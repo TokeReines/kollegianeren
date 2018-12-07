@@ -1,0 +1,82 @@
+<div fxLayout="row" xLayoutAlign="space-around center">
+
+  <div fxLayout="column" xLayoutAlign="space-around center" class="buypage-left">
+
+    <div fxLayout="row wrap" xLayoutAlign="space-around center" class="buypage-group disable-text-selection">
+      <mat-card *ngFor="let product of products" (click)="selectProduct(product)"
+                (contextmenu)="deselectProduct(product, $event)"
+                [class.mat-elevation-z5]="product.selected" class="mat-elevation-z buypage-grid-card">
+        <mat-card-title-group>
+
+          <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
+            <cl-image public-id="{{product.clId}}" crop="fit" class="product"
+                      quality="50" width="50" height="75" format="png">
+            </cl-image>
+          </div>
+          <div *ngIf="!!product.image && !product.clId" class="image-wrapper" matBadge="{{product.amount}}">
+            <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
+          </div>
+
+          <mat-card-title>{{product.name}}</mat-card-title>
+          <mat-card-subtitle>{{product.price}} kr</mat-card-subtitle>
+        </mat-card-title-group>
+      </mat-card>
+    </div>
+    <mat-divider></mat-divider>
+
+    <div fxLayout="row wrap" xLayoutAlign="space-around center" class="buypage-group disable-text-selection">
+      <mat-card *ngFor="let user of users" (click)="selectUser(user, $event)" (contextmenu)="selectUser(user, $event)"
+                [class.mat-elevation-z5]="user.selected" class="mat-elevation-z buypage-grid-card">
+        <mat-card-title-group>
+          <div *ngIf="!!user.clId" class="image-wrapper">
+            <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
+                      quality="50" width="75" height="75" format="png" radius="max">
+            </cl-image>
+          </div>
+          <div *ngIf="!!user.image" class="image-wrapper">
+            <img [src]="user.image" class="avatar" >
+          </div>
+          <mat-card-title>{{user.name}}</mat-card-title>
+          <mat-card-subtitle>{{user.room}}</mat-card-subtitle>
+        </mat-card-title-group>
+      </mat-card>
+    </div>
+  </div>
+
+  <div class="buypage-cart-card">
+    <mat-card *ngIf="selectedProduct" class="mat-elevation-z5">
+      <img *ngIf="!!selectedProduct.image" mat-card-image [src]="selectedProduct.image" class="cart-image">
+      <div *ngIf="!!selectedProduct.clId">
+        <cl-image public-id="{{selectedProduct.clId}}" format="png" class="cart-image">
+          <cl-transformation height="200" width="168" crop="lpad" quality="100"></cl-transformation>
+        </cl-image>
+      </div>
+      <mat-card-title class="cart-title">{{selectedProduct.name}}</mat-card-title>
+
+      <table class="ehp-table">
+        <tbody>
+        <tr>
+          <td>Pris</td>
+          <td>{{selectedProduct.price}} kr</td>
+        </tr>
+        <tr>
+          <td>Antal</td>
+          <td>{{selectedProduct.amount}} stk</td>
+        </tr>
+        <tr>
+          <td>Total</td>
+          <td><b>{{selectedProduct.amount * selectedProduct.price}} kr</b></td>
+        </tr>
+        </tbody>
+      </table>
+      <mat-card-actions class="cart-buttons">
+        <button mat-raised-button color="primary" [disabled]="!selectedUsers.length" (click)="purchase()">Køb</button>
+        <button mat-button color="warning" (click)="cancel()">Fortryd</button>
+      </mat-card-actions>
+    </mat-card>
+
+  </div>
+</div>
+<button mat-fab class="bottom-right" (click)="openHistorySheet()">
+  <mat-icon>list</mat-icon>
+</button>

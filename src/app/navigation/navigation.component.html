@@ -1,0 +1,25 @@
+<mat-sidenav-container class="nav-container">
+  <mat-sidenav #sidenav mode="side" opened role="navigation">
+    <mat-nav-list>
+      <mat-list-item [routerLink]="['']">
+        <mat-icon matListIcon>local_grocery_store</mat-icon>
+        <a>Ølsystem</a>
+      </mat-list-item>
+      <mat-list-item [routerLink]="['/products']">
+        <mat-icon matListIcon>local_bar</mat-icon>
+        <a>Produkter</a>
+      </mat-list-item>
+      <mat-list-item [routerLink]="['/users']">
+        <mat-icon matListIcon>people</mat-icon>
+        <a>Beboere</a>
+      </mat-list-item>
+      <mat-list-item [routerLink]="['/accounting']">
+        <mat-icon matListIcon>receipt</mat-icon>
+        <a>Regnskab</a>
+      </mat-list-item>
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>

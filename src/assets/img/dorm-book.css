@@ -1,0 +1,56 @@
+h5 {
+  margin-bottom: 0; }
+
+h6 {
+  margin-top: 0;
+  margin-left: 4px; }
+
+body {
+  background-color: #e9eaed; }
+
+.message-wrapper {
+  padding: 10px; }
+
+.message {
+  position: relative;
+  background-color: white;
+  padding: 10px;
+  padding-top: 5px;
+  margin-bottom: 15px;
+  border-radius: 3px; }
+  .message input[type="text"] {
+    margin-bottom: 0; }
+  .message .collection {
+    margin-bottom: 5px; }
+  .message .timestamp {
+    position: absolute;
+    right: 10px;
+    top: 22.3px;
+    color: lightgray; }
+  .message .comment-section {
+    background-color: #f6f7f8;
+    margin-left: -10px !important;
+    margin-right: -10px !important;
+    position: relative; }
+    .message .comment-section .shadow {
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      right: 0px;
+      bottom: 0px;
+      -webkit-box-shadow: inset 0px 0px 9px 0px rgba(0, 0, 0, 0.21);
+      -moz-box-shadow: inset 0px 0px 9px 0px rgba(0, 0, 0, 0.21);
+      box-shadow: inset 0px 0px 9px 0px rgba(0, 0, 0, 0.21); }
+    .message .comment-section .collection {
+      background-color: #f6f7f8 !important; }
+      .message .comment-section .collection .collection-item {
+        background-color: #f6f7f8; }
+  .message .comment {
+    position: relative; }
+    .message .comment p {
+      margin: 0 !important; }
+    .message .comment h6 {
+      margin: 0;
+      position: absolute;
+      right: 10px;
+      top: 10px; }

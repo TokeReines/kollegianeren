@@ -1,0 +1,58 @@
+<mat-table #table [dataSource]="users" matSort class="animate">
+  <ng-container matColumnDef="image">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+    <mat-cell *matCellDef="let user" class="image-wrapper">
+      <div *ngIf="!!user.clId" class="image-wrapper">
+        <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
+                  quality="50" width="75" height="75" format="png" radius="max">
+        </cl-image>
+      </div>
+      <div *ngIf="!!user.image" class="image-wrapper">
+        <img [src]="user.image" class="avatar">
+      </div>
+      <div *ngIf="!user.image && !user.clId" class="image-wrapper">
+        <img src="/assets/img/avatar.png" class="avatar"/>
+      </div>
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="name">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Billede</mat-header-cell>
+    <mat-cell *matCellDef="let user"> {{ user.name }} </mat-cell>
+  </ng-container>
+
+
+  <ng-container matColumnDef="room">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Room</mat-header-cell>
+    <mat-cell *matCellDef="let user"> {{ user.room }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="active">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Active</mat-header-cell>
+    <mat-cell *matCellDef="let user">
+      <mat-checkbox [(ngModel)]="user.active" (change)="userService.update(user)"></mat-checkbox>
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="edit">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Ret</mat-header-cell>
+    <mat-cell *matCellDef="let user">
+      <button mat-icon-button (click)="openEditDialog(user)">
+        <mat-icon>edit</mat-icon>
+      </button>
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="delete">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Slet</mat-header-cell>
+    <mat-cell *matCellDef="let user">
+      <button mat-icon-button (click)="userService.delete(user)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </mat-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+  <mat-row *matRowDef="let product; columns: displayedColumns;" class="animate"></mat-row>
+</mat-table>
+<button mat-fab class="bottom-right" color="primary" (click)="openAddDialog()">+</button>

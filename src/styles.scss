@@ -1,0 +1,105 @@
+/* You can add global styles to this file, and also import other style files */
+@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+}
+
+.basic-container {
+  padding: 30px;
+}
+
+.version-info {
+  font-size: 8pt;
+  float: right;
+}
+
+
+.bottom-right {
+  top: auto;
+  right: 30px;
+  bottom: 30px;
+  left: auto;
+  position: fixed !important;
+}
+
+.table-image {
+  max-height: 46px;
+}
+
+.register-form {
+  position: absolute;
+  width: 300px;
+  height: 200px;
+  z-index: 15;
+  left: 50%;
+  margin: 100px 0 0 -150px;
+}
+
+.image-wrapper {
+  height: 75px !important;
+  width: 75px !important;
+
+  .product {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    max-height: 75px !important;
+    max-width: 75px  !important;
+  }
+
+  .avatar {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    max-height: 75px !important;
+    max-width: 75px  !important;
+    border-radius: 50%;
+  }
+}
+
+.fill-space {
+  // This fills the remaining space, by using flexbox.
+  // Every toolbar row uses a flexbox row layout.
+  flex: 1 1 auto;
+}
+
+.image-input-radio {
+
+}
+
+.mat-dialog-content {
+  height:345px;
+}
+.user_id {
+  width: 100px;
+}
+
+.dialog-image-preview {
+    display: table;
+    margin-left: auto;
+    margin-right: auto;
+  .user-img {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+  }
+  .product-img {
+    width: 75px;
+    height: 75px;
+  }
+  button {
+    display: table-cell;
+    vertical-align: middle;
+  }
+}
+
+.dialog-checkbox-active {
+  display: block;
+  margin-top: auto;
+}

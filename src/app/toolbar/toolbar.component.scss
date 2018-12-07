@@ -1,0 +1,15 @@
+
+.toolbar-logo {
+  height: 58px;
+  width: 58px;
+  padding: 3px;
+  img {
+
+    display: inline-block;
+    height: 100%;
+    width: 100%;
+    margin-left: 15px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}

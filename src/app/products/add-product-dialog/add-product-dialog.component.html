@@ -1,0 +1,42 @@
+<h1 mat-dialog-title>Ret produkt</h1>
+<div mat-dialog-content fxLayout="column" style="height: 448px;">
+  <mat-form-field>
+    <input matInput [(ngModel)]="product.name" placeholder="Navn">
+  </mat-form-field>
+  <mat-form-field>
+    <input matInput [(ngModel)]="product.price" placeholder="Salgspris">
+  </mat-form-field>
+  <mat-form-field>
+    <input matInput [(ngModel)]="product.retailPrice" placeholder="Indkøbspris">
+  </mat-form-field>
+  <div>
+    <button mat-raised-button color="accent" [disabled]="!!product.clId" (click)="openFileExplorer()">Upload</button>
+    <input hidden type="file" #clFileInput (change)="uploadClImage($event.target.files)">
+    <span class="fill-space" style="margin-left:10px; margin-right:10px;">eller</span>
+    <mat-form-field>
+      <input matInput [(ngModel)]="imageUrl" placeholder="Url til online billede">
+      <button mat-icon-button matSuffix color="primary" (click)="setImageFromUrl()">
+        <mat-icon>check</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+  <div class="dialog-image-preview">
+    <mat-spinner *ngIf="!!uploading" class="avatar"></mat-spinner>
+    <img class="product-img" src="/assets/img/avatar.png" *ngIf="!product.clId && !product.image && !uploading"/>
+
+    <div *ngIf="!!product.image" class="image-wrapper" matBadge="{{product.amount}}">
+      <img class="product" [src]="product.image" *ngIf="!!product.image" (error)="revertImageUrl()"/>
+    </div>
+    <cl-image public-id="{{product.clId}}" crop="fit" *ngIf="!!product.clId"
+              quality="50" width="75" height="75" format="png">
+    </cl-image>
+    <button mat-icon-button (click)="deleteImage()">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+  <mat-checkbox [(ngModel)]="product.active" class="dialog-checkbox-active">Findes i køleskab</mat-checkbox>
+</div>
+<div mat-dialog-actions>
+  <button mat-raised-button (click)="onYesClick(product)" color="primary">Gem</button>
+  <button mat-button (click)="onNoClick()">Fortryd</button>
+</div>

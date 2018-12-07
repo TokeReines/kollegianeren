@@ -1,0 +1,65 @@
+<mat-table #table [dataSource]="products" matSort class="animate">
+
+  <ng-container matColumnDef="image">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Billede</mat-header-cell>
+    <mat-cell *matCellDef="let product" class="table-image-wrapper">
+      <!--<img [src]="product.image" alt="./assets/img/maribo.png" class="table-image">-->
+      <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
+        <cl-image public-id="{{product.clId}}" crop="fit" class="product"
+                  quality="50" width="75" height="75" format="png">
+        </cl-image>
+      </div>
+      <div *ngIf="!product.image && !product.clId" class="image-wrapper">
+        <img src="/assets/img/avatar.png" class="avatar"/>
+      </div>
+      <div *ngIf="!!product.image" class="image-wrapper" matBadge="{{product.amount}}">
+        <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
+      </div>
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="name">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+    <mat-cell *matCellDef="let product"> {{ product.name }} </mat-cell>
+  </ng-container>
+
+
+  <ng-container matColumnDef="retailPrice">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Retailprice</mat-header-cell>
+    <mat-cell *matCellDef="let product"> {{ product.retailPrice }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="price">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Price</mat-header-cell>
+    <mat-cell *matCellDef="let product"> {{ product.price }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="active">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Active</mat-header-cell>
+    <mat-cell *matCellDef="let product">
+      <mat-checkbox [(ngModel)]="product.active" (change)="productService.update(product)"></mat-checkbox>
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="edit">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Ret</mat-header-cell>
+    <mat-cell *matCellDef="let product">
+      <button mat-icon-button (click)="openEditDialog(product)">
+        <mat-icon>edit</mat-icon>
+      </button>
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="delete">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Slet</mat-header-cell>
+    <mat-cell *matCellDef="let product">
+      <button mat-icon-button (click)="productService.delete(product)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </mat-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+  <mat-row *matRowDef="let product; columns: displayedColumns;" class="animate"></mat-row>
+</mat-table>
+<button mat-fab class="bottom-right" color="primary" (click)="openAddDialog()">+</button>

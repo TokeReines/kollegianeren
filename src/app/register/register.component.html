@@ -1,0 +1,30 @@
+<div class="register-form" fxLayout="column" xLayoutAlign="space-around center">
+  <mat-card>
+    <h1>Registrer nyt køkken</h1>
+    <form name="registerForm" fxLayout="column" [formGroup]="form">
+      <mat-form-field>
+        <mat-select placeholder="Køkken" [(ngModel)]="registration.kitchen" formControlName="kitchen">
+          <mat-option *ngFor="let kitchen of kitchens" [value]="kitchen.value">
+            {{kitchen.viewValue}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <input matInput placeholder="Enter your email" formControlName="email" [(ngModel)]="registration.email"
+               name="email">
+      </mat-form-field>
+
+      <mat-form-field>
+        <input matInput placeholder="Enter your password" [type]="hidePassword ? 'password' : 'text'"
+               [(ngModel)]="registration.password" formControlName="password">
+        <mat-icon matSuffix
+                  (click)="hidePassword = !hidePassword">{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="onSubmit(registration)" [disabled]="form.invalid">Registrér
+      </button>
+
+    </form>
+  </mat-card>
+</div>

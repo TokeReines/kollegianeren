@@ -1,0 +1,27 @@
+<div fxLayout="row" xLayoutAlign="space-around center">
+  <mat-form-field>
+    <input matInput [matDatepicker]="pickerFrom" placeholder="Fra dato (inklusiv)" [(ngModel)]="from_date"
+           [matDatepickerFilter]="fromDateFilter" (dateChange)="fromDateChange()">
+    <mat-datepicker-toggle matSuffix [for]="pickerFrom"></mat-datepicker-toggle>
+    <mat-datepicker #pickerFrom></mat-datepicker>
+  </mat-form-field>
+  <mat-form-field>
+    <input matInput [matDatepicker]="pickerTo" placeholder="Til dato (inklusiv)" [(ngModel)]="to_date"
+           [matDatepickerFilter]="toDateFilter" (dateChange)="toDateChange()">
+    <mat-datepicker-toggle matSuffix [for]="pickerTo"></mat-datepicker-toggle>
+    <mat-datepicker #pickerTo></mat-datepicker>
+  </mat-form-field>
+  <div class="export-button">
+    <button mat-raised-button color="primary" (click)="exportAsXLSX()">Export som .xlsx</button>
+  </div>
+</div>
+<table mat-table [dataSource]="dataSource" matSort>
+  <!-- Position Column -->
+  <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
+    <th mat-header-cell class="{{column}}" *matHeaderCellDef mat-sort-header>{{column}}</th>
+    <td mat-cell class="{{column}}" *matCellDef="let element"> {{element[column]}} </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+</table>

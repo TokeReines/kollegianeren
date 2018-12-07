@@ -1,0 +1,39 @@
+<mat-table #table [dataSource]="purchases" matSort class="animate">
+
+  <ng-container matColumnDef="timestamp" >
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Tidspunkt</mat-header-cell>
+    <mat-cell *matCellDef="let purchase" class="history-cell"> {{ purchase.timestamp.toDate() | date :'short' }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="name">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+    <mat-cell *matCellDef="let purchase"> {{ purchase.product_name }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="amount">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Antal</mat-header-cell>
+    <mat-cell *matCellDef="let purchase"> {{ purchase.amount }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="price">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Pris</mat-header-cell>
+    <mat-cell *matCellDef="let purchase"> {{ purchase.price }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="user">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Køber</mat-header-cell>
+    <mat-cell *matCellDef="let purchase"> {{ purchase.user_name }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="delete">
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Slet</mat-header-cell>
+    <mat-cell *matCellDef="let purchase">
+      <button mat-icon-button (click)="purchaseService.delete(purchase)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </mat-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+  <mat-row *matRowDef="let purchase; columns: displayedColumns;" class="animate"></mat-row>
+</mat-table>

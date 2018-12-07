@@ -1,0 +1,15 @@
+.nav-container {
+  height: 100%;
+  mat-sidenav {
+    width: 150px;
+  }
+}
+
+.front-page-logo {
+  display: inline-block;
+  height: 140px;
+  width: 140px;
+  margin: 5px;
+  border-radius: 50%;
+  pointer-events: none;
+}
