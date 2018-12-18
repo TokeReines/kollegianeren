@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "kollegianeren"
+    "default": "kollegianeren",
+    "prod": "firebase-ehp",
+    "dev": "kollegianeren"
   }
 }

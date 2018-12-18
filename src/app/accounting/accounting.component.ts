@@ -33,22 +33,22 @@ export class AccountingComponent implements OnInit {
       // { columnDef: 'userId',    header: 'ID',       cell: (row: UserData) => `${row.id}`        },
       const data = {};
       purchases.map(purchase => {
-        if (!(purchase.user_id in data)) {
-          data[purchase.user_id] = {user_id: purchase.user_id, name: purchase.user_name, room: purchase.user_room, products: {}, total: 0};
+        if (!(purchase.userId in data)) {
+          data[purchase.userId] = {userId: purchase.userId, name: purchase.userName, room: purchase.userRoom, products: {}, total: 0};
         }
-        const products = data[purchase.user_id]['products'];
-        if (!(purchase.product_name in products)) {
-          products[purchase.product_name] = {name: purchase.product_name, amount: purchase.amount, price: purchase.price};
+        const products = data[purchase.userId]['products'];
+        if (!(purchase.productName in products)) {
+          products[purchase.productName] = {name: purchase.productName, amount: purchase.amount, price: purchase.price};
         } else {
-          products[purchase.product_name]['amount'] += purchase.amount;
+          products[purchase.productName]['amount'] += purchase.amount;
           // products[purchase.product_id]['price'] += purchase.price;
         }
 
-        data[purchase.user_id]['total'] += purchase.price;
+        data[purchase.userId]['total'] += purchase.price;
       });
 
-      Object.keys(data).forEach(user_id => {
-        const value = data[user_id];
+      Object.keys(data).forEach(userId => {
+        const value = data[userId];
         const row = {name: value['name'], room: value['room'], total: value['total']};
         Object.keys(value['products']).forEach(key => {
           const product = value['products'][key];

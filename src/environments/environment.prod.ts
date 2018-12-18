@@ -11,12 +11,12 @@ export const environment = {
     upload_preset: 'l8l2znwi'
   },
   firebase: {
-    apiKey: 'AIzaSyBQYwdOvSjikzel3fLDmO7wY75byglR5T4',
-    authDomain: 'kollegianeren.firebaseapp.com',
-    databaseURL: 'https://kollegianeren.firebaseio.com',
-    projectId: 'kollegianeren',
-    storageBucket: 'kollegianeren.appspot.com',
-    messagingSenderId: '507071028000'
+    apiKey: 'AIzaSyBbDKH9Nm0tyzvCyM8JzUVRZhaCegjlKP4',
+    authDomain: 'ehp.firebaseapp.com',
+    databaseURL: 'https://ehp.firebaseio.com',
+    projectId: 'firebase-ehp',
+    storageBucket: 'firebase-ehp.appspot.com',
+    messagingSenderId: '844857538913'
   }
 };
 

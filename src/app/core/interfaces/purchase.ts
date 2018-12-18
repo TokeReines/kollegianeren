@@ -3,11 +3,11 @@
 export interface Purchase {
   id: string;
   amount: number;
-  product_id: string;
-  product_name: string;
+  productId: string;
+  productName: string;
   price: number;
-  user_id: string;
-  user_name: string;
-  user_room: string;
+  userId: string;
+  userName: string;
+  userRoom: string;
   timestamp: any;
 }

@@ -94,13 +94,13 @@ export class BuyPageComponent implements OnInit {
     const users = [];
     this.selectedUsers.forEach(user => {
       const p = <Purchase>{
-        product_name: this.selectedProduct.name,
-        product_id: this.selectedProduct.id,
+        productName: this.selectedProduct.name,
+        productId: this.selectedProduct.id,
         amount: this.selectedProduct.amount,
         price: this.selectedProduct.price * this.selectedProduct.amount,
-        user_id: user.id,
-        user_name: user.name,
-        user_room: user.room
+        userId: user.id,
+        userName: user.name,
+        userRoom: user.room
       };
       users.push(user.name);
       this.purchaseService.add(p);
