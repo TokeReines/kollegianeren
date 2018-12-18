@@ -99,6 +99,21 @@ body {
   }
 }
 
+
+.sidenav-content {
+  padding: 20px;
+  height: calc(100% - 64px);
+  overflow: auto;
+}
+
+mat-sidenav-content {
+  height: 100%;
+}
+
+mat-sidenav-container {
+  height: calc(100% - 64px) !important;
+}
+
 .dialog-checkbox-active {
   display: block;
   margin-top: auto;
