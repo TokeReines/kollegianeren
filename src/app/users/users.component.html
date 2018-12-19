@@ -1,6 +1,6 @@
 <mat-table #table [dataSource]="users" matSort class="animate">
   <ng-container matColumnDef="image">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Billede</mat-header-cell>
     <mat-cell *matCellDef="let user" class="image-wrapper">
       <div *ngIf="!!user.clId" class="image-wrapper">
         <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
@@ -17,18 +17,18 @@
   </ng-container>
 
   <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Billede</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Navn</mat-header-cell>
     <mat-cell *matCellDef="let user"> {{ user.name }} </mat-cell>
   </ng-container>
 
 
   <ng-container matColumnDef="room">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Room</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Værelse</mat-header-cell>
     <mat-cell *matCellDef="let user"> {{ user.room }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="active">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Active</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Aktiv</mat-header-cell>
     <mat-cell *matCellDef="let user">
       <mat-checkbox [(ngModel)]="user.active" (change)="userService.update(user)"></mat-checkbox>
     </mat-cell>

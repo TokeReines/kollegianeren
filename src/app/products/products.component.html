@@ -19,23 +19,23 @@
   </ng-container>
 
   <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Navn</mat-header-cell>
     <mat-cell *matCellDef="let product"> {{ product.name }} </mat-cell>
   </ng-container>
 
 
   <ng-container matColumnDef="retailPrice">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Retailprice</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Indkøbspris</mat-header-cell>
     <mat-cell *matCellDef="let product"> {{ product.retailPrice }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="price">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Price</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Salgspris</mat-header-cell>
     <mat-cell *matCellDef="let product"> {{ product.price }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="active">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Active</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>Aktiv</mat-header-cell>
     <mat-cell *matCellDef="let product">
       <mat-checkbox [(ngModel)]="product.active" (change)="productService.update(product)"></mat-checkbox>
     </mat-cell>

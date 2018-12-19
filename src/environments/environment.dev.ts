@@ -3,7 +3,7 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: true,
+  production: false,
   cloudinary: {
     cloud_name: 'egmontkollegiet',
     api_key: '135774189578826',
