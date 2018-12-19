@@ -29,36 +29,44 @@ export class AccountingComponent implements OnInit {
   _setTableData() {
     this.purchaseService.list_from_to(this.from_date, this.to_date).valueChanges().subscribe(purchases => {
       const rows = [];
-      const columns = { name: '', room: ''};
-      // { columnDef: 'userId',    header: 'ID',       cell: (row: UserData) => `${row.id}`        },
-      const data = {};
+      let columns = ['name', 'room'];
+      const formatted_rows = {};
       purchases.map(purchase => {
-        if (!(purchase.userId in data)) {
-          data[purchase.userId] = {userId: purchase.userId, name: purchase.userName, room: purchase.userRoom, products: {}, total: 0};
+        if (!(purchase.userId in formatted_rows)) {
+          formatted_rows[purchase.userId] = {
+            userId: purchase.userId,
+            name: purchase.userName,
+            room: purchase.userRoom,
+            products: {},
+            total: 0
+          };
         }
-        const products = data[purchase.userId]['products'];
+        const products = formatted_rows[purchase.userId]['products'];
         if (!(purchase.productName in products)) {
           products[purchase.productName] = {name: purchase.productName, amount: purchase.amount, price: purchase.price};
         } else {
           products[purchase.productName]['amount'] += purchase.amount;
-          // products[purchase.product_id]['price'] += purchase.price;
         }
 
-        data[purchase.userId]['total'] += purchase.price;
+        formatted_rows[purchase.userId]['total'] += purchase.price;
       });
-
-      Object.keys(data).forEach(userId => {
-        const value = data[userId];
-        const row = {name: value['name'], room: value['room'], total: value['total']};
+      const product_columns = [];
+      Object.keys(formatted_rows).forEach(userId => {
+        const value = formatted_rows[userId];
+        const row = {name: value['name'], room: value['room'], total: value['total'].toFixed(2)};
         Object.keys(value['products']).forEach(key => {
           const product = value['products'][key];
           row[product.name] = product['amount'];
-          columns[product['name']] = '';
+          if (!product_columns.includes(product.name)) {
+            product_columns.push(product.name);
+          }
         });
         rows.push(row);
       });
-      columns['total'] = '';
-      this.displayedColumns = Object.keys(columns);
+      product_columns.sort();
+      columns = columns.concat(product_columns);
+      columns.push('total');
+      this.displayedColumns = columns;
       this.dataSource = new MatTableDataSource(rows);
       this.dataSource.sort = this.sort;
     });
