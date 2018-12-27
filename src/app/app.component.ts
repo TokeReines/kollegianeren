@@ -1,7 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {AuthService} from './core/services/auth.service';
+import {AuthService} from './services/auth.service';
 import {MatSidenav} from '@angular/material';
-import {SidenavService} from './core/services/sidenav.service';
+import {SidenavService} from './services/sidenav.service';
 
 @Component({
   selector: 'app-root',

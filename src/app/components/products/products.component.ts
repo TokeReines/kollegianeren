@@ -1,7 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {ProductService} from '../core/services/product.service';
+import {ProductService} from '../../services/product.service';
 import {Observable} from 'rxjs';
-import {Product} from '../core/interfaces/product';
+import {Product} from '../../interfaces/product';
 import {MatDialog, MatSort, MatTableDataSource} from '@angular/material';
 import {EditProductDialogComponent} from './edit-product-dialog/edit-product-dialog.component';
 import {AddProductDialogComponent} from './add-product-dialog/add-product-dialog.component';

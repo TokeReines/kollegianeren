@@ -1,10 +1,10 @@
 import {Component, OnInit} from '@angular/core';
 import {Form, FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
-import {AuthService} from '../core/services/auth.service';
+import {AuthService} from '../../services/auth.service';
 import {Router} from '@angular/router';
-import {Registration} from '../core/models/registration';
-import {KitchenService} from '../core/services/kitchen.service';
-import {Kitchen} from '../core/interfaces/kitchen';
+import {Registration} from '../../models/registration';
+import {KitchenService} from '../../services/kitchen.service';
+import {Kitchen} from '../../interfaces/kitchen';
 
 export interface KitchenSelect {
   value: string;

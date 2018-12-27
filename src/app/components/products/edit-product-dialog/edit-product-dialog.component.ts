@@ -1,21 +1,22 @@
 import {Component, ElementRef, Inject, OnInit, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material';
-import {User} from '../../core/interfaces/user';
-import {environment} from '../../../environments/environment';
+import {Product} from '../../../interfaces/product';
+import {environment} from '../../../../environments/environment';
 import {HttpClient} from '@angular/common/http';
 
+
 @Component({
-  selector: 'app-edit-user-dialog',
-  templateUrl: './edit-user-dialog.component.html'
+  selector: 'app-edit-product-dialog',
+  templateUrl: './edit-product-dialog.component.html',
 })
-export class EditUserDialogComponent implements OnInit {
+export class EditProductDialogComponent implements OnInit {
   imageUrl: string;
   oldImageUrl: string;
   uploading: boolean;
   @ViewChild('clFileInput') clFileInput: ElementRef;
 
-  constructor(public dialogRef: MatDialogRef<EditUserDialogComponent>,
-              @Inject(MAT_DIALOG_DATA) public user: User, private httpClient: HttpClient) {
+  constructor(public dialogRef: MatDialogRef<EditProductDialogComponent>,
+              @Inject(MAT_DIALOG_DATA) public product: Product, private httpClient: HttpClient) {
   }
 
   onNoClick(): void {
@@ -27,18 +28,18 @@ export class EditUserDialogComponent implements OnInit {
   }
 
   deleteImage() {
-    this.user.image = '';
-    this.user.clId = '';
+    this.product.image = '';
+    this.product.clId = '';
   }
 
   revertImageUrl() {
-    this.user.image = '';
+    this.product.image = '';
   }
 
   setImageFromUrl() {
-    this.oldImageUrl = this.user.image;
-    this.user.image = this.imageUrl;
-    this.user.clId = '';
+    this.oldImageUrl = this.product.image;
+    this.product.image = this.imageUrl;
+    this.product.clId = '';
   }
 
   uploadClImage(files) {
@@ -52,8 +53,8 @@ export class EditUserDialogComponent implements OnInit {
     this.httpClient.post(url, data)
       .subscribe((clImage) => {
         this.uploading = false;
-        this.user.image = '';
-        this.user.clId = clImage['public_id'];
+        this.product.image = '';
+        this.product.clId = clImage['public_id'];
       }, error => {
         this.uploading = false;
         console.log(error);
@@ -65,7 +66,6 @@ export class EditUserDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.imageUrl = this.user.image;
+    this.imageUrl = this.product.image;
   }
-
 }

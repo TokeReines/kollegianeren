@@ -1,12 +1,12 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {map} from 'rxjs/operators';
-import {UserService} from '../core/services/user.service';
+import {UserService} from '../../services/user.service';
 import {Observable} from 'rxjs';
-import {User} from '../core/interfaces/user';
+import {User} from '../../interfaces/user';
 import {MatDialog, MatSort, MatTableDataSource} from '@angular/material';
 import {EditUserDialogComponent} from './edit-user-dialog/edit-user-dialog.component';
 import {AddUserDialogComponent} from './add-user-dialog/add-user-dialog.component';
-import {Product} from '../core/interfaces/product';
+import {Product} from '../../interfaces/product';
 
 @Component({
   selector: 'app-users',

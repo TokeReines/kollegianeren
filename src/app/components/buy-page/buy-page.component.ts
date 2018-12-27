@@ -1,10 +1,10 @@
 import {Component, OnInit} from '@angular/core';
-import {ProductService} from '../core/services/product.service';
-import {BuyableProduct} from '../core/models/buyable-product';
-import {BuyableUser} from '../core/models/buyable-user';
-import {UserService} from '../core/services/user.service';
-import {Purchase} from '../core/interfaces/purchase';
-import {PurchaseService} from '../core/services/purchase.service';
+import {ProductService} from '../../services/product.service';
+import {BuyableProduct} from '../../models/buyable-product';
+import {BuyableUser} from '../../models/buyable-user';
+import {UserService} from '../../services/user.service';
+import {Purchase} from '../../interfaces/purchase';
+import {PurchaseService} from '../../services/purchase.service';
 import {MatBottomSheet, MatSnackBar} from '@angular/material';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 

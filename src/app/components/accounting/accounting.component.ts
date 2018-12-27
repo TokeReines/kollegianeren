@@ -1,8 +1,8 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {PurchaseService} from '../core/services/purchase.service';
+import {PurchaseService} from '../../services/purchase.service';
 import {MatSort, MatTableDataSource} from '@angular/material';
-import {ExcelService} from '../core/services/excel.service';
-import {PdfService} from '../core/services/pdf.service';
+import {ExcelService} from '../../services/excel.service';
+import {PdfService} from '../../services/pdf.service';
 
 @Component({
   selector: 'app-accounting',
