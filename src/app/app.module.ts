@@ -33,6 +33,7 @@ import {AccountingComponent} from './components/accounting/accounting.component'
 import {CloudinaryConfiguration, CloudinaryModule} from '@cloudinary/angular-5.x';
 import {Cloudinary} from 'cloudinary-core';
 import {HttpClientModule} from '@angular/common/http';
+import {PriceInputDirective} from './directives/priceInput.directive';
 
 export const cloudinaryLib = {
   Cloudinary: Cloudinary
@@ -54,7 +55,8 @@ export const cloudinaryLib = {
     EditUserDialogComponent,
     BuyPageComponent,
     HistoryBottomSheetComponent,
-    AccountingComponent
+    AccountingComponent,
+    PriceInputDirective
   ],
   imports: [
     BrowserModule,

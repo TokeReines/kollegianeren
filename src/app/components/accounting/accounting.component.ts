@@ -53,7 +53,7 @@ export class AccountingComponent implements OnInit {
       const product_columns = [];
       Object.keys(formatted_rows).forEach(userId => {
         const value = formatted_rows[userId];
-        const row = {name: value['name'], room: value['room'], total: value['total'].toFixed(2)};
+        const row = {name: value['name'], room: value['room'], total: parseFloat(value['total']).toFixed(2)};
         Object.keys(value['products']).forEach(key => {
           const product = value['products'][key];
           row[product.name] = product['amount'];

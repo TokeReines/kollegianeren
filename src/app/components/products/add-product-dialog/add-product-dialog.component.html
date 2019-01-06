@@ -4,10 +4,10 @@
     <input matInput [(ngModel)]="product.name" placeholder="Navn">
   </mat-form-field>
   <mat-form-field>
-    <input matInput [(ngModel)]="product.price" placeholder="Salgspris">
+    <input matInput priceInput type='number' [(ngModel)]="product.price" placeholder="Salgspris">
   </mat-form-field>
   <mat-form-field>
-    <input matInput [(ngModel)]="product.retailPrice" placeholder="Indkøbspris">
+    <input matInput priceInput type='number' [(ngModel)]="product.retailPrice" placeholder="Indkøbspris">
   </mat-form-field>
   <div>
     <button mat-raised-button color="accent" [disabled]="!!product.clId" (click)="openFileExplorer()">Upload</button>
