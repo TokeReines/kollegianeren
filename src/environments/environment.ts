@@ -5,10 +5,10 @@
 export const environment = {
   production: false,
   cloudinary: {
-    cloud_name: 'egmontkollegiet',
-    api_key: '135774189578826',
-    api_secret: '350zecUxBcQ1Yel553diSXNlOpA',
-    upload_preset: 'l8l2znwi'
+    cloud_name: 'egmontkollegiet-dev',
+    api_key: '847733283445576',
+    api_secret: 'oWrtkHnYekzL1ba-ks537vnWUXg',
+    upload_preset: 'ml_default'
   },
   firebase: {
     apiKey: 'AIzaSyBQYwdOvSjikzel3fLDmO7wY75byglR5T4',
