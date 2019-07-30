@@ -40,6 +40,17 @@ export class AuthService {
         }, err => reject(err));
     });
   }
+
+  sendResetEmail(email) {
+    console.log(email);
+    return new Promise<any>((resolve, reject) => {
+      firebase.auth().sendPasswordResetEmail(email)
+        .then(res => {
+          resolve(res);
+        }, err => reject(err));
+    });
+  }
+
   isLoggedIn() {
     return this.afAuth.authState;
   }

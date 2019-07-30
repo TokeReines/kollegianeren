@@ -31,7 +31,6 @@ export class UsersComponent implements OnInit {
     console.log(product);
     const dialogRef = this.dialog.open(EditUserDialogComponent, {
       width: '400px',
-      height: '540px',
       data: product
     });
 
@@ -50,7 +49,6 @@ export class UsersComponent implements OnInit {
   openAddDialog() {
     const dialogRef = this.dialog.open(AddUserDialogComponent, {
       width: '400px',
-      height: '540px',
       data: {}
     });
 
