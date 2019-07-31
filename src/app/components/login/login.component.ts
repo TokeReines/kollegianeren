@@ -1,25 +1,23 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
-import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-password-dialog.component';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent {
   email = '';
   password = '';
   hidePassword = true;
+  emailSent = false;
 
   constructor(private authService: AuthService,
     private router: Router,
     public dialog: MatDialog) {
-  }
-
-  ngOnInit() {
   }
 
   login() {
@@ -27,22 +25,18 @@ export class LoginComponent implements OnInit {
       .then(() => this.router.navigate(['']));
   }
 
-  handleButtonClicked(email) {
-    this.authService.sendResetEmail(email);
-  }
-
   openDialog() {
-    console.log(this.email);
     const dialogRef = this.dialog.open(ResetPasswordDialogComponent, {
-      data: { email: this.email }
+      data: { email: this.email, emailSent: this.emailSent }
     });
-    dialogRef.componentInstance.emailSent.subscribe((email: string) => {
+    dialogRef.componentInstance.doSendEmail.subscribe((email: string) => {
       this.authService.sendResetEmail(email);
+      dialogRef.componentInstance.data.emailSent = true;
     });
 
     dialogRef.afterClosed().subscribe(result => {
       console.log(`Dialog result: ${result}`);
-      dialogRef.componentInstance.emailSent.unsubscribe();
+      dialogRef.componentInstance.doSendEmail.unsubscribe();
     });
   }
 

@@ -1,4 +1,4 @@
-import { OnInit, Component, Inject, Input, Output, EventEmitter } from '@angular/core';
+import { OnInit, Component, Inject, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
 
 @Component({
@@ -7,10 +7,11 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
   styleUrls: ['reset-password-dialog.component.scss'],
 })
 export class ResetPasswordDialogComponent {
-  @Output() emailSent = new EventEmitter();
+  @Output() doSendEmail = new EventEmitter();
 
   constructor(
-    public dialogRef: MatDialogRef<ResetPasswordDialogComponent>, @Inject(MAT_DIALOG_DATA) public data: { email: string }) { }
+    public dialogRef: MatDialogRef<ResetPasswordDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { email: string, emailSent: boolean }) { }
 
   onNoClick(): void {
     this.dialogRef.close();
@@ -18,7 +19,7 @@ export class ResetPasswordDialogComponent {
 
   onSendResetEmail(email): void {
     console.log('Sending reset email to: ' + email);
-    this.emailSent.emit(email);
+    this.doSendEmail.emit(email);
   }
 
 }
