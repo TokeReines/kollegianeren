@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-password-dialog.component';
 
@@ -9,15 +10,24 @@ import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-pass
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email = '';
   password = '';
   hidePassword = true;
   emailSent = false;
+  form: FormGroup;
+
 
   constructor(private authService: AuthService,
     private router: Router,
     public dialog: MatDialog) {
+  }
+
+  ngOnInit() {
+    this.form = new FormGroup({
+      email: new FormControl('', [Validators.required, Validators.email]),
+      password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    });
   }
 
   login() {
@@ -25,7 +35,7 @@ export class LoginComponent {
       .then(() => this.router.navigate(['']));
   }
 
-  openDialog() {
+  openResetPasswordDialog() {
     const dialogRef = this.dialog.open(ResetPasswordDialogComponent, {
       data: { email: this.email, emailSent: this.emailSent }
     });
