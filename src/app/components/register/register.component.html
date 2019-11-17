@@ -1,7 +1,8 @@
+<app-language-button></app-language-button>
 <div class="register-form" fxLayout="column" xLayoutAlign="space-around center">
   <mat-card>
     <mat-card-header class="mat-card-header">
-      <mat-card-title>Registrér nyt køkken</mat-card-title>
+      <mat-card-title>{{ "REGISTER_KITCHEN" | translate }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
       <form name="registerForm" fxLayout="column" [formGroup]="form">
@@ -54,10 +55,10 @@
             (click)="onSubmit(registration)"
             [disabled]="form.invalid"
           >
-            Registrér
+            {{ "REGISTER" | translate }}
           </button>
           <button mat-raised-button color="secondary" [routerLink]="['/login']">
-            Tilbage til login
+            {{ "REGISTER_TO_LOGIN" | translate }}
           </button>
         </mat-card-actions>
       </form>

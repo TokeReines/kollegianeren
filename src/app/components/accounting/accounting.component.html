@@ -12,7 +12,7 @@
     <mat-datepicker #pickerTo></mat-datepicker>
   </mat-form-field>
   <div class="export-button">
-    <button mat-raised-button color="primary" (click)="exportAsXLSX()">Export som .xlsx</button>
+    <button mat-raised-button color="primary" (click)="exportAsXLSX()">{{ "ACCOUNTING_EXPORT" | translate }}</button>
   </div>
 </div>
 <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z1">

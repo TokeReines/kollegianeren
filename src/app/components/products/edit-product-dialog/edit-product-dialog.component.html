@@ -1,4 +1,4 @@
-<h1 mat-dialog-title>Ret produkt</h1>
+<h1 mat-dialog-title>{{ "PRODUCTS_EDIT_PRODUCT" | translate }}</h1>
 <div mat-dialog-content fxLayout="column" style="height: 448px;">
   <mat-form-field>
     <input matInput [(ngModel)]="product.name" placeholder="Navn">
@@ -10,9 +10,9 @@
     <input matInput priceInput type='number' [(ngModel)]="product.retailPrice" placeholder="Indkøbspris">
   </mat-form-field>
   <div>
-    <button mat-raised-button color="accent" [disabled]="!!product.clId" (click)="openFileExplorer()">Upload</button>
+    <button mat-raised-button color="accent" [disabled]="!!product.clId" (click)="openFileExplorer()">{{ "UPLOAD" | translate }}</button>
     <input hidden type="file" #clFileInput (change)="uploadClImage($event.target.files)">
-    <span class="fill-space" style="margin-left:10px; margin-right:10px;">eller</span>
+    <span class="fill-space" style="margin-left:10px; margin-right:10px;">{{ "OR" | translate }}</span>
     <mat-form-field>
       <input matInput [(ngModel)]="imageUrl" placeholder="Url til online billede">
       <button mat-icon-button matSuffix color="primary" (click)="setImageFromUrl()">
@@ -34,9 +34,9 @@
       <mat-icon>delete</mat-icon>
     </button>
   </div>
-  <mat-checkbox [(ngModel)]="product.active" class="dialog-checkbox-active">Findes i køleskab</mat-checkbox>
+  <mat-checkbox [(ngModel)]="product.active" class="dialog-checkbox-active">{{ "PRODUCTS_FRIDGE" | translate }}</mat-checkbox>
 </div>
 <div mat-dialog-actions>
-  <button mat-raised-button (click)="onYesClick(product)" color="primary">Gem</button>
-  <button mat-button (click)="onNoClick()">Fortryd</button>
+  <button mat-raised-button (click)="onYesClick(product)" color="primary">{{ "SAVE" | translate }}</button>
+  <button mat-button (click)="onNoClick()">{{ "CANCEL" | translate }}</button>
 </div>

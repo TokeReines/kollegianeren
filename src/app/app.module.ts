@@ -1,9 +1,10 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { MaterialModule } from './material.module';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { LanguageButtonComponent } from './components/language-button/language-button.component';
 import { HomeComponent } from './components/home/home.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NavigationComponent } from './components/navigation/navigation.component';
@@ -35,14 +36,22 @@ import { CloudinaryConfiguration, CloudinaryModule } from '@cloudinary/angular-5
 import { Cloudinary } from 'cloudinary-core';
 import { HttpClientModule } from '@angular/common/http';
 import { PriceInputDirective } from './directives/priceInput.directive';
+import { TranslateService } from './services/translate.service';
+import { TranslatePipe } from './translate.pipe';
 
 export const cloudinaryLib = {
   Cloudinary: Cloudinary
 };
 
+export function setupTranslateFactory(
+  service: TranslateService): Function {
+  return () => service.use('da');
+}
+
 @NgModule({
   declarations: [
     AppComponent,
+    LanguageButtonComponent,
     HomeComponent,
     NavigationComponent,
     UsersComponent,
@@ -58,7 +67,8 @@ export const cloudinaryLib = {
     BuyPageComponent,
     HistoryBottomSheetComponent,
     AccountingComponent,
-    PriceInputDirective
+    PriceInputDirective,
+    TranslatePipe
   ],
   imports: [
     BrowserModule,
@@ -76,7 +86,12 @@ export const cloudinaryLib = {
     FlexLayoutModule,
     HttpClientModule
   ],
-  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService],
+  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {
+    provide: APP_INITIALIZER,
+    useFactory: setupTranslateFactory,
+    deps: [TranslateService],
+    multi: true
+  }],
   bootstrap: [AppComponent],
   entryComponents: [
     EditProductDialogComponent,
@@ -87,5 +102,4 @@ export const cloudinaryLib = {
     ResetPasswordDialogComponent
   ]
 })
-export class AppModule {
-}
+export class AppModule { }

@@ -1,32 +1,32 @@
 <mat-table #table [dataSource]="purchases" matSort class="animate">
 
   <ng-container matColumnDef="timestamp" >
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Tidspunkt</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "BEERSYSTEM_TIME" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase" class="history-cell"> {{ purchase.timestamp.toDate() |  date:'dd/MM HH:mm' }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "NAME" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase"> {{ purchase.productName }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="amount">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Antal</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "BEERSYSTEM_AMOUNT" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase"> {{ purchase.amount }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="price">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Pris</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "BEERSYSTEM_PRICE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase"> {{ purchase.price }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="user">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Køber</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "BEERSYSTEM_PURCHASER" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase"> {{ purchase.userName }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="delete">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Slet</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase">
       <button mat-icon-button (click)="purchaseService.delete(purchase)">
         <mat-icon>delete</mat-icon>

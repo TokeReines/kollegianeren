@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-password-dialog.component';
+import { TranslateService } from 'src/app/services/translate.service';
 
 @Component({
   selector: 'app-login',
@@ -16,11 +17,13 @@ export class LoginComponent implements OnInit {
   hidePassword = true;
   emailSent = false;
   form: FormGroup;
+  currentLanguage = this.translate.getLanguage();
 
 
   constructor(private authService: AuthService,
     private router: Router,
-    public dialog: MatDialog) {
+    public dialog: MatDialog,
+    private translate: TranslateService) {
   }
 
   ngOnInit() {

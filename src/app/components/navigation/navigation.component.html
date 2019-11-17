@@ -3,19 +3,19 @@
     <mat-nav-list>
       <mat-list-item [routerLink]="['']">
         <mat-icon matListIcon>local_grocery_store</mat-icon>
-        <a>Ølsystem</a>
+        <a>{{ "MENU_BEERSYSTEM" | translate }}</a>
       </mat-list-item>
       <mat-list-item [routerLink]="['/products']">
         <mat-icon matListIcon>local_bar</mat-icon>
-        <a>Produkter</a>
+        <a>{{ "MENU_PRODUCTS" | translate }}</a>
       </mat-list-item>
       <mat-list-item [routerLink]="['/users']">
         <mat-icon matListIcon>people</mat-icon>
-        <a>Beboere</a>
+        <a>{{ "MENU_RESIDENTS" | translate }}</a>
       </mat-list-item>
       <mat-list-item [routerLink]="['/accounting']">
         <mat-icon matListIcon>receipt</mat-icon>
-        <a>Regnskab</a>
+        <a>{{ "MENU_ACCOUNTING" | translate }}</a>
       </mat-list-item>
     </mat-nav-list>
   </mat-sidenav>
