@@ -1,30 +1,67 @@
+<app-language-button></app-language-button>
 <div class="register-form" fxLayout="column" xLayoutAlign="space-around center">
   <mat-card>
-    <h1>Registrer nyt køkken</h1>
-    <form name="registerForm" fxLayout="column" [formGroup]="form">
-      <mat-form-field>
-        <mat-select placeholder="Køkken" [(ngModel)]="registration.kitchen" formControlName="kitchen">
-          <mat-option *ngFor="let kitchen of kitchens" [value]="kitchen.value">
-            {{kitchen.viewValue}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+    <mat-card-header class="mat-card-header">
+      <mat-card-title>{{ "REGISTER_KITCHEN" | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form name="registerForm" fxLayout="column" [formGroup]="form">
+        <mat-form-field>
+          <mat-select
+            placeholder="{{ 'KITCHEN' | translate }}"
+            required
+            [(ngModel)]="registration.kitchen"
+            formControlName="kitchen"
+          >
+            <mat-option
+              *ngFor="let kitchen of kitchens"
+              [value]="kitchen.value"
+            >
+              {{ kitchen.viewValue }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
 
-      <mat-form-field>
-        <input matInput placeholder="Enter your email" formControlName="email" [(ngModel)]="registration.email"
-               name="email">
-      </mat-form-field>
+        <mat-form-field>
+          <input
+            matInput
+            required
+            placeholder="{{ 'REGISTER_ENTER_EMAIL' | translate }}"
+            formControlName="email"
+            [(ngModel)]="registration.email"
+            name="email"
+            (keyup.enter)="onSubmit(registration)"
+          />
+        </mat-form-field>
 
-      <mat-form-field>
-        <input matInput placeholder="Enter your password" [type]="hidePassword ? 'password' : 'text'"
-               [(ngModel)]="registration.password" formControlName="password">
-        <mat-icon matSuffix
-                  (click)="hidePassword = !hidePassword">{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
-      </mat-form-field>
-
-      <button mat-raised-button color="primary" (click)="onSubmit(registration)" [disabled]="form.invalid">Registrér
-      </button>
-
-    </form>
+        <mat-form-field>
+          <input
+            matInput
+            required
+            placeholder="{{ 'REGISTER_CHOOSE_PASSWORD' | translate }}"
+            [type]="hidePassword ? 'password' : 'text'"
+            [(ngModel)]="registration.password"
+            formControlName="password"
+            (keyup.enter)="onSubmit(registration)"
+          />
+          <mat-icon matSuffix (click)="hidePassword = !hidePassword">{{
+            hidePassword ? "visibility_off" : "visibility"
+          }}</mat-icon>
+        </mat-form-field>
+        <mat-card-actions>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="onSubmit(registration)"
+            [disabled]="form.invalid"
+          >
+            {{ "REGISTER" | translate }}
+          </button>
+          <button mat-raised-button color="secondary" [routerLink]="['/login']">
+            {{ "REGISTER_TO_LOGIN" | translate }}
+          </button>
+        </mat-card-actions>
+      </form>
+    </mat-card-content>
   </mat-card>
 </div>

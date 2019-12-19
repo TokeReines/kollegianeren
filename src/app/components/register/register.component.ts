@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {Form, FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
+import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {AuthService} from '../../services/auth.service';
 import {Router} from '@angular/router';
 import {Registration} from '../../models/registration';
@@ -17,6 +17,8 @@ export interface KitchenSelect {
 })
 export class RegisterComponent implements OnInit {
   registration: Registration = new Registration();
+  form: FormGroup;
+  hidePassword = true;
   kitchens: KitchenSelect[] = [
     {value: 'gl8', viewValue: 'Gamle 8.'},
     {value: 'gl7', viewValue: 'Gamle 7.'},
@@ -41,8 +43,6 @@ export class RegisterComponent implements OnInit {
     {value: 'ny3', viewValue: 'Ny 3.'},
     {value: 'ny2', viewValue: 'Ny 2.'}
   ];
-  form: FormGroup;
-  hidePassword = true;
 
   constructor(
     private authService: AuthService,

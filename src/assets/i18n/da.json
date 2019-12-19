@@ -1,0 +1,61 @@
+{
+  "CLOSE": "Luk",
+  "OK": "OK",
+  "EDIT": "Ret",
+  "DELETE": "Slet",
+  "LOG_OUT": "Log ud",
+  "CURRENCY": "kr.",
+  "PIECES": "stk.",
+  "SAVE": "Gem",
+  "CANCEL": "Fortryd",
+
+  "REGISTER": "Registrér",
+  "PASSWORD": "Kode",
+  "EMAIL": "Email",
+  "KITCHEN": "Køkken",
+  "NAME": "Navn",
+
+  "LOGIN": "Log ind",
+  "LOGIN_FORGOT_PASSWORD": "Glemt kodeord? Nulstil det her!",
+
+  "REGISTER_KITCHEN": "Registrér nyt køkken",
+  "REGISTER_ENTER_EMAIL": "Skriv din email",
+  "REGISTER_CHOOSE_PASSWORD": "Vælg en kode",
+  "REGISTER_TO_LOGIN": "Tilbage til login",
+
+  "RESET_ENTER_EMAIL": "Indtast email for at nulstille",
+  "RESET_PASSWORD": "Nulstil kode",
+  "RESET_PASSWORD_CONFIRMATION": "Et link til at nulstille din kode er sendt til ",
+
+  "MENU_BEERSYSTEM": "Ølsystem",
+  "MENU_PRODUCTS": "Produkter",
+  "MENU_RESIDENTS": "Beboere",
+  "MENU_ACCOUNTING": "Regnskab",
+
+  "BEERSYSTEM_PRICE": "Pris",
+  "BEERSYSTEM_AMOUNT": "Antal",
+  "BEERSYSTEM_TOTAL": "Total",
+  "BEERSYSTEM_BUY": "Køb",
+  "BEERSYSTEM_AND": " og ",
+  "BEERSYSTEM_BOUGHT": " købte ",
+  "BEERSYSTEM_TIME": "Tidspunkt",
+  "BEERSYSTEM_PURCHASER": "Køber",
+
+  "ACTIVE": "Aktiv",
+  "PRODUCTS_PRODUCT_PICTURE": "Billede",
+  "PRODUCTS_RETAIL_PRICE": "Indkøbspris",
+  "PRODUCTS_SALES_PRICE": "Salgspris",
+  "PRODUCTS_EDIT_PRODUCT": "Ret produkt",
+  "PRODUCTS_OR": " eller ",
+  "PRODUCTS_URL": "URL til online billede",
+  "PRODUCTS_FRIDGE": "Findes i køleskab",
+  "PRODUCTS_UPLOAD": "Upload",
+
+  "ROOM": "Værelse",
+  "RESIDENTS_EDIT_RESIDENT": "Rediger beboer",
+  "RESIDENTS_NEW_RESIDENT": "Ny beboer",
+
+  "ACCOUNTING_FROM_DATE": "Fra dato (inklusiv)",
+  "ACCOUNTING_TO_DATE": "Til dato (inklusiv)",
+  "ACCOUNTING_EXPORT": "Eksportér som .xlsx"
+}

@@ -18,7 +18,7 @@
           </div>
 
           <mat-card-title>{{product.name}}</mat-card-title>
-          <mat-card-subtitle>{{product.price}} kr</mat-card-subtitle>
+          <mat-card-subtitle>{{product.price}} {{ "CURRENCY" | translate }}</mat-card-subtitle>
         </mat-card-title-group>
       </mat-card>
     </div>
@@ -56,22 +56,22 @@
       <table class="ehp-table">
         <tbody>
         <tr>
-          <td>Pris</td>
-          <td>{{selectedProduct.price}} kr</td>
+          <td>{{ "BEERSYSTEM_PRICE" | translate }}</td>
+          <td>{{selectedProduct.price}} {{ "CURRENCY" | translate }}</td>
         </tr>
         <tr>
-          <td>Antal</td>
-          <td>{{selectedProduct.amount}} stk</td>
+          <td>{{ "BEERSYSTEM_AMOUNT" | translate }}</td>
+          <td>{{selectedProduct.amount}} {{ "PIECES" | translate }}</td>
         </tr>
         <tr>
-          <td>Total</td>
-          <td><b>{{selectedProduct.amount * selectedProduct.price}} kr</b></td>
+          <td>{{ "BEERSYSTEM_TOTAL" | translate }}</td>
+          <td><b>{{selectedProduct.amount * selectedProduct.price}} {{ "CURRENCY" | translate }}</b></td>
         </tr>
         </tbody>
       </table>
       <mat-card-actions class="cart-buttons">
-        <button mat-raised-button color="primary" [disabled]="!selectedUsers.length" (click)="purchase()">Køb</button>
-        <button mat-button color="warning" (click)="cancel()">Fortryd</button>
+        <button mat-raised-button color="primary" [disabled]="!selectedUsers.length" (click)="purchase()">{{ "BEERSYSTEM_BUY" | translate }}</button>
+        <button mat-button color="warning" (click)="cancel()">{{ "CANCEL" | translate }}</button>
       </mat-card-actions>
     </mat-card>
 

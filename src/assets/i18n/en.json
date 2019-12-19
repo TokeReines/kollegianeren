@@ -1,0 +1,61 @@
+{
+  "CLOSE": "Close",
+  "OK": "OK",
+  "EDIT": "Edit",
+  "DELETE": "Delete",
+  "LOG_OUT": "Sign out",
+  "CURRENCY": "kr.",
+  "PIECES": "pcs.",
+  "SAVE": "Save",
+  "CANCEL": "Cancel",
+
+  "REGISTER": "Register",
+  "PASSWORD": "Password",
+  "EMAIL": "Email",
+  "KITCHEN": "Kitchen",
+  "NAME": "Name",
+
+  "LOGIN": "Sign In",
+  "LOGIN_FORGOT_PASSWORD": "Forgot your password? Reset it here!",
+
+  "REGISTER_KITCHEN": "Register new kitchen",
+  "REGISTER_ENTER_EMAIL": "Enter your email",
+  "REGISTER_CHOOSE_PASSWORD": "Choose a password",
+  "REGISTER_TO_LOGIN": "Back to sign in",
+
+  "RESET_ENTER_EMAIL": "Enter your email to reset password",
+  "RESET_PASSWORD": "Reset password",
+  "RESET_PASSWORD_CONFIRMATION": "A link to reset your password has been sent to ",
+
+  "MENU_BEERSYSTEM": "Beer system",
+  "MENU_PRODUCTS": "Products",
+  "MENU_RESIDENTS": "Residents",
+  "MENU_ACCOUNTING": "Accounting",
+
+  "BEERSYSTEM_PRICE": "Price",
+  "BEERSYSTEM_AMOUNT": "Amount",
+  "BEERSYSTEM_TOTAL": "Total",
+  "BEERSYSTEM_BUY": "Buy",
+  "BEERSYSTEM_AND": " and ",
+  "BEERSYSTEM_BOUGHT": " bought ",
+  "BEERSYSTEM_TIME": "Time",
+  "BEERSYSTEM_PURCHASER": "Purchaser",
+
+  "ACTIVE": "Active",
+  "PRODUCTS_PRODUCT_PICTURE": "Picture",
+  "PRODUCTS_RETAIL_PRICE": "Retail price",
+  "PRODUCTS_SALES_PRICE": "Sales price",
+  "PRODUCTS_EDIT_PRODUCT": "Edit product",
+  "PRODUCTS_OR": " or ",
+  "PRODUCTS_URL": "URL to online picture",
+  "PRODUCTS_FRIDGE": "Is in fridge",
+  "PRODUCTS_UPLOAD": "Upload",
+
+  "ROOM": "Room",
+  "RESIDENTS_EDIT_RESIDENT": "Edit resident",
+  "RESIDENTS_NEW_RESIDENT": "New resident",
+
+  "ACCOUNTING_FROM_DATE": "From date (inclusive)",
+  "ACCOUNTING_TO_DATE": "To date (inclusive)",
+  "ACCOUNTING_EXPORT": "Export as .xlsx"
+}

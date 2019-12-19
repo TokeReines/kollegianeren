@@ -1,7 +1,7 @@
 <mat-table #table [dataSource]="products" matSort class="animate">
 
   <ng-container matColumnDef="image">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Billede</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product" class="table-image-wrapper">
       <!--<img [src]="product.image" alt="./assets/img/maribo.png" class="table-image">-->
       <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
@@ -19,30 +19,30 @@
   </ng-container>
 
   <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Navn</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "NAME" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product"> {{ product.name }} </mat-cell>
   </ng-container>
 
 
   <ng-container matColumnDef="retailPrice">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Indkøbspris</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_RETAIL_PRICE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product"> {{ product.retailPrice }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="price">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Salgspris</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_SALES_PRICE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product"> {{ product.price }} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="active">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Aktiv</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACTIVE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
       <mat-checkbox [(ngModel)]="product.active" (change)="productService.update(product)"></mat-checkbox>
     </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="edit">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Ret</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "EDIT" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
       <button mat-icon-button (click)="openEditDialog(product)">
         <mat-icon>edit</mat-icon>
@@ -51,7 +51,7 @@
   </ng-container>
 
   <ng-container matColumnDef="delete">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>Slet</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
       <button mat-icon-button (click)="productService.delete(product)">
         <mat-icon>delete</mat-icon>
