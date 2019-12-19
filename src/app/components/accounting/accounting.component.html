@@ -1,12 +1,12 @@
 <div fxLayout="row" xLayoutAlign="space-around center">
   <mat-form-field>
-    <input matInput [matDatepicker]="pickerFrom" placeholder="Fra dato (inklusiv)" [(ngModel)]="from_date"
+    <input matInput [matDatepicker]="pickerFrom" placeholder="{{ 'ACCOUNTING_FROM_DATE' | translate }}" [(ngModel)]="from_date"
            [matDatepickerFilter]="fromDateFilter" (dateChange)="fromDateChange()">
     <mat-datepicker-toggle matSuffix [for]="pickerFrom"></mat-datepicker-toggle>
     <mat-datepicker #pickerFrom></mat-datepicker>
   </mat-form-field>
   <mat-form-field>
-    <input matInput [matDatepicker]="pickerTo" placeholder="Til dato (inklusiv)" [(ngModel)]="to_date"
+    <input matInput [matDatepicker]="pickerTo" placeholder="{{ 'ACCOUNTING_TO_DATE' | translate }}" [(ngModel)]="to_date"
            [matDatepickerFilter]="toDateFilter" (dateChange)="toDateChange()">
     <mat-datepicker-toggle matSuffix [for]="pickerTo"></mat-datepicker-toggle>
     <mat-datepicker #pickerTo></mat-datepicker>

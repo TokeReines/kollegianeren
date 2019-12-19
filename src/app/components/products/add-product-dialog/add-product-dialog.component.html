@@ -1,20 +1,20 @@
 <h1 mat-dialog-title>{{ "PRODUCTS_EDIT_PRODUCT" | translate }}</h1>
 <div mat-dialog-content fxLayout="column" style="height: 448px;">
   <mat-form-field>
-    <input matInput [(ngModel)]="product.name" placeholder="Navn">
+    <input matInput [(ngModel)]="product.name" placeholder="{{ 'NAME' | translate }}">
   </mat-form-field>
   <mat-form-field>
-    <input matInput priceInput type='number' [(ngModel)]="product.price" placeholder="Salgspris">
+    <input matInput priceInput type='number' [(ngModel)]="product.price" placeholder="{{ 'PRODUCTS_SALES_PRICE' | translate }}">
   </mat-form-field>
   <mat-form-field>
-    <input matInput priceInput type='number' [(ngModel)]="product.retailPrice" placeholder="Indkøbspris">
+    <input matInput priceInput type='number' [(ngModel)]="product.retailPrice" placeholder="{{ 'PRODUCTS_RETAIL_PRICE' | translate }}">
   </mat-form-field>
   <div>
     <button mat-raised-button color="accent" [disabled]="!!product.clId" (click)="openFileExplorer()">{{ "PRODUCTS_UPLOAD" | translate }}</button>
     <input hidden type="file" #clFileInput (change)="uploadClImage($event.target.files)">
     <span class="fill-space" style="margin-left:10px; margin-right:10px;">{{ "OR" | translate }}</span>
     <mat-form-field>
-      <input matInput [(ngModel)]="imageUrl" placeholder="Url til online billede">
+      <input matInput [(ngModel)]="imageUrl" placeholder="{{ 'PRODUCTS_URL' | translate }}">
       <button mat-icon-button matSuffix color="primary" (click)="setImageFromUrl()">
         <mat-icon>check</mat-icon>
       </button>
@@ -24,7 +24,7 @@
     <mat-spinner *ngIf="!!uploading" class="avatar"></mat-spinner>
     <img class="product-img" src="/assets/img/avatar.png" *ngIf="!product.clId && !product.image && !uploading"/>
 
-    <div *ngIf="!!product.image" class="image-wrapper" matBadge="{{product.amount}}">
+    <div *ngIf="!!product.image" class="image-wrapper">
       <img class="product" [src]="product.image" *ngIf="!!product.image" (error)="revertImageUrl()"/>
     </div>
     <cl-image public-id="{{product.clId}}" crop="fit" *ngIf="!!product.clId"

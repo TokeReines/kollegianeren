@@ -1,17 +1,17 @@
 <h1 mat-dialog-title>{{ "RESIDENTS_NEW_RESIDENT" | translate }}</h1>
 <div mat-dialog-content fxLayout="column">
   <mat-form-field>
-    <input matInput [(ngModel)]="user.name" placeholder="Navn">
+    <input matInput [(ngModel)]="user.name" placeholder="{{ 'NAME' | translate }}">
   </mat-form-field>
   <mat-form-field>
-    <input matInput [(ngModel)]="user.room" placeholder="Værelse">
+    <input matInput [(ngModel)]="user.room" placeholder="{{ 'ROOM' | translate }}">
   </mat-form-field>
   <div>
     <button mat-raised-button color="accent" [disabled]="!!user.clId" (click)="openFileExplorer()">{{ "UPLOAD" | translate }}</button>
     <input hidden type="file" #clFileInput (change)="uploadClImage($event.target.files)">
     <span class="fill-space" style="margin-left:10px; margin-right:10px;">{{ "OR" | translate }}</span>
     <mat-form-field>
-      <input matInput [(ngModel)]="imageUrl" placeholder="Url til online billede">
+      <input matInput [(ngModel)]="imageUrl" placeholder="{{ 'PRODUCTS_URL' | translate }}">
       <button mat-icon-button matSuffix color="primary" (click)="setImageFromUrl()">
         <mat-icon>check</mat-icon>
       </button>
