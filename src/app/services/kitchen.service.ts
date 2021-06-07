@@ -10,7 +10,7 @@ export class KitchenService {
   _kitchens: AngularFirestoreCollection<Kitchen>;
 
   constructor(private afs: AngularFirestore, private auth: AuthService) {
-      this._kitchens = this.afs.collection<Kitchen>('kitchens');
+    this._kitchens = this.afs.collection<Kitchen>('kitchens');
   }
 
   set(kitchen) {

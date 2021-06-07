@@ -1,7 +1,20 @@
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write;
+    match /kitchens/{id} {
+    	// Unauthenticated users can read kitchens
+      allow read: if true;
+    }
+   	match /kitchens/{userId}/{document=**} {
+    	// Only the kitchen that is logged in can read write its own data
+    	allow read, write: if isAuthenticated() && belongsToCaller(userId);
     }
   }
+}
+
+function isAuthenticated() {
+	return request.auth != null
+}
+
+function belongsToCaller(callerId) {
+	return request.auth.uid == callerId
 }
