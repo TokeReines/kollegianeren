@@ -1,6 +1,6 @@
 # Kollegianeren
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.1.2.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.1.2, using node v8.12.0 and npm v6.4.1.
 
 ## Development server
 
