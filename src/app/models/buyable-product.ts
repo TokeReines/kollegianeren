@@ -5,7 +5,7 @@ export class BuyableProduct implements Product {
   amount: number;
   active: boolean;
   id: string;
-  image: string;
+  image: any;
   name: string;
   price: number;
   retailPrice: number;
@@ -13,7 +13,7 @@ export class BuyableProduct implements Product {
 
   constructor(product: Product) {
     this.selected = false;
-    this.amount = null;
+    this.amount = 0;
     this.active = product.active;
     this.id = product.id;
     this.image = product.image;

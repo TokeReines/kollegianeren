@@ -17,7 +17,7 @@ export interface KitchenSelect {
 })
 export class RegisterComponent implements OnInit {
   registration: Registration = new Registration();
-  form: FormGroup;
+  form!: FormGroup;
   hidePassword = true;
   kitchens: KitchenSelect[] = [
     {value: 'gl8', viewValue: 'Gamle 8.'},
@@ -68,7 +68,7 @@ export class RegisterComponent implements OnInit {
     return this.form.controls;
   }
 
-  onSubmit(registration) {
+  onSubmit(registration: Registration) {
     if (this.form.invalid) {
       return;
     }

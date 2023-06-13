@@ -1,20 +1,23 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
-import {AuthService} from './services/auth.service';
-import {MatSidenav} from '@angular/material';
-import {SidenavService} from './services/sidenav.service';
+import { Component } from '@angular/core';
+import {Cloudinary, CloudinaryImage} from '@cloudinary/url-gen';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
-  @ViewChild('sidenav') public sidenav: MatSidenav;
+export class AppComponent {
+  title = 'test';
+  cloudinary!: Cloudinary;
 
-  constructor(public auth: AuthService, private sidenavService: SidenavService) {
-  }
-
-  ngOnInit(): void {
-    this.sidenavService.setSidenav(this.sidenav);
+  ngOnInit() {
+    this.cloudinary = new Cloudinary({
+      cloud:  {
+        cloudName: 'egmontkollegiet-dev',
+        apiKey: '847733283445576',
+        apiSecret: 'oWrtkHnYekzL1ba-ks537vnWUXg'
+      }
+    });
   }
 }
