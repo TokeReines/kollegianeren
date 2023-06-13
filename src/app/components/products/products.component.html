@@ -5,9 +5,9 @@
     <mat-cell *matCellDef="let product" class="table-image-wrapper">
       <!--<img [src]="product.image" alt="./assets/img/maribo.png" class="table-image">-->
       <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
-        <cl-image public-id="{{product.clId}}" crop="fit" class="product"
+        <!-- <advanced-image public-id="{{product.clId}}" crop="fit" class="product"
                   quality="50" width="75" height="75" format="png">
-        </cl-image>
+        </advanced-image> -->
       </div>
       <div *ngIf="!product.image && !product.clId" class="image-wrapper">
         <img src="/assets/img/avatar.png" class="avatar"/>
@@ -37,7 +37,7 @@
   <ng-container matColumnDef="active">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACTIVE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
-      <mat-checkbox [(ngModel)]="product.active" (change)="productService.update(product)"></mat-checkbox>
+      <mat-checkbox [(ngModel)]="product.active" (change)="updateProduct(product)"></mat-checkbox>
     </mat-cell>
   </ng-container>
 
@@ -53,7 +53,7 @@
   <ng-container matColumnDef="delete">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
-      <button mat-icon-button (click)="productService.delete(product)">
+      <button mat-icon-button (click)="deleteProduct(product)">
         <mat-icon>delete</mat-icon>
       </button>
     </mat-cell>

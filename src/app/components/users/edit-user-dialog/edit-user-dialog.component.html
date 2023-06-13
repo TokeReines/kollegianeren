@@ -21,9 +21,9 @@
     <mat-spinner *ngIf="!!uploading" class="avatar"></mat-spinner>
     <img class="user-img" src="/assets/img/avatar.png" *ngIf="!user.clId && !user.image && !uploading"/>
     <img class="user-img" [src]="user.image" *ngIf="!!user.image" (error)="revertImageUrl()"/>
-    <cl-image public-id="{{user.clId}}" crop="fill" gravity="face" *ngIf="!!user.clId"
+    <!-- <cl-image public-id="{{user.clId}}" crop="fill" gravity="face" *ngIf="!!user.clId"
               quality="50" width="75" height="75" format="png" radius="max">
-    </cl-image>
+    </cl-image> -->
     <button mat-icon-button (click)="deleteImage()">
       <mat-icon>delete</mat-icon>
     </button>

@@ -1,6 +1,7 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {PurchaseService} from '../../services/purchase.service';
-import {MatSort, MatTableDataSource} from '@angular/material';
+import {MatSort} from '@angular/material/sort';
+import {MatTableDataSource} from '@angular/material/table';
 import {ExcelService} from '../../services/excel.service';
 import {PdfService} from '../../services/pdf.service';
 
@@ -12,10 +13,10 @@ import {PdfService} from '../../services/pdf.service';
 export class AccountingComponent implements OnInit {
   from_date = new Date();
   to_date = new Date();
-  dataSource: MatTableDataSource<any>;
+  dataSource!: MatTableDataSource<any>;
   displayedColumns: any;
 
-  @ViewChild(MatSort) sort: MatSort;
+  @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('accountingTable') accountingTable: any;
 
   constructor(private purchaseService: PurchaseService, private excelService: ExcelService, private pdfService: PdfService) {
@@ -28,9 +29,9 @@ export class AccountingComponent implements OnInit {
 
   _setTableData() {
     this.purchaseService.list_from_to(this.from_date, this.to_date).valueChanges().subscribe(purchases => {
-      const rows = [];
+      const rows: any[] = [];
       let columns = ['name', 'room'];
-      const formatted_rows = {};
+      const formatted_rows: any = {};
       purchases.map(purchase => {
         if (!(purchase.userId in formatted_rows)) {
           formatted_rows[purchase.userId] = {
@@ -50,10 +51,10 @@ export class AccountingComponent implements OnInit {
 
         formatted_rows[purchase.userId]['total'] += purchase.price;
       });
-      const product_columns = [];
+      const product_columns: any = [];
       Object.keys(formatted_rows).forEach(userId => {
         const value = formatted_rows[userId];
-        const row = {name: value['name'], room: value['room'], total: parseFloat(value['total']).toFixed(2)};
+        const row: any = {name: value['name'], room: value['room'], total: parseFloat(value['total']).toFixed(2)};
         Object.keys(value['products']).forEach(key => {
           const product = value['products'][key];
           row[product.name] = product['amount'];
@@ -80,9 +81,9 @@ export class AccountingComponent implements OnInit {
   exportAsPdf(): void {
     const table = document.getElementById('accountingTable');
     console.log(table);
-    console.log(table.innerHTML);
+    console.log(table!.innerHTML);
     console.log(this.accountingTable._element);
-    this.pdfService.exportAsPdfFile(table.innerHTML, this.dataSource.data, 'tats');
+    this.pdfService.exportAsPdfFile(table!.innerHTML, this.dataSource.data, 'tats');
   }
 
   fromDateFilter = (date: Date): boolean => {

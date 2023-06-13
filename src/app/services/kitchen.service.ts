@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
+import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/compat/firestore';
 import {AuthService} from './auth.service';
 import {Kitchen} from '../interfaces/kitchen';
 
@@ -13,7 +13,7 @@ export class KitchenService {
       this._kitchens = this.afs.collection<Kitchen>('kitchens');
   }
 
-  set(kitchen) {
+  set(kitchen: Kitchen) {
     this._kitchens.doc(kitchen.id).set(kitchen);
   }
 

@@ -2,7 +2,6 @@ import {NgModule} from '@angular/core';
 import {Routes, RouterModule} from '@angular/router';
 
 import {ProductsComponent} from './components/products/products.component';
-import {UsersComponent} from './components/users/users.component';
 import {LoginComponent} from './components/login/login.component';
 import {RegisterComponent} from './components/register/register.component';
 import {AuthGuard} from './guards/auth.guard';
@@ -18,7 +17,7 @@ const routes: Routes = [
       children: [
         {path: '', component: BuyPageComponent, canActivate: [AuthGuard]},
         {path: 'products', component: ProductsComponent, canActivate: [AuthGuard]},
-        {path: 'users', component: UsersComponent, canActivate: [AuthGuard]},
+        // {path: 'users', component: UsersComponent, canActivate: [AuthGuard]},
         {path: 'accounting', component: AccountingComponent, canActivate: [AuthGuard]}]
     }
   ]

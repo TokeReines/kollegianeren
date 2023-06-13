@@ -1,5 +1,5 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
-import {MatDialogRef} from '@angular/material';
+import {MatDialogRef} from '@angular/material/dialog';
 import {User} from '../../../interfaces/user';
 import {environment} from '../../../../environments/environment';
 import {HttpClient} from '@angular/common/http';

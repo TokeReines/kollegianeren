@@ -1,5 +1,5 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {MatDialogRef} from '@angular/material';
+import {MatDialogRef} from '@angular/material/dialog';
 import {Product} from '../../../interfaces/product';
 import {environment} from '../../../../environments/environment';
 import {HttpClient} from '@angular/common/http';
@@ -10,10 +10,10 @@ import {HttpClient} from '@angular/common/http';
 })
 export class AddProductDialogComponent implements OnInit {
   product = <Product>{};
-  imageUrl: string;
-  oldImageUrl: string;
-  uploading: boolean;
-  @ViewChild('clFileInput') clFileInput: ElementRef;
+  imageUrl!: string;
+  oldImageUrl!: string;
+  uploading!: boolean;
+  @ViewChild('clFileInput') clFileInput!: ElementRef;
 
   constructor(public dialogRef: MatDialogRef<AddProductDialogComponent>, private httpClient: HttpClient) {
   }
@@ -22,8 +22,8 @@ export class AddProductDialogComponent implements OnInit {
     this.dialogRef.close(null);
   }
 
-  onYesClick(user) {
-    this.dialogRef.close(user);
+  onYesClick(product: Product) {
+    this.dialogRef.close(product);
   }
 
   deleteImage() {
@@ -41,23 +41,23 @@ export class AddProductDialogComponent implements OnInit {
     this.product.clId = '';
   }
 
-  uploadClImage(files) {
+  uploadClImage(files: FileList) {
     const url = 'https://api.cloudinary.com/v1_1/' + environment.cloudinary.cloud_name + '/image/upload/';
     const upload_preset = environment.cloudinary.upload_preset;
     const file = files.item(0);
     const data = new FormData();
-    data.append('file', file);
-    data.append('upload_preset', upload_preset);
-    this.uploading = true;
-    this.httpClient.post(url, data)
-      .subscribe((clImage) => {
-        this.uploading = false;
-        this.product.image = '';
-        this.product.clId = clImage['public_id'];
-      }, error => {
-        this.uploading = false;
-        console.log(error);
-      });
+    // data.append('file', file);
+    // data.append('upload_preset', upload_preset);
+    // this.uploading = true;
+    // this.httpClient.post(url, data)
+    //   .subscribe((clImage) => {
+    //     this.uploading = false;
+    //     this.product.image = '';
+    //     this.product.clId = clImage['public_id'];
+    //   }, error => {
+    //     this.uploading = false;
+    //     console.log(error);
+    //   });
   }
 
   openFileExplorer() {

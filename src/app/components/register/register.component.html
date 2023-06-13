@@ -8,7 +8,7 @@
       <form name="registerForm" fxLayout="column" [formGroup]="form">
         <mat-form-field>
           <mat-select
-            placeholder="{{ 'KITCHEN' | translate }}"
+            placeholder="{{ 'KITCHEN'}}"
             required
             [(ngModel)]="registration.kitchen"
             formControlName="kitchen"
@@ -26,7 +26,7 @@
           <input
             matInput
             required
-            placeholder="{{ 'REGISTER_ENTER_EMAIL' | translate }}"
+            placeholder="{{ 'REGISTER_ENTER_EMAIL'}}"
             formControlName="email"
             [(ngModel)]="registration.email"
             name="email"
@@ -38,7 +38,7 @@
           <input
             matInput
             required
-            placeholder="{{ 'REGISTER_CHOOSE_PASSWORD' | translate }}"
+            placeholder="{{ 'REGISTER_CHOOSE_PASSWORD'}}"
             [type]="hidePassword ? 'password' : 'text'"
             [(ngModel)]="registration.password"
             formControlName="password"

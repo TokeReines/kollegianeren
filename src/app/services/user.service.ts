@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
+import {AngularFirestore, AngularFirestoreCollection, CollectionReference, DocumentChangeAction} from '@angular/fire/compat/firestore';
 import {Product} from '../interfaces/product';
 import {AuthService} from './auth.service';
 import {User} from '../interfaces/user';
@@ -9,7 +9,7 @@ import {map} from 'rxjs/operators';
   providedIn: 'root'
 })
 export class UserService {
-  _users: AngularFirestoreCollection<User>;
+  _users!: AngularFirestoreCollection<User>;
 
   constructor(private afs: AngularFirestore, private auth: AuthService) {
     this.auth.user.subscribe(
@@ -17,7 +17,7 @@ export class UserService {
         if (!user) {
           return;
         }
-        this._users = this.afs.collection<Product>('kitchens').doc(user.uid).collection('users');
+        this._users = this.afs.collection<User>('kitchens').doc(user.uid).collection('users');
       }
     );
   }
@@ -28,7 +28,7 @@ export class UserService {
         map(actions => actions.map(a => {
           const data = a.payload.doc.data() as User;
           const id = a.payload.doc.id;
-          return {id, ...data} as User;
+          return {...data, id} as User;
         }))
       );
   }

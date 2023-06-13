@@ -1,15 +1,14 @@
-import {Injectable} from '@angular/core';
-import {Observable, of} from 'rxjs';
-import {AngularFireAuth} from '@angular/fire/auth';
-import * as firebase from 'firebase';
-import {switchMap} from 'rxjs/operators';
+import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
+import firebase from 'firebase/compat/app';
+import { switchMap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  user: Observable<firebase.User>;
-
+  user: Observable<firebase.User | null>;
 
   constructor(private afAuth: AngularFireAuth) {
     this.user = this.afAuth.authState.pipe(
@@ -23,7 +22,7 @@ export class AuthService {
     );
   }
 
-  emailSignup(email, password) {
+  emailSignup(email: string, password: string) {
     return new Promise<any>((resolve, reject) => {
       firebase.auth().createUserWithEmailAndPassword(email, password)
         .then(res => {
@@ -32,7 +31,7 @@ export class AuthService {
     });
   }
 
-  emailLogin(email, password) {
+  emailLogin(email: string, password: string) {
     return new Promise<any>((resolve, reject) => {
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(res => {
@@ -41,7 +40,7 @@ export class AuthService {
     });
   }
 
-  sendResetEmail(email) {
+  sendResetEmail(email: string) {
     console.log(email);
     return new Promise<any>((resolve, reject) => {
       firebase.auth().sendPasswordResetEmail(email)
@@ -56,6 +55,6 @@ export class AuthService {
   }
 
   logout() {
-    return this.afAuth.auth.signOut();
+    return this.afAuth.signOut();
   }
 }

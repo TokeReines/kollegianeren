@@ -1,20 +1,20 @@
 <h1 mat-dialog-title>{{ "PRODUCTS_EDIT_PRODUCT" | translate }}</h1>
 <div mat-dialog-content fxLayout="column" style="height: 448px;">
   <mat-form-field>
-    <input matInput [(ngModel)]="product.name" placeholder="{{ 'NAME' | translate }}">
+    <input matInput [(ngModel)]="product.name" placeholder="{{ 'NAME'}}">
   </mat-form-field>
   <mat-form-field>
-    <input matInput priceInput type='number' [(ngModel)]="product.price" placeholder="{{ 'PRODUCTS_SALES_PRICE' | translate }}">
+    <input matInput priceInput type='number' [(ngModel)]="product.price" placeholder="{{ 'PRODUCTS_SALES_PRICE'}}">
   </mat-form-field>
   <mat-form-field>
-    <input matInput priceInput type='number' [(ngModel)]="product.retailPrice" placeholder="{{ 'PRODUCTS_RETAIL_PRICE' | translate }}">
+    <input matInput priceInput type='number' [(ngModel)]="product.retailPrice" placeholder="{{ 'PRODUCTS_RETAIL_PRICE'}}">
   </mat-form-field>
   <div>
     <button mat-raised-button color="accent" [disabled]="!!product.clId" (click)="openFileExplorer()">{{ "UPLOAD" | translate }}</button>
-    <input hidden type="file" #clFileInput (change)="uploadClImage($event.target.files)">
+    <input hidden type="file" #clFileInput> <!--(change)="uploadClImage($event.target.files)"-->
     <span class="fill-space" style="margin-left:10px; margin-right:10px;">{{ "OR" | translate }}</span>
     <mat-form-field>
-      <input matInput [(ngModel)]="imageUrl" placeholder="{{ 'PRODUCTS_URL' | translate }}">
+      <input matInput [(ngModel)]="imageUrl" placeholder="{{ 'PRODUCTS_URL'}}">
       <button mat-icon-button matSuffix color="primary" (click)="setImageFromUrl()">
         <mat-icon>check</mat-icon>
       </button>
@@ -27,9 +27,9 @@
     <div *ngIf="!!product.image" class="image-wrapper">
       <img class="product" [src]="product.image" *ngIf="!!product.image" (error)="revertImageUrl()"/>
     </div>
-    <cl-image public-id="{{product.clId}}" crop="fit" *ngIf="!!product.clId"
+    <!-- <cl-image public-id="{{product.clId}}" crop="fit" *ngIf="!!product.clId"
               quality="50" width="75" height="75" format="png">
-    </cl-image>
+    </cl-image> -->
     <button mat-icon-button (click)="deleteImage()">
       <mat-icon>delete</mat-icon>
     </button>

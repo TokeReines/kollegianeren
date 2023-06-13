@@ -9,9 +9,11 @@
         <mat-card-title-group>
 
           <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
-            <cl-image public-id="{{product.clId}}" crop="fit" class="product"
+            <advanced-image [cldImg]="img" class="product"></advanced-image> 
+            <!-- <cl-image public-id="{{product.clId}}" crop="fit" class="product"
                       quality="50" width="50" height="75" format="png">
-            </cl-image>
+            </cl-image> -->
+            
           </div>
           <div *ngIf="!!product.image && !product.clId" class="image-wrapper" matBadge="{{product.amount}}">
             <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
@@ -29,9 +31,9 @@
                 [class.mat-elevation-z5]="user.selected" class="mat-elevation-z buypage-grid-card">
         <mat-card-title-group>
           <div *ngIf="!!user.clId" class="image-wrapper">
-            <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
+            <!-- <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
                       quality="50" width="75" height="75" format="png" radius="max">
-            </cl-image>
+            </cl-image> -->
           </div>
           <div *ngIf="!!user.image" class="image-wrapper">
             <img [src]="user.image" class="avatar" >
@@ -47,9 +49,9 @@
     <mat-card *ngIf="selectedProduct" class="mat-elevation-z5">
       <img *ngIf="!!selectedProduct.image" mat-card-image [src]="selectedProduct.image" class="cart-image">
       <div *ngIf="!!selectedProduct.clId">
-        <cl-image public-id="{{selectedProduct.clId}}" format="png" class="cart-image">
+        <!-- <cl-image public-id="{{selectedProduct.clId}}" format="png" class="cart-image">
           <cl-transformation height="200" width="168" crop="lpad" quality="100"></cl-transformation>
-        </cl-image>
+        </cl-image> -->
       </div>
       <mat-card-title class="cart-title">{{selectedProduct.name}}</mat-card-title>
 

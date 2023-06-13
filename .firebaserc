@@ -1,7 +1,14 @@
 {
+  "targets": {
+    "kollegianeren": {
+      "hosting": {
+        "test": [
+          "kollegianeren"
+        ]
+      }
+    }
+  },
   "projects": {
-    "default": "kollegianeren",
-    "prod": "firebase-ehp",
-    "dev": "kollegianeren"
+    "default": "kollegianeren"
   }
 }

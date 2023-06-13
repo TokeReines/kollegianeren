@@ -28,7 +28,7 @@
   <ng-container matColumnDef="delete">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase">
-      <button mat-icon-button (click)="purchaseService.delete(purchase)">
+      <button mat-icon-button (click)="deletePurchase(purchase)">
         <mat-icon>delete</mat-icon>
       </button>
     </mat-cell>

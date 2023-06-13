@@ -16,7 +16,7 @@ export class LoginComponent implements OnInit {
   password = '';
   hidePassword = true;
   emailSent = false;
-  form: FormGroup;
+  form!: FormGroup;
   currentLanguage = this.translate.getLanguage();
 
 

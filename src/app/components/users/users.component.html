@@ -3,9 +3,9 @@
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user" class="image-wrapper">
       <div *ngIf="!!user.clId" class="image-wrapper">
-        <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
+        <!-- <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
                   quality="50" width="75" height="75" format="png" radius="max">
-        </cl-image>
+        </cl-image> -->
       </div>
       <div *ngIf="!!user.image" class="image-wrapper">
         <img [src]="user.image" class="avatar">
@@ -30,7 +30,7 @@
   <ng-container matColumnDef="active">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACTIVE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user">
-      <mat-checkbox [(ngModel)]="user.active" (change)="userService.update(user)"></mat-checkbox>
+      <mat-checkbox [(ngModel)]="user.active" (change)="updateUser(user)"></mat-checkbox>
     </mat-cell>
   </ng-container>
 
@@ -46,7 +46,7 @@
   <ng-container matColumnDef="delete">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user">
-      <button mat-icon-button (click)="userService.delete(user)">
+      <button mat-icon-button (click)="deleteUser(user)">
         <mat-icon>delete</mat-icon>
       </button>
     </mat-cell>
