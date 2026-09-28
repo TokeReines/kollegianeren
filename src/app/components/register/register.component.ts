@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {AuthService} from '../../services/auth.service';
 import {Router} from '@angular/router';
 import {Registration} from '../../models/registration';
@@ -17,7 +17,7 @@ export interface KitchenSelect {
 })
 export class RegisterComponent implements OnInit {
   registration: Registration = new Registration();
-  form: FormGroup;
+  form: UntypedFormGroup;
   hidePassword = true;
   kitchens: KitchenSelect[] = [
     {value: 'gl8', viewValue: 'Gamle 8.'},
@@ -52,10 +52,10 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.form = new FormGroup({
-      email: new FormControl('', [Validators.required, Validators.email]),
-      kitchen: new FormControl('', [Validators.required]),
-      password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    this.form = new UntypedFormGroup({
+      email: new UntypedFormControl('', [Validators.required, Validators.email]),
+      kitchen: new UntypedFormControl('', [Validators.required]),
+      password: new UntypedFormControl('', [Validators.required, Validators.minLength(6)]),
     });
     this.kitchenService.list().valueChanges().subscribe(kitchens => {
       for (const kitchen of kitchens) {

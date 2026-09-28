@@ -1,6 +1,6 @@
 import { Component, Inject, Output, EventEmitter, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-reset-password',
@@ -9,7 +9,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 })
 export class ResetPasswordDialogComponent implements OnInit {
   @Output() doSendEmail = new EventEmitter();
-  form: FormGroup;
+  form: UntypedFormGroup;
 
   constructor(
     public dialogRef: MatDialogRef<ResetPasswordDialogComponent>,
@@ -17,8 +17,8 @@ export class ResetPasswordDialogComponent implements OnInit {
 
 
   ngOnInit() {
-    this.form = new FormGroup({
-      email: new FormControl('', [Validators.required, Validators.email]),
+    this.form = new UntypedFormGroup({
+      email: new UntypedFormControl('', [Validators.required, Validators.email]),
     });
   }
 
