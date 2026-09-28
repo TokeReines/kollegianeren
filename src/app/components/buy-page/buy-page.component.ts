@@ -6,7 +6,7 @@ import {UserService} from '../../services/user.service';
 import {Purchase} from '../../interfaces/purchase';
 import {PurchaseService} from '../../services/purchase.service';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 
 @Component({
