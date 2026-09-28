@@ -9,7 +9,7 @@ import {SidenavService} from './services/sidenav.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  @ViewChild('sidenav', { static: false }) public sidenav: MatSidenav;
+  @ViewChild('sidenav') public sidenav: MatSidenav;
 
   constructor(public auth: AuthService, private sidenavService: SidenavService) {
   }

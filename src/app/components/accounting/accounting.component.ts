@@ -17,7 +17,7 @@ export class AccountingComponent implements OnInit {
   displayedColumns: any;
 
   @ViewChild(MatSort, { static: true }) sort: MatSort;
-  @ViewChild('accountingTable', { static: false }) accountingTable: any;
+  @ViewChild('accountingTable') accountingTable: any;
 
   constructor(private purchaseService: PurchaseService, private excelService: ExcelService, private pdfService: PdfService) {
     this.from_date.setMonth(this.from_date.getMonth() - 1);
