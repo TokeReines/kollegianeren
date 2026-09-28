@@ -124,3 +124,8 @@ mat-sidenav-container {
 [layout="row"] { flex-direction: row; }
 [layout="column"] { flex-direction: column; }
 [layout="row wrap"] { flex-flow: row wrap; }
+
+// Material 15 (MDC) cards have no padding of their own; the layouts here assume the old 16px.
+.mat-mdc-card {
+  padding: 16px;
+}

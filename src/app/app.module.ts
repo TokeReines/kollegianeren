@@ -22,7 +22,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AngularFirestoreModule, USE_EMULATOR as USE_FIRESTORE_EMULATOR } from '@angular/fire/compat/firestore';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
-import { MatLegacyTableModule as MatTableModule } from '@angular/material/legacy-table';
+import { MatTableModule } from '@angular/material/table';
 import { EditProductDialogComponent } from './components/products/edit-product-dialog/edit-product-dialog.component';
 import { AddProductDialogComponent } from './components/products/add-product-dialog/add-product-dialog.component';
 import { AddUserDialogComponent } from './components/users/add-user-dialog/add-user-dialog.component';

@@ -1,22 +1,22 @@
 <mat-sidenav-container class="nav-container">
   <mat-sidenav #sidenav mode="side" opened role="navigation">
     <mat-nav-list>
-      <mat-list-item [routerLink]="['']">
-        <mat-icon matListIcon>local_grocery_store</mat-icon>
-        <a>{{ "MENU_BEERSYSTEM" | translate }}</a>
-      </mat-list-item>
-      <mat-list-item [routerLink]="['/products']">
-        <mat-icon matListIcon>local_bar</mat-icon>
-        <a>{{ "MENU_PRODUCTS" | translate }}</a>
-      </mat-list-item>
-      <mat-list-item [routerLink]="['/users']">
-        <mat-icon matListIcon>people</mat-icon>
-        <a>{{ "MENU_RESIDENTS" | translate }}</a>
-      </mat-list-item>
-      <mat-list-item [routerLink]="['/accounting']">
-        <mat-icon matListIcon>receipt</mat-icon>
-        <a>{{ "MENU_ACCOUNTING" | translate }}</a>
-      </mat-list-item>
+      <a mat-list-item [routerLink]="['']" routerLinkActive #rla0="routerLinkActive" [activated]="rla0.isActive" [routerLinkActiveOptions]="{exact: true}">
+        <mat-icon matListItemIcon>local_grocery_store</mat-icon>
+        <span matListItemTitle>{{ "MENU_BEERSYSTEM" | translate }}</span>
+      </a>
+      <a mat-list-item [routerLink]="['/products']" routerLinkActive #rla1="routerLinkActive" [activated]="rla1.isActive" [routerLinkActiveOptions]="{exact: true}">
+        <mat-icon matListItemIcon>local_bar</mat-icon>
+        <span matListItemTitle>{{ "MENU_PRODUCTS" | translate }}</span>
+      </a>
+      <a mat-list-item [routerLink]="['/users']" routerLinkActive #rla2="routerLinkActive" [activated]="rla2.isActive" [routerLinkActiveOptions]="{exact: true}">
+        <mat-icon matListItemIcon>people</mat-icon>
+        <span matListItemTitle>{{ "MENU_RESIDENTS" | translate }}</span>
+      </a>
+      <a mat-list-item [routerLink]="['/accounting']" routerLinkActive #rla3="routerLinkActive" [activated]="rla3.isActive" [routerLinkActiveOptions]="{exact: true}">
+        <mat-icon matListItemIcon>receipt</mat-icon>
+        <span matListItemTitle>{{ "MENU_ACCOUNTING" | translate }}</span>
+      </a>
     </mat-nav-list>
   </mat-sidenav>
   <mat-sidenav-content class="sidenav-content">

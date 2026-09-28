@@ -2,7 +2,7 @@ import {Subscription} from 'rxjs';
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {PurchaseService} from '../../services/purchase.service';
 import { MatSort } from '@angular/material/sort';
-import { MatLegacyTableDataSource as MatTableDataSource } from '@angular/material/legacy-table';
+import { MatTableDataSource } from '@angular/material/table';
 import {ExcelService} from '../../services/excel.service';
 import {PdfService} from '../../services/pdf.service';
 

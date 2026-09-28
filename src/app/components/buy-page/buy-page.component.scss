@@ -63,3 +63,8 @@ table.ehp-table > tbody > tr > td {
   user-select: none;
 }
 
+
+// Selected products and residents. MDC cards draw their own shadow, so elevation alone barely shows.
+.buypage-grid-card.mat-elevation-z5 {
+  box-shadow: 0 0 0 3px #673ab7, 0 3px 6px rgba(0, 0, 0, .3) !important;
+}
