@@ -1,24 +1,19 @@
 import {Injectable} from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/compat/firestore';
-import {AuthService} from './auth.service';
+import {collection, doc, setDoc} from 'firebase/firestore';
 import {Kitchen} from '../interfaces/kitchen';
+import {db, watch} from '../firebase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class KitchenService {
-  _kitchens: AngularFirestoreCollection<Kitchen>;
 
-  constructor(private afs: AngularFirestore, private auth: AuthService) {
-      this._kitchens = this.afs.collection<Kitchen>('kitchens');
+  set(kitchen: Kitchen) {
+    return setDoc(doc(db, 'kitchens', kitchen.id), kitchen);
   }
 
-  set(kitchen) {
-    this._kitchens.doc(kitchen.id).set(kitchen);
-  }
-
+  // All registered kitchens (id and name). Readable before sign-in, for the register page.
   list() {
-    console.log(this._kitchens);
-    return this._kitchens;
+    return watch<Kitchen>(collection(db, 'kitchens'));
   }
 }
