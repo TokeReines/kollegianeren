@@ -14,14 +14,13 @@ import { LoginComponent } from './components/login/login.component';
 import { ResetPasswordDialogComponent } from './components/login/reset-password-dialog/reset-password-dialog.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { RegisterComponent } from './components/register/register.component';
-import { AngularFireModule } from '@angular/fire';
+import { AngularFireModule } from '@angular/fire/compat';
 import { environment } from '../environments/environment';
-import { AngularFireAuthModule } from '@angular/fire/auth';
-import { AngularFireDatabaseModule } from '@angular/fire/database';
+import { AngularFireAuthModule, USE_EMULATOR as USE_AUTH_EMULATOR } from '@angular/fire/compat/auth';
 import { AuthService } from './services/auth.service';
 import { AuthGuard } from './guards/auth.guard';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { AngularFirestoreModule } from '@angular/fire/firestore';
+import { AngularFirestoreModule, USE_EMULATOR as USE_FIRESTORE_EMULATOR } from '@angular/fire/compat/firestore';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatTableModule } from '@angular/material/table';
 import { EditProductDialogComponent } from './components/products/edit-product-dialog/edit-product-dialog.component';
@@ -73,14 +72,16 @@ export function setupTranslateFactory(
     MaterialModule,
     MatTableModule,
     AngularFireModule.initializeApp(environment.firebase),
-    AngularFireDatabaseModule,
     AngularFirestoreModule,
     AngularFireAuthModule,
     FormsModule,
     ReactiveFormsModule,
     HttpClientModule
   ],
-  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {
+  providers: [
+    { provide: USE_AUTH_EMULATOR, useValue: environment.emulators ? ['http://localhost:9099'] : undefined },
+    { provide: USE_FIRESTORE_EMULATOR, useValue: environment.emulators ? ['localhost', 8181] : undefined },
+    { provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {
     provide: APP_INITIALIZER,
     useFactory: setupTranslateFactory,
     deps: [TranslateService],

@@ -1,7 +1,8 @@
 import {Injectable} from '@angular/core';
 import {Observable, of} from 'rxjs';
-import {AngularFireAuth} from '@angular/fire/auth';
-import * as firebase from 'firebase';
+import {AngularFireAuth} from '@angular/fire/compat/auth';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
 import {switchMap} from 'rxjs/operators';
 
 @Injectable({
@@ -56,6 +57,6 @@ export class AuthService {
   }
 
   logout() {
-    return this.afAuth.auth.signOut();
+    return this.afAuth.signOut();
   }
 }

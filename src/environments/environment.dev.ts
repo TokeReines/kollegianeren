@@ -3,6 +3,7 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
+  emulators: false,
   production: false,
   cloudinary: {
     cloud_name: 'egmontkollegiet-dev',
