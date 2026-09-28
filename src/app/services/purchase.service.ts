@@ -1,7 +1,8 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/compat/firestore';
 import {AuthService} from './auth.service';
-import {map} from 'rxjs/operators';
+import {Observable} from 'rxjs';
+import {map, switchMap} from 'rxjs/operators';
 import {Purchase} from '../interfaces/purchase';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
@@ -25,8 +26,13 @@ export class PurchaseService {
     );
   }
 
+  private purchases(query?) {
+    return this.auth.kitchenId.pipe(
+      map(uid => this.afs.collection('kitchens').doc(uid).collection<Purchase>('purchases', query)));
+  }
+
   list() {
-    return this._purchases.snapshotChanges().pipe(
+    return this.purchases().pipe(switchMap(c => c.snapshotChanges()),
       map(actions => actions.map(a => {
         const data = a.payload.doc.data() as Purchase;
         const id = a.payload.doc.id;
@@ -38,14 +44,13 @@ export class PurchaseService {
   list_from_to(from: Date, to: Date) {
     from.setHours(0, 0, 0, 0);
     to.setHours(23, 59, 59, 999);
-    return this._root.collection('purchases', ref => ref.where('timestamp', '>=', from)
-      .where('timestamp', '<', to)) as AngularFirestoreCollection<Purchase>;
+    return this.purchases(ref => ref.where('timestamp', '>=', from).where('timestamp', '<', to))
+      .pipe(switchMap(c => c.valueChanges())) as Observable<Purchase[]>;
   }
 
   list_newest(limit = 30) {
-    const collection = this._root.collection('purchases', ref => ref.orderBy('timestamp', 'desc')
-      .limit(limit)) as AngularFirestoreCollection<Purchase>;
-    return collection.snapshotChanges().pipe(
+    return this.purchases(ref => ref.orderBy('timestamp', 'desc').limit(limit)).pipe(
+      switchMap(c => c.snapshotChanges()),
       map(actions => actions.map(a => {
         const data = a.payload.doc.data() as Purchase;
         const id = a.payload.doc.id;

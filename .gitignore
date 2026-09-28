@@ -45,3 +45,8 @@ Thumbs.db
 "node_modules"
 "node_modules"
 node_modules/
+
+# emulators
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

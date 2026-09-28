@@ -2,7 +2,7 @@ import {Injectable, OnInit} from '@angular/core';
 import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/compat/firestore';
 import {Product} from '../interfaces/product';
 import {AuthService} from './auth.service';
-import {map} from 'rxjs/operators';
+import {map, switchMap} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +23,9 @@ export class ProductService {
   }
 
   list() {
-    return this._products.snapshotChanges()
+    return this.auth.kitchenId.pipe(
+      switchMap(uid => this.afs.collection('kitchens').doc(uid).collection<Product>('products').snapshotChanges()),
+    )
       .pipe(
         map(actions => actions.map(a => {
           const data = a.payload.doc.data() as Product;

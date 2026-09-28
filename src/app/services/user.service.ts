@@ -3,7 +3,7 @@ import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/compat
 import {Product} from '../interfaces/product';
 import {AuthService} from './auth.service';
 import {User} from '../interfaces/user';
-import {map} from 'rxjs/operators';
+import {map, switchMap} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +23,9 @@ export class UserService {
   }
 
   list() {
-    return this._users.snapshotChanges()
+    return this.auth.kitchenId.pipe(
+      switchMap(uid => this.afs.collection('kitchens').doc(uid).collection<User>('users').snapshotChanges()),
+    )
       .pipe(
         map(actions => actions.map(a => {
           const data = a.payload.doc.data() as User;

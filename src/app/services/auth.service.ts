@@ -3,13 +3,15 @@ import {Observable, of} from 'rxjs';
 import {AngularFireAuth} from '@angular/fire/compat/auth';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
-import {switchMap} from 'rxjs/operators';
+import {filter, map, shareReplay, switchMap} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   user: Observable<firebase.User>;
+  // The signed-in kitchen's uid. Waits for sign-in, because auth state arrives asynchronously.
+  kitchenId: Observable<string>;
 
 
   constructor(private afAuth: AngularFireAuth) {
@@ -22,6 +24,7 @@ export class AuthService {
         }
       })
     );
+    this.kitchenId = this.user.pipe(filter(user => !!user), map(user => user.uid), shareReplay(1));
   }
 
   emailSignup(email, password) {

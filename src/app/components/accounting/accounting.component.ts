@@ -1,3 +1,4 @@
+import {Subscription} from 'rxjs';
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {PurchaseService} from '../../services/purchase.service';
 import { MatSort } from '@angular/material/sort';
@@ -17,6 +18,7 @@ export class AccountingComponent implements OnInit {
   displayedColumns: any;
 
   @ViewChild(MatSort, { static: true }) sort: MatSort;
+  private rangeSubscription: Subscription;
   @ViewChild('accountingTable') accountingTable: any;
 
   constructor(private purchaseService: PurchaseService, private excelService: ExcelService, private pdfService: PdfService) {
@@ -28,7 +30,9 @@ export class AccountingComponent implements OnInit {
   }
 
   _setTableData() {
-    this.purchaseService.list_from_to(this.from_date, this.to_date).valueChanges().subscribe(purchases => {
+    // Close the previous range's listener; otherwise every date change leaves one open and re-reads the range.
+    this.rangeSubscription?.unsubscribe();
+    this.rangeSubscription = this.purchaseService.list_from_to(this.from_date, this.to_date).subscribe(purchases => {
       const rows = [];
       let columns = ['name', 'room'];
       const formatted_rows = {};
