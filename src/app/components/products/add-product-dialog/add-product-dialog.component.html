@@ -21,13 +21,23 @@
     </mat-form-field>
   </div>
   <div class="dialog-image-preview">
-    <mat-spinner *ngIf="!!uploading" class="avatar"></mat-spinner>
-    <img class="product-img" src="/assets/img/avatar.png" *ngIf="!product.clId && !product.image && !uploading"/>
+    @if (!!uploading) {
+      <mat-spinner class="avatar"></mat-spinner>
+    }
+    @if (!product.clId && !product.image && !uploading) {
+      <img class="product-img" src="/assets/img/avatar.png"/>
+    }
 
-    <div *ngIf="!!product.image" class="image-wrapper">
-      <img class="product" [src]="product.image" *ngIf="!!product.image" (error)="revertImageUrl()"/>
-    </div>
-    <img [src]="product.clId | clUrl:'c_fit,q_50,w_75,h_75':'png'" *ngIf="!!product.clId" alt="">
+    @if (!!product.image) {
+      <div class="image-wrapper">
+        @if (!!product.image) {
+          <img class="product" [src]="product.image" (error)="revertImageUrl()"/>
+        }
+      </div>
+    }
+    @if (!!product.clId) {
+      <img [src]="product.clId | clUrl:'c_fit,q_50,w_75,h_75':'png'" alt="">
+    }
     <button mat-icon-button (click)="deleteImage()">
       <mat-icon>delete</mat-icon>
     </button>

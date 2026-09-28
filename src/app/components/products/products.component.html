@@ -4,15 +4,21 @@
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product" class="table-image-wrapper">
       <!--<img [src]="product.image" alt="./assets/img/maribo.png" class="table-image">-->
-      <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
-        <img [src]="product.clId | clUrl:'c_fit,q_50,w_75,h_75':'png'" class="product" alt="">
-      </div>
-      <div *ngIf="!product.image && !product.clId" class="image-wrapper">
-        <img src="/assets/img/avatar.png" class="avatar"/>
-      </div>
-      <div *ngIf="!!product.image" class="image-wrapper" matBadge="{{product.amount}}">
-        <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
-      </div>
+      @if (!!product.clId) {
+        <div matBadge="{{product.amount}}" class="image-wrapper">
+          <img [src]="product.clId | clUrl:'c_fit,q_50,w_75,h_75':'png'" class="product" alt="">
+        </div>
+      }
+      @if (!product.image && !product.clId) {
+        <div class="image-wrapper">
+          <img src="/assets/img/avatar.png" class="avatar"/>
+        </div>
+      }
+      @if (!!product.image) {
+        <div class="image-wrapper" matBadge="{{product.amount}}">
+          <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
+        </div>
+      }
     </mat-cell>
   </ng-container>
 

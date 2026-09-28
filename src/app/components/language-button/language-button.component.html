@@ -1,6 +1,7 @@
 <button class="lang-button" mat-icon-button (click)="setLang()">
-  <p *ngIf="currentLanguage === 'da'; else english">EN</p>
-  <ng-template #english>
+  @if (currentLanguage === 'da') {
+    <p>EN</p>
+  } @else {
     <p>DA</p>
-  </ng-template>
+  }
 </button>

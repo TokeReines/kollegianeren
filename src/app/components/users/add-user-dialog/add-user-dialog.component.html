@@ -18,10 +18,18 @@
     </mat-form-field>
   </div>
   <div class="dialog-image-preview">
-    <mat-spinner *ngIf="!!uploading" class="avatar"></mat-spinner>
-    <img class="user-img" src="/assets/img/avatar.png" *ngIf="!user.clId && !user.image && !uploading"/>
-    <img class="user-img" [src]="user.image" *ngIf="!!user.image" (error)="revertImageUrl()"/>
-    <img [src]="user.clId | clUrl:'c_fill,g_face,q_50,w_75,h_75,r_max':'png'" *ngIf="!!user.clId" alt="">
+    @if (!!uploading) {
+      <mat-spinner class="avatar"></mat-spinner>
+    }
+    @if (!user.clId && !user.image && !uploading) {
+      <img class="user-img" src="/assets/img/avatar.png"/>
+    }
+    @if (!!user.image) {
+      <img class="user-img" [src]="user.image" (error)="revertImageUrl()"/>
+    }
+    @if (!!user.clId) {
+      <img [src]="user.clId | clUrl:'c_fill,g_face,q_50,w_75,h_75,r_max':'png'" alt="">
+    }
     <button mat-icon-button (click)="deleteImage()">
       <mat-icon>delete</mat-icon>
     </button>

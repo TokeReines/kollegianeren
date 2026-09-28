@@ -12,13 +12,14 @@
             required
             [(ngModel)]="registration.kitchen"
             formControlName="kitchen"
-          >
-            <mat-option
-              *ngFor="let kitchen of kitchens"
-              [value]="kitchen.value"
             >
-              {{ kitchen.viewValue }}
-            </mat-option>
+            @for (kitchen of kitchens; track kitchen) {
+              <mat-option
+                [value]="kitchen.value"
+                >
+                {{ kitchen.viewValue }}
+              </mat-option>
+            }
           </mat-select>
         </mat-form-field>
 
@@ -31,7 +32,7 @@
             [(ngModel)]="registration.email"
             name="email"
             (keyup.enter)="onSubmit(registration)"
-          />
+            />
         </mat-form-field>
 
         <mat-form-field>
@@ -43,7 +44,7 @@
             [(ngModel)]="registration.password"
             formControlName="password"
             (keyup.enter)="onSubmit(registration)"
-          />
+            />
           <mat-icon matSuffix (click)="hidePassword = !hidePassword">{{
             hidePassword ? "visibility_off" : "visibility"
           }}</mat-icon>
@@ -54,7 +55,7 @@
             color="primary"
             (click)="onSubmit(registration)"
             [disabled]="form.invalid"
-          >
+            >
             {{ "REGISTER" | translate }}
           </button>
           <button mat-raised-button color="secondary" [routerLink]="['/login']">
