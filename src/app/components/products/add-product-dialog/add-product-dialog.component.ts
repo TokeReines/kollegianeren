@@ -1,5 +1,5 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {MatDialogRef} from '@angular/material';
+import { MatDialogRef } from '@angular/material/dialog';
 import {Product} from '../../../interfaces/product';
 import {environment} from '../../../../environments/environment';
 import {HttpClient} from '@angular/common/http';
@@ -13,7 +13,7 @@ export class AddProductDialogComponent implements OnInit {
   imageUrl: string;
   oldImageUrl: string;
   uploading: boolean;
-  @ViewChild('clFileInput') clFileInput: ElementRef;
+  @ViewChild('clFileInput', { static: true }) clFileInput: ElementRef;
 
   constructor(public dialogRef: MatDialogRef<AddProductDialogComponent>, private httpClient: HttpClient) {
   }

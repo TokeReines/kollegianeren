@@ -1,5 +1,5 @@
 import {Component, ElementRef, Inject, OnInit, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import {User} from '../../../interfaces/user';
 import {environment} from '../../../../environments/environment';
 import {HttpClient} from '@angular/common/http';
@@ -12,7 +12,7 @@ export class EditUserDialogComponent implements OnInit {
   imageUrl: string;
   oldImageUrl: string;
   uploading: boolean;
-  @ViewChild('clFileInput') clFileInput: ElementRef;
+  @ViewChild('clFileInput', { static: true }) clFileInput: ElementRef;
 
   constructor(public dialogRef: MatDialogRef<EditUserDialogComponent>,
               @Inject(MAT_DIALOG_DATA) public user: User, private httpClient: HttpClient) {

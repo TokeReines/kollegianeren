@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {Purchase} from '../../../interfaces/purchase';
-import {MatBottomSheetRef} from '@angular/material';
+import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import {PurchaseService} from '../../../services/purchase.service';
 import {map} from 'rxjs/operators';
 import {Observable} from 'rxjs';

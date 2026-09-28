@@ -1,6 +1,7 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {PurchaseService} from '../../services/purchase.service';
-import {MatSort, MatTableDataSource} from '@angular/material';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 import {ExcelService} from '../../services/excel.service';
 import {PdfService} from '../../services/pdf.service';
 
@@ -15,8 +16,8 @@ export class AccountingComponent implements OnInit {
   dataSource: MatTableDataSource<any>;
   displayedColumns: any;
 
-  @ViewChild(MatSort) sort: MatSort;
-  @ViewChild('accountingTable') accountingTable: any;
+  @ViewChild(MatSort, { static: true }) sort: MatSort;
+  @ViewChild('accountingTable', { static: false }) accountingTable: any;
 
   constructor(private purchaseService: PurchaseService, private excelService: ExcelService, private pdfService: PdfService) {
     this.from_date.setMonth(this.from_date.getMonth() - 1);

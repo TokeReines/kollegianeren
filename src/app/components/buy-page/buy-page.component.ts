@@ -5,7 +5,8 @@ import {BuyableUser} from '../../models/buyable-user';
 import {UserService} from '../../services/user.service';
 import {Purchase} from '../../interfaces/purchase';
 import {PurchaseService} from '../../services/purchase.service';
-import {MatBottomSheet, MatSnackBar} from '@angular/material';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 
 @Component({
