@@ -104,17 +104,17 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "kollegianeren:build"
+            "buildTarget": "kollegianeren:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "kollegianeren:build:production"
+              "buildTarget": "kollegianeren:build:production"
             },
             "dev": {
-              "browserTarget": "kollegianeren:build:dev"
+              "buildTarget": "kollegianeren:build:dev"
             },
             "emulator": {
-              "browserTarget": "kollegianeren:build:emulator"
+              "buildTarget": "kollegianeren:build:emulator"
             }
           },
           "defaultConfiguration": "dev"
@@ -122,7 +122,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "kollegianeren:build"
+            "buildTarget": "kollegianeren:build"
           }
         },
         "test": {
