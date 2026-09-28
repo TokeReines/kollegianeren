@@ -31,7 +31,7 @@ import { SidenavService } from './services/sidenav.service';
 import { BuyPageComponent } from './components/buy-page/buy-page.component';
 import { HistoryBottomSheetComponent } from './components/buy-page/history-bottom-sheet/history-bottom-sheet.component';
 import { AccountingComponent } from './components/accounting/accounting.component';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { PriceInputDirective } from './directives/priceInput.directive';
 import { TranslateService } from './services/translate.service';
 import { TranslatePipe } from './translate.pipe';
@@ -42,8 +42,7 @@ export function setupTranslateFactory(
   return () => service.use('da');
 }
 
-@NgModule({
-    declarations: [
+@NgModule({ declarations: [
         AppComponent,
         LanguageButtonComponent,
         HomeComponent,
@@ -65,8 +64,7 @@ export function setupTranslateFactory(
         TranslatePipe,
         ClUrlPipe
     ],
-    imports: [
-        BrowserModule,
+    bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,
         BrowserAnimationsModule,
         MaterialModule,
@@ -75,10 +73,7 @@ export function setupTranslateFactory(
         AngularFirestoreModule,
         AngularFireAuthModule,
         FormsModule,
-        ReactiveFormsModule,
-        HttpClientModule
-    ],
-    providers: [
+        ReactiveFormsModule], providers: [
         { provide: USE_AUTH_EMULATOR, useValue: environment.emulators ? ['http://localhost:9099'] : undefined },
         { provide: USE_FIRESTORE_EMULATOR, useValue: environment.emulators ? ['localhost', 8181] : undefined },
         { provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {
@@ -86,8 +81,7 @@ export function setupTranslateFactory(
             useFactory: setupTranslateFactory,
             deps: [TranslateService],
             multi: true
-        }
-    ],
-    bootstrap: [AppComponent]
-})
+        },
+        provideHttpClient(withInterceptorsFromDi())
+    ] })
 export class AppModule { }

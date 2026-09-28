@@ -2,7 +2,7 @@ import {Component, ElementRef, Inject, OnInit, ViewChild} from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import {Product} from '../../../interfaces/product';
 import {environment} from '../../../../environments/environment';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 
 @Component({
