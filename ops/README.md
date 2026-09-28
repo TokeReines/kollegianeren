@@ -32,4 +32,26 @@ Each run snapshots the small collections (~1k reads), pulls new purchases, then 
 40 7,8 * * * cd ~/kollegianeren/ops && node backup.js --project prod --before-reset 30 --max-reads 40000 --ceiling 46000 >> ~/kollegianeren-backups/backup.log 2>&1
 ```
 
+## Restore
+
+`restore.js` takes the latest snapshot plus every purchase chunk (later copies win) and writes them with BulkWriter. Kitchens and small collections go first, so a capped restore still gives usable kitchens.
+
+**Local development data** (anonymised, no quota, never touches a real project):
+
+```bash
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8181 firebase emulators:exec --only firestore --project demo-kollegianeren \
+  --export-on-exit ~/kollegianeren-emulator-data \
+  "node restore.js --from ~/kollegianeren-backups/firebase-ehp --project demo-kollegianeren --anonymise"
+```
+
+Later: `firebase emulators:start --only firestore --project demo-kollegianeren --import ~/kollegianeren-emulator-data`.
+
+`--anonymise` replaces resident names, rooms and photos with stable fakes (`Beboer 12`, room `112`), also on the purchases that copy them.
+
+**Into the dev project**: dev has a 20k writes/day quota, so pick kitchens and cap writes: `--kitchens <id> --rename-kitchen <prodId>=<yourDevUid> --max-writes 15000 --anonymise`.
+
+**Emergency restore into prod**: needs `--i-really-mean-prod` and refuses `--anonymise`. Mind the 20k writes/day cap: restore one kitchen at a time with `--kitchens`.
+
+## Credentials for cron
+
 The cron service account needs only `roles/datastore.viewer` and `roles/monitoring.viewer` on `firebase-ehp`.
