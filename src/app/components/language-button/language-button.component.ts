@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { TranslateService } from '../../services/translate.service';
 
 @Component({
     selector: 'app-language-button',
     templateUrl: './language-button.component.html',
     styleUrls: ['./language-button.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LanguageButtonComponent implements OnInit {

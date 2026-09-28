@@ -56,7 +56,7 @@
                 {
                   "type": "initial",
                   "maximumWarning": "2mb",
-                  "maximumError": "5mb"
+                  "maximumError": "3mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -73,14 +73,20 @@
               ],
               "budgets": [
                 {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "3mb"
+                },
+                {
                   "type": "anyComponentStyle",
                   "maximumWarning": "6kb"
                 }
               ],
-              "optimization": false,
-              "sourceMap": true,
-              "namedChunks": true,
-              "extractLicenses": false
+              "optimization": true,
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "outputHashing": "all"
             },
             "emulator": {
               "fileReplacements": [
@@ -93,9 +99,13 @@
               "sourceMap": true,
               "namedChunks": true,
               "extractLicenses": false
+            },
+            "testing": {
+              "aot": false,
+              "polyfills": "src/polyfills.ts"
             }
           },
-          "defaultConfiguration": ""
+          "defaultConfiguration": "emulator"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -113,7 +123,7 @@
               "buildTarget": "kollegianeren:build:emulator"
             }
           },
-          "defaultConfiguration": "dev"
+          "defaultConfiguration": "emulator"
         },
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n",
@@ -122,20 +132,17 @@
           }
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular/build:unit-test",
           "options": {
-            "main": "src/test.ts",
-            "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.spec.json",
-            "karmaConfig": "src/karma.conf.js",
-            "styles": [
-              "src/styles.scss"
+            "reporters": [
+              "default"
             ],
-            "scripts": [],
-            "assets": [
-              "src/favicon.ico",
-              "src/assets"
-            ]
+            "setupFiles": [
+              "src/test.ts"
+            ],
+            "buildTarget": ":build:testing",
+            "runner": "vitest"
           }
         }
       }

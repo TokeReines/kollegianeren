@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ProductService} from '../../services/product.service';
 import {BuyableProduct} from '../../models/buyable-product';
 import {BuyableUser} from '../../models/buyable-user';
@@ -13,6 +13,7 @@ import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom
     selector: 'app-buy-page',
     templateUrl: './buy-page.component.html',
     styleUrls: ['./buy-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BuyPageComponent implements OnInit {

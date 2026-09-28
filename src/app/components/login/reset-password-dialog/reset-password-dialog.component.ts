@@ -1,4 +1,4 @@
-import { Component, Inject, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Inject, Output, EventEmitter, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 
@@ -6,6 +6,7 @@ import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms
     selector: 'app-reset-password',
     templateUrl: 'reset-password-dialog.component.html',
     styleUrls: ['reset-password-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ResetPasswordDialogComponent implements OnInit {

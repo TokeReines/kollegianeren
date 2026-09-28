@@ -28,7 +28,7 @@ import { SidenavService } from './services/sidenav.service';
 import { BuyPageComponent } from './components/buy-page/buy-page.component';
 import { HistoryBottomSheetComponent } from './components/buy-page/history-bottom-sheet/history-bottom-sheet.component';
 import { AccountingComponent } from './components/accounting/accounting.component';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { PriceInputDirective } from './directives/priceInput.directive';
 import { TranslateService } from './services/translate.service';
 import { TranslatePipe } from './translate.pipe';
@@ -72,6 +72,6 @@ export function setupTranslateFactory(
         const initializerFn = (setupTranslateFactory)(inject(TranslateService));
         return initializerFn();
       }),
-        provideHttpClient(withInterceptorsFromDi())
+        provideHttpClient(withXhr(), withInterceptorsFromDi())
     ] })
 export class AppModule { }

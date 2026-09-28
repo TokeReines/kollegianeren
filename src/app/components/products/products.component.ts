@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ProductService} from '../../services/product.service';
 import {Observable} from 'rxjs';
 import {Product} from '../../interfaces/product';
@@ -13,6 +13,7 @@ import {map} from 'rxjs/operators';
 @Component({
     selector: 'app-products',
     templateUrl: './products.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ProductsComponent implements OnInit {

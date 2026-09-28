@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {map} from 'rxjs/operators';
 import {UserService} from '../../services/user.service';
 import {Observable} from 'rxjs';
@@ -13,6 +13,7 @@ import {Product} from '../../interfaces/product';
 @Component({
     selector: 'app-users',
     templateUrl: './users.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class UsersComponent implements OnInit {

@@ -1,15 +1,15 @@
 import {Subscription} from 'rxjs';
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {PurchaseService} from '../../services/purchase.service';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import {ExcelService} from '../../services/excel.service';
-import {PdfService} from '../../services/pdf.service';
 
 @Component({
     selector: 'app-accounting',
     templateUrl: './accounting.component.html',
     styleUrls: ['./accounting.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AccountingComponent implements OnInit {
@@ -22,7 +22,7 @@ export class AccountingComponent implements OnInit {
   private rangeSubscription: Subscription;
   @ViewChild('accountingTable') accountingTable: any;
 
-  constructor(private purchaseService: PurchaseService, private excelService: ExcelService, private pdfService: PdfService) {
+  constructor(private purchaseService: PurchaseService, private excelService: ExcelService) {
     this.from_date.setMonth(this.from_date.getMonth() - 1);
   }
 
@@ -83,13 +83,6 @@ export class AccountingComponent implements OnInit {
     this.excelService.exportAsExcelFile(this.dataSource.data, name);
   }
 
-  exportAsPdf(): void {
-    const table = document.getElementById('accountingTable');
-    console.log(table);
-    console.log(table.innerHTML);
-    console.log(this.accountingTable._element);
-    this.pdfService.exportAsPdfFile(table.innerHTML, this.dataSource.data, 'tats');
-  }
 
   fromDateFilter = (date: Date): boolean => {
     return !this.to_date || date <= this.to_date;

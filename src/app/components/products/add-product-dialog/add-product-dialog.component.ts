@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import {Product} from '../../../interfaces/product';
 import {environment} from '../../../../environments/environment';
@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 @Component({
     selector: 'app-add-product-dialog',
     templateUrl: './add-product-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AddProductDialogComponent implements OnInit {

@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import { MatSidenav } from '@angular/material/sidenav';
 import {SidenavService} from '../../services/sidenav.service';
 
@@ -6,6 +6,7 @@ import {SidenavService} from '../../services/sidenav.service';
     selector: 'app-navigation',
     templateUrl: './navigation.component.html',
     styleUrls: ['./navigation.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class NavigationComponent implements OnInit {

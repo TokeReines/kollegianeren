@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {AuthService} from './services/auth.service';
 import { MatSidenav } from '@angular/material/sidenav';
 import {SidenavService} from './services/sidenav.service';
@@ -7,6 +7,7 @@ import {SidenavService} from './services/sidenav.service';
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AppComponent implements OnInit {

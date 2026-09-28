@@ -1,4 +1,4 @@
-import {Component, ElementRef, ViewChild} from '@angular/core';
+import {Component, ElementRef, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import {User} from '../../../interfaces/user';
 import {environment} from '../../../../environments/environment';
@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 @Component({
     selector: 'app-add-user-dialog',
     templateUrl: './add-user-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AddUserDialogComponent {
