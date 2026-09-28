@@ -43,58 +43,51 @@ export function setupTranslateFactory(
 }
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    LanguageButtonComponent,
-    HomeComponent,
-    NavigationComponent,
-    UsersComponent,
-    ProductsComponent,
-    LoginComponent,
-    ResetPasswordDialogComponent,
-    ToolbarComponent,
-    RegisterComponent,
-    EditProductDialogComponent,
-    AddProductDialogComponent,
-    AddUserDialogComponent,
-    EditUserDialogComponent,
-    BuyPageComponent,
-    HistoryBottomSheetComponent,
-    AccountingComponent,
-    PriceInputDirective,
-    TranslatePipe,
-    ClUrlPipe
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    BrowserAnimationsModule,
-    MaterialModule,
-    MatTableModule,
-    AngularFireModule.initializeApp(environment.firebase),
-    AngularFirestoreModule,
-    AngularFireAuthModule,
-    FormsModule,
-    ReactiveFormsModule,
-    HttpClientModule
-  ],
-  providers: [
-    { provide: USE_AUTH_EMULATOR, useValue: environment.emulators ? ['http://localhost:9099'] : undefined },
-    { provide: USE_FIRESTORE_EMULATOR, useValue: environment.emulators ? ['localhost', 8181] : undefined },
-    { provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {
-    provide: APP_INITIALIZER,
-    useFactory: setupTranslateFactory,
-    deps: [TranslateService],
-    multi: true
-  }],
-  bootstrap: [AppComponent],
-  entryComponents: [
-    EditProductDialogComponent,
-    AddProductDialogComponent,
-    EditUserDialogComponent,
-    AddUserDialogComponent,
-    HistoryBottomSheetComponent,
-    ResetPasswordDialogComponent
-  ]
+    declarations: [
+        AppComponent,
+        LanguageButtonComponent,
+        HomeComponent,
+        NavigationComponent,
+        UsersComponent,
+        ProductsComponent,
+        LoginComponent,
+        ResetPasswordDialogComponent,
+        ToolbarComponent,
+        RegisterComponent,
+        EditProductDialogComponent,
+        AddProductDialogComponent,
+        AddUserDialogComponent,
+        EditUserDialogComponent,
+        BuyPageComponent,
+        HistoryBottomSheetComponent,
+        AccountingComponent,
+        PriceInputDirective,
+        TranslatePipe,
+        ClUrlPipe
+    ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        BrowserAnimationsModule,
+        MaterialModule,
+        MatTableModule,
+        AngularFireModule.initializeApp(environment.firebase),
+        AngularFirestoreModule,
+        AngularFireAuthModule,
+        FormsModule,
+        ReactiveFormsModule,
+        HttpClientModule
+    ],
+    providers: [
+        { provide: USE_AUTH_EMULATOR, useValue: environment.emulators ? ['http://localhost:9099'] : undefined },
+        { provide: USE_FIRESTORE_EMULATOR, useValue: environment.emulators ? ['localhost', 8181] : undefined },
+        { provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {
+            provide: APP_INITIALIZER,
+            useFactory: setupTranslateFactory,
+            deps: [TranslateService],
+            multi: true
+        }
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }
