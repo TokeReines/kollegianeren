@@ -1,11 +1,11 @@
 <app-language-button></app-language-button>
-<div class="register-form" fxLayout="column" xLayoutAlign="space-around center">
+<div class="register-form" layout="column">
   <mat-card>
     <mat-card-header class="mat-card-header">
       <mat-card-title>{{ "LOGIN" | translate }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <form class="login-form" fxLayout="column" [formGroup]="form">
+      <form class="login-form" layout="column" [formGroup]="form">
         <mat-form-field>
           <input
             matInput

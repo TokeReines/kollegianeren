@@ -1,4 +1,4 @@
-<div fxLayout="row" xLayoutAlign="space-around center">
+<div layout="row">
   <mat-form-field>
     <input matInput [matDatepicker]="pickerFrom" placeholder="{{ 'ACCOUNTING_FROM_DATE' | translate }}" [(ngModel)]="from_date"
            [matDatepickerFilter]="fromDateFilter" (dateChange)="fromDateChange()">

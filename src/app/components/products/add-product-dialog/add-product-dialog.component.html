@@ -1,5 +1,5 @@
 <h1 mat-dialog-title>{{ "PRODUCTS_EDIT_PRODUCT" | translate }}</h1>
-<div mat-dialog-content fxLayout="column" style="height: 448px;">
+<div mat-dialog-content layout="column" style="height: 448px;">
   <mat-form-field>
     <input matInput [(ngModel)]="product.name" placeholder="{{ 'NAME' | translate }}">
   </mat-form-field>
@@ -27,9 +27,7 @@
     <div *ngIf="!!product.image" class="image-wrapper">
       <img class="product" [src]="product.image" *ngIf="!!product.image" (error)="revertImageUrl()"/>
     </div>
-    <cl-image public-id="{{product.clId}}" crop="fit" *ngIf="!!product.clId"
-              quality="50" width="75" height="75" format="png">
-    </cl-image>
+    <img [src]="product.clId | clUrl:'c_fit,q_50,w_75,h_75':'png'" *ngIf="!!product.clId" alt="">
     <button mat-icon-button (click)="deleteImage()">
       <mat-icon>delete</mat-icon>
     </button>

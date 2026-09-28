@@ -1,17 +1,15 @@
-<div fxLayout="row" xLayoutAlign="space-around center">
+<div layout="row">
 
-  <div fxLayout="column" xLayoutAlign="space-around center" class="buypage-left">
+  <div layout="column" class="buypage-left">
 
-    <div fxLayout="row wrap" xLayoutAlign="space-around center" class="buypage-group disable-text-selection">
+    <div layout="row wrap" class="buypage-group disable-text-selection">
       <mat-card *ngFor="let product of products" (click)="selectProduct(product)"
                 (contextmenu)="deselectProduct(product, $event)"
                 [class.mat-elevation-z5]="product.selected" class="mat-elevation-z buypage-grid-card">
         <mat-card-title-group>
 
           <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
-            <cl-image public-id="{{product.clId}}" crop="fit" class="product"
-                      quality="50" width="50" height="75" format="png">
-            </cl-image>
+            <img [src]="product.clId | clUrl:'c_fit,q_50,w_50,h_75':'png'" class="product" alt="">
           </div>
           <div *ngIf="!!product.image && !product.clId" class="image-wrapper" matBadge="{{product.amount}}">
             <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
@@ -24,14 +22,12 @@
     </div>
     <mat-divider></mat-divider>
 
-    <div fxLayout="row wrap" xLayoutAlign="space-around center" class="buypage-group disable-text-selection">
+    <div layout="row wrap" class="buypage-group disable-text-selection">
       <mat-card *ngFor="let user of users" (click)="selectUser(user, $event)" (contextmenu)="selectUser(user, $event)"
                 [class.mat-elevation-z5]="user.selected" class="mat-elevation-z buypage-grid-card">
         <mat-card-title-group>
           <div *ngIf="!!user.clId" class="image-wrapper">
-            <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
-                      quality="50" width="75" height="75" format="png" radius="max">
-            </cl-image>
+            <img [src]="user.clId | clUrl:'c_fill,g_face,q_50,w_75,h_75,r_max':'png'" alt="">
           </div>
           <div *ngIf="!!user.image" class="image-wrapper">
             <img [src]="user.image" class="avatar" >
@@ -47,9 +43,7 @@
     <mat-card *ngIf="selectedProduct" class="mat-elevation-z5">
       <img *ngIf="!!selectedProduct.image" mat-card-image [src]="selectedProduct.image" class="cart-image">
       <div *ngIf="!!selectedProduct.clId">
-        <cl-image public-id="{{selectedProduct.clId}}" format="png" class="cart-image">
-          <cl-transformation height="200" width="168" crop="lpad" quality="100"></cl-transformation>
-        </cl-image>
+        <img [src]="selectedProduct.clId | clUrl:'c_lpad,q_100,w_168,h_200':'png'" class="cart-image" alt="">
       </div>
       <mat-card-title class="cart-title">{{selectedProduct.name}}</mat-card-title>
 

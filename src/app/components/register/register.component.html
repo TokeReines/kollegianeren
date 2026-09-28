@@ -1,11 +1,11 @@
 <app-language-button></app-language-button>
-<div class="register-form" fxLayout="column" xLayoutAlign="space-around center">
+<div class="register-form" layout="column">
   <mat-card>
     <mat-card-header class="mat-card-header">
       <mat-card-title>{{ "REGISTER_KITCHEN" | translate }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <form name="registerForm" fxLayout="column" [formGroup]="form">
+      <form name="registerForm" layout="column" [formGroup]="form">
         <mat-form-field>
           <mat-select
             placeholder="{{ 'KITCHEN' | translate }}"

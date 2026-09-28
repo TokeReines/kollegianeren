@@ -29,19 +29,13 @@ import { AddUserDialogComponent } from './components/users/add-user-dialog/add-u
 import { EditUserDialogComponent } from './components/users/edit-user-dialog/edit-user-dialog.component';
 import { SidenavService } from './services/sidenav.service';
 import { BuyPageComponent } from './components/buy-page/buy-page.component';
-import { FlexLayoutModule } from '@angular/flex-layout';
 import { HistoryBottomSheetComponent } from './components/buy-page/history-bottom-sheet/history-bottom-sheet.component';
 import { AccountingComponent } from './components/accounting/accounting.component';
-import { CloudinaryConfiguration, CloudinaryModule } from '@cloudinary/angular-5.x';
-import { Cloudinary } from 'cloudinary-core';
 import { HttpClientModule } from '@angular/common/http';
 import { PriceInputDirective } from './directives/priceInput.directive';
 import { TranslateService } from './services/translate.service';
 import { TranslatePipe } from './translate.pipe';
-
-export const cloudinaryLib = {
-  Cloudinary: Cloudinary
-};
+import { ClUrlPipe } from './cl-url.pipe';
 
 export function setupTranslateFactory(
   service: TranslateService): Function {
@@ -68,7 +62,8 @@ export function setupTranslateFactory(
     HistoryBottomSheetComponent,
     AccountingComponent,
     PriceInputDirective,
-    TranslatePipe
+    TranslatePipe,
+    ClUrlPipe
   ],
   imports: [
     BrowserModule,
@@ -77,13 +72,11 @@ export function setupTranslateFactory(
     MaterialModule,
     MatTableModule,
     AngularFireModule.initializeApp(environment.firebase),
-    CloudinaryModule.forRoot(cloudinaryLib, environment.cloudinary as CloudinaryConfiguration),
     AngularFireDatabaseModule,
     AngularFirestoreModule,
     AngularFireAuthModule,
     FormsModule,
     ReactiveFormsModule,
-    FlexLayoutModule,
     HttpClientModule
   ],
   providers: [{ provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {

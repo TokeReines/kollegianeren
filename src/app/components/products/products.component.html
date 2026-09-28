@@ -5,9 +5,7 @@
     <mat-cell *matCellDef="let product" class="table-image-wrapper">
       <!--<img [src]="product.image" alt="./assets/img/maribo.png" class="table-image">-->
       <div *ngIf="!!product.clId" matBadge="{{product.amount}}" class="image-wrapper">
-        <cl-image public-id="{{product.clId}}" crop="fit" class="product"
-                  quality="50" width="75" height="75" format="png">
-        </cl-image>
+        <img [src]="product.clId | clUrl:'c_fit,q_50,w_75,h_75':'png'" class="product" alt="">
       </div>
       <div *ngIf="!product.image && !product.clId" class="image-wrapper">
         <img src="/assets/img/avatar.png" class="avatar"/>
