@@ -6,9 +6,10 @@ import {map} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 
 @Component({
-  selector: 'app-history',
-  templateUrl: './history-bottom-sheet.component.html',
-  styleUrls: ['./history-bottom-sheet.component.scss']
+    selector: 'app-history',
+    templateUrl: './history-bottom-sheet.component.html',
+    styleUrls: ['./history-bottom-sheet.component.scss'],
+    standalone: false
 })
 export class HistoryBottomSheetComponent implements OnInit {
   purchases: Observable<Purchase[]>;

@@ -5,8 +5,9 @@ import {environment} from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
-  selector: 'app-add-user-dialog',
-  templateUrl: './add-user-dialog.component.html'
+    selector: 'app-add-user-dialog',
+    templateUrl: './add-user-dialog.component.html',
+    standalone: false
 })
 export class AddUserDialogComponent {
   user = <User>{};

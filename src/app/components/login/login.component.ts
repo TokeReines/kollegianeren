@@ -7,9 +7,10 @@ import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-pass
 import { TranslateService } from 'src/app/services/translate.service';
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss'],
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+    styleUrls: ['./login.component.scss'],
+    standalone: false
 })
 export class LoginComponent implements OnInit {
   email = '';

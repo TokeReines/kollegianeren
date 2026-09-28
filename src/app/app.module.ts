@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule, APP_INITIALIZER } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { MaterialModule } from './material.module';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -76,12 +76,10 @@ export function setupTranslateFactory(
         ReactiveFormsModule], providers: [
         { provide: USE_AUTH_EMULATOR, useValue: environment.emulators ? ['http://localhost:9099'] : undefined },
         { provide: USE_FIRESTORE_EMULATOR, useValue: environment.emulators ? ['localhost', 8181] : undefined },
-        { provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, {
-            provide: APP_INITIALIZER,
-            useFactory: setupTranslateFactory,
-            deps: [TranslateService],
-            multi: true
-        },
+        { provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, provideAppInitializer(() => {
+        const initializerFn = (setupTranslateFactory)(inject(TranslateService));
+        return initializerFn();
+      }),
         provideHttpClient(withInterceptorsFromDi())
     ] })
 export class AppModule { }

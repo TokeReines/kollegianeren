@@ -12,8 +12,9 @@ export interface KitchenSelect {
 }
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html'
+    selector: 'app-register',
+    templateUrl: './register.component.html',
+    standalone: false
 })
 export class RegisterComponent implements OnInit {
   registration: Registration = new Registration();

@@ -6,8 +6,9 @@ import { HttpClient } from '@angular/common/http';
 
 
 @Component({
-  selector: 'app-edit-product-dialog',
-  templateUrl: './edit-product-dialog.component.html',
+    selector: 'app-edit-product-dialog',
+    templateUrl: './edit-product-dialog.component.html',
+    standalone: false
 })
 export class EditProductDialogComponent implements OnInit {
   imageUrl: string;

@@ -11,8 +11,9 @@ import {AddUserDialogComponent} from './add-user-dialog/add-user-dialog.componen
 import {Product} from '../../interfaces/product';
 
 @Component({
-  selector: 'app-users',
-  templateUrl: './users.component.html'
+    selector: 'app-users',
+    templateUrl: './users.component.html',
+    standalone: false
 })
 export class UsersComponent implements OnInit {
   users: MatTableDataSource<User>;

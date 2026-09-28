@@ -3,9 +3,10 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'app-reset-password',
-  templateUrl: 'reset-password-dialog.component.html',
-  styleUrls: ['reset-password-dialog.component.scss'],
+    selector: 'app-reset-password',
+    templateUrl: 'reset-password-dialog.component.html',
+    styleUrls: ['reset-password-dialog.component.scss'],
+    standalone: false
 })
 export class ResetPasswordDialogComponent implements OnInit {
   @Output() doSendEmail = new EventEmitter();

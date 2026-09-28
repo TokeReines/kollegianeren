@@ -5,8 +5,9 @@ import {environment} from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
-  selector: 'app-edit-user-dialog',
-  templateUrl: './edit-user-dialog.component.html'
+    selector: 'app-edit-user-dialog',
+    templateUrl: './edit-user-dialog.component.html',
+    standalone: false
 })
 export class EditUserDialogComponent implements OnInit {
   imageUrl: string;

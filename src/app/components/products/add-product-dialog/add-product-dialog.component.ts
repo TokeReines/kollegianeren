@@ -5,8 +5,9 @@ import {environment} from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
-  selector: 'app-add-product-dialog',
-  templateUrl: './add-product-dialog.component.html'
+    selector: 'app-add-product-dialog',
+    templateUrl: './add-product-dialog.component.html',
+    standalone: false
 })
 export class AddProductDialogComponent implements OnInit {
   product = <Product>{};

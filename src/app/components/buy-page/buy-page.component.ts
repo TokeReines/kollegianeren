@@ -10,9 +10,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 
 @Component({
-  selector: 'app-buy-page',
-  templateUrl: './buy-page.component.html',
-  styleUrls: ['./buy-page.component.scss']
+    selector: 'app-buy-page',
+    templateUrl: './buy-page.component.html',
+    styleUrls: ['./buy-page.component.scss'],
+    standalone: false
 })
 export class BuyPageComponent implements OnInit {
   products: Array<BuyableProduct>;

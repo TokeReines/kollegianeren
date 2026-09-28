@@ -11,8 +11,9 @@ import {map} from 'rxjs/operators';
 
 
 @Component({
-  selector: 'app-products',
-  templateUrl: './products.component.html',
+    selector: 'app-products',
+    templateUrl: './products.component.html',
+    standalone: false
 })
 export class ProductsComponent implements OnInit {
   products: MatTableDataSource<Product>;
