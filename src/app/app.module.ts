@@ -1,5 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule, inject, provideAppInitializer } from '@angular/core';
+import { LOCALE_ID, NgModule, inject, provideAppInitializer } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeDa from '@angular/common/locales/da';
 import { MaterialModule } from './material.module';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -33,6 +35,13 @@ import { PriceInputDirective } from './directives/priceInput.directive';
 import { TranslateService } from './services/translate.service';
 import { TranslatePipe } from './translate.pipe';
 import { ClUrlPipe } from './cl-url.pipe';
+import { AktueltComponent } from './components/aktuelt/aktuelt.component';
+import { MakerChatComponent } from './components/maker-chat/maker-chat.component';
+import { MakerInboxComponent } from './components/maker-inbox/maker-inbox.component';
+import { RevealDialogComponent } from './components/reveal-dialog/reveal-dialog.component';
+
+// Dates read the Danish way (29. september 2026) in both languages; the kitchens are Danish.
+registerLocaleData(localeDa);
 
 export function setupTranslateFactory(
   service: TranslateService): Function {
@@ -59,7 +68,11 @@ export function setupTranslateFactory(
         AccountingComponent,
         PriceInputDirective,
         TranslatePipe,
-        ClUrlPipe
+        ClUrlPipe,
+        AktueltComponent,
+        MakerChatComponent,
+        MakerInboxComponent,
+        RevealDialogComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,
@@ -68,7 +81,8 @@ export function setupTranslateFactory(
         MatTableModule,
         FormsModule,
         ReactiveFormsModule], providers: [
-        { provide: MAT_DATE_LOCALE, useValue: 'da-DK' }, AuthService, AuthGuard, SidenavService, TranslateService, provideAppInitializer(() => {
+        { provide: MAT_DATE_LOCALE, useValue: 'da-DK' },
+        { provide: LOCALE_ID, useValue: 'da' }, AuthService, AuthGuard, SidenavService, TranslateService, provideAppInitializer(() => {
         const initializerFn = (setupTranslateFactory)(inject(TranslateService));
         return initializerFn();
       }),

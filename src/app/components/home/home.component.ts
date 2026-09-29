@@ -1,4 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { RevealDialogComponent, revealSeen } from '../reveal-dialog/reveal-dialog.component';
 
 @Component({
     selector: 'app-home',
@@ -9,9 +11,12 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 })
 export class HomeComponent implements OnInit {
 
-  constructor() { }
+  constructor(private dialog: MatDialog) { }
 
   ngOnInit() {
+    if (!revealSeen()) {
+      this.dialog.open(RevealDialogComponent, {maxWidth: '96vw', autoFocus: false});
+    }
   }
 
 }

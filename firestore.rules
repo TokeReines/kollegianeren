@@ -17,6 +17,39 @@ service cloud.firestore {
         && (d.get('userRoom', null) == null || d.userRoom is string || d.userRoom is number);
     }
 
+    // Admins (the maker) have an admins/{uid} document, created only in the Firebase console.
+    function isAdmin() {
+      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function validMessage(d) {
+      return d.keys().hasOnly(['text', 'from', 'createdAt', 'seenByMaker', 'seenByKitchen'])
+        && d.text is string && d.text.size() >= 1 && d.text.size() <= 2000
+        && d.createdAt == request.time
+        && d.seenByMaker == (d.from == 'maker') && d.seenByKitchen == (d.from == 'kitchen');
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // "Aktuelt": readable by every signed-in kitchen, written by admins.
+    match /announcements/{id} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['title', 'body', 'createdAt'])
+        && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 200
+        && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 5000
+        && request.resource.data.createdAt is timestamp;
+      allow delete: if isAdmin();
+    }
+
+    // The maker's inbox reads every kitchen's thread at once.
+    match /{path=**}/messages/{id} {
+      allow read: if isAdmin();
+    }
+
     // One document per kitchen, id == the kitchen's auth uid.
     match /kitchens/{uid} {
       // The register page lists taken kitchens before sign-in. Only id and name live here.
@@ -34,11 +67,23 @@ service cloud.firestore {
           && request.resource.data.timestamp == resource.data.timestamp;
       }
 
-      // products and users (residents) belong to that kitchen alone. Purchases are matched
-      // above; rules are OR'ed, so they are excluded here or this would bypass validation.
+      // "Message your maker": the kitchen and the maker each write their own side and may only
+      // flip their own "seen" flag. Admins cannot read anything else in the kitchen.
+      match /messages/{messageId} {
+        allow read: if isKitchen(uid) || isAdmin();
+        allow create: if validMessage(request.resource.data)
+          && ((isKitchen(uid) && request.resource.data.from == 'kitchen')
+            || (isAdmin() && request.resource.data.from == 'maker'));
+        allow update: if (isKitchen(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByKitchen']))
+          || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByMaker']));
+        allow delete: if false;
+      }
+
+      // products and users (residents) belong to that kitchen alone. Purchases and messages are
+      // matched above; rules are OR'ed, so they are excluded here or this would bypass them.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read, write: if isKitchen(uid) && collection != 'purchases';
+        allow read, write: if isKitchen(uid) && !(collection in ['purchases', 'messages']);
       }
     }
   }

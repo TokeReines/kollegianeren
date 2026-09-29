@@ -8,7 +8,7 @@ const {
 } = require('@firebase/rules-unit-testing');
 const {
   doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, limit, Timestamp, serverTimestamp,
+  query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup,
 } = require('firebase/firestore');
 
 let env;
@@ -28,8 +28,10 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async ctx => {
     const db = ctx.firestore();
+    await setDoc(doc(db, 'admins', 'maker'), {});
     for (const k of [A, B]) {
       await setDoc(doc(db, 'kitchens', k), { id: k, name: k === A ? 'Ny2' : 'Gl4' });
+      await setDoc(doc(db, 'kitchens', k, 'messages', 'm1'), { text: 'hi', from: 'kitchen', createdAt: Timestamp.now(), seenByMaker: false, seenByKitchen: true });
       await setDoc(doc(db, 'kitchens', k, 'users', 'u1'), { name: 'Resident', room: '101', kitchen: k, active: true });
       await setDoc(doc(db, 'kitchens', k, 'products', 'p1'), { name: 'Beer', price: 5, retailPrice: 3, active: true });
       await setDoc(doc(db, 'kitchens', k, 'purchases', 'x1'), {
@@ -151,4 +153,41 @@ test('purchases: every distinct real-world shape from the backup is accepted', {
     await assertSucceeds(addPurchase({ ...rest, timestamp: serverTimestamp() }));
   }
   console.log(`# replayed ${shapes.size} distinct purchase shapes`);
+});
+
+// Maker features (#84, #85).
+const maker = () => asKitchen('maker');
+const msg = (from, extra = {}) => ({ text: 'Hej', from, createdAt: serverTimestamp(), seenByMaker: from === 'maker', seenByKitchen: from === 'kitchen', ...extra });
+test('announcements: every signed-in kitchen reads, only admins post', async () => {
+  await assertSucceeds(getDocs(collection(asKitchen(A), 'announcements')));
+  await assertFails(getDocs(collection(anon(), 'announcements')));
+  await assertFails(addDoc(collection(asKitchen(A), 'announcements'), { title: 'x', body: 'y', createdAt: serverTimestamp() }));
+  await assertSucceeds(addDoc(collection(maker(), 'announcements'), { title: 'Nyt', body: 'Tekst', createdAt: serverTimestamp() }));
+  await assertFails(addDoc(collection(maker(), 'announcements'), { title: '', body: 'Tekst', createdAt: serverTimestamp() }));
+});
+test('admins: nobody can make themselves admin', async () => {
+  await assertFails(setDoc(doc(asKitchen(A), 'admins', A), {}));
+  await assertSucceeds(getDoc(doc(maker(), 'admins', 'maker')));
+  await assertFails(getDoc(doc(asKitchen(A), 'admins', 'maker')));
+});
+test('messages: kitchen writes its own side only', async () => {
+  const col = collection(asKitchen(A), 'kitchens', A, 'messages');
+  await assertSucceeds(addDoc(col, msg('kitchen')));
+  await assertFails(addDoc(col, msg('maker')));
+  await assertFails(addDoc(col, msg('kitchen', { seenByMaker: true })));
+  await assertFails(addDoc(col, msg('kitchen', { text: '' })));
+  await assertFails(addDoc(collection(asKitchen(A), 'kitchens', B, 'messages'), msg('kitchen')));
+  await assertFails(getDocs(collection(asKitchen(A), 'kitchens', B, 'messages')));
+  await assertFails(updateDoc(doc(asKitchen(A), 'kitchens', A, 'messages', 'm1'), { text: 'edited' }));
+  await assertFails(updateDoc(doc(asKitchen(A), 'kitchens', A, 'messages', 'm1'), { seenByMaker: true }));
+  await assertFails(deleteDoc(doc(asKitchen(A), 'kitchens', A, 'messages', 'm1')));
+});
+test('messages: maker reads the inbox, replies, marks seen, and nothing else', async () => {
+  await assertSucceeds(getDocs(collectionGroup(maker(), 'messages')));
+  await assertFails(getDocs(collectionGroup(asKitchen(A), 'messages')));
+  await assertSucceeds(addDoc(collection(maker(), 'kitchens', A, 'messages'), msg('maker')));
+  await assertFails(addDoc(collection(maker(), 'kitchens', A, 'messages'), msg('kitchen')));
+  await assertSucceeds(updateDoc(doc(maker(), 'kitchens', A, 'messages', 'm1'), { seenByMaker: true }));
+  await assertFails(getDocs(collection(maker(), 'kitchens', A, 'purchases')));
+  await assertFails(getDocs(collection(maker(), 'kitchens', A, 'users')));
 });

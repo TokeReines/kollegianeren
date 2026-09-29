@@ -1,0 +1,52 @@
+.reveal {
+  text-align: center;
+  padding: 32px 24px 16px;
+  max-width: 560px;
+
+  h1 {
+    margin: 16px 0;
+  }
+
+  p {
+    line-height: 1.55;
+    text-align: left;
+  }
+}
+
+.ghost {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #ede7f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: haunt 3s ease-in-out infinite;
+  box-shadow: 0 0 40px 8px rgba(103, 58, 183, .35);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(.6) contrast(1.1);
+  }
+
+  .emoji {
+    font-size: 96px;
+  }
+}
+
+@keyframes haunt {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}

@@ -1,0 +1,30 @@
+.page {
+  max-width: 760px;
+  padding: 24px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.announcement,
+.post-form {
+  margin-bottom: 16px;
+}
+
+.body {
+  white-space: pre-line;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.full {
+  width: 100%;
+}
+
+.empty {
+  color: rgba(0, 0, 0, .54);
+}
