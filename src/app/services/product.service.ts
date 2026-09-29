@@ -1,28 +1,29 @@
-import {Injectable} from '@angular/core';
-import {addDoc, collection, deleteDoc, doc, increment, updateDoc} from 'firebase/firestore';
-import {switchMap} from 'rxjs/operators';
-import {Product} from '../interfaces/product';
+import {Injectable, inject} from '@angular/core';
+import {addDoc, deleteDoc, doc, increment, updateDoc} from 'firebase/firestore';
+import {Observable} from 'rxjs';
+import {EditableProduct, Product, ProductFields} from '../interfaces/product';
 import {AuthService} from './auth.service';
-import {db, watch} from '../firebase';
+import {kitchenCollection, watchInKitchen} from './kitchen-data';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({providedIn: 'root'})
 export class ProductService {
+  private readonly auth = inject(AuthService);
 
-  constructor(private auth: AuthService) {
+  private products() {
+    return kitchenCollection(this.auth.currentKitchenId, 'products');
   }
 
-  private products(uid = this.auth.currentKitchenId) {
-    return collection(db, 'kitchens', uid, 'products');
+  list(): Observable<Product[]> {
+    return watchInKitchen<Product>(this.auth.kitchenId$, kid => kitchenCollection(kid, 'products'));
   }
 
-  list() {
-    return this.auth.kitchenId.pipe(switchMap(uid => watch<Product>(this.products(uid))));
+  add(product: ProductFields) {
+    return addDoc(this.products(), product);
   }
 
-  update(product: Product) {
-    return updateDoc(doc(this.products(), product.id), {...product});
+  // Only the given fields: writing the whole product back could undo sales made meanwhile.
+  update(product: Product, fields: Partial<EditableProduct>) {
+    return updateDoc(doc(this.products(), product.id), fields);
   }
 
   delete(product: Product) {
@@ -36,9 +37,5 @@ export class ProductService {
 
   setStock(productId: string, stock: number | null) {
     return updateDoc(doc(this.products(), productId), {stock});
-  }
-
-  add(product) {
-    return addDoc(this.products(), product);
   }
 }

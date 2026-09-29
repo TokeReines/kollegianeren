@@ -1,15 +1,12 @@
-import { Pipe, PipeTransform } from '@angular/core';
-import { TranslateService } from './services/translate.service';
+import {Pipe, PipeTransform, inject} from '@angular/core';
+import {TranslateService} from './services/translate.service';
 
-@Pipe({
-    name: 'translate',
-    pure: false,
-    standalone: false
-})
+// {{ "KEY" | translate }}. Impure, so it re-reads the texts when the language changes.
+@Pipe({name: 'translate', pure: false})
 export class TranslatePipe implements PipeTransform {
-  constructor(private translate: TranslateService) {}
+  private readonly i18n = inject(TranslateService);
 
-  transform(key: any): any {
-    return this.translate.data[key] || key;
+  transform(key: string): string {
+    return this.i18n.dictionary()[key] || key;
   }
 }

@@ -1,38 +1,49 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {Observable} from 'rxjs';
-import {environment} from '../../../environments/environment';
-import {Announcement, MakerService} from '../../services/maker.service';
+import {Component, inject, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCardModule} from '@angular/material/card';
 import {MatDialog} from '@angular/material/dialog';
-import {RevealDialogComponent} from '../reveal-dialog/reveal-dialog.component';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
+import {MatInputModule} from '@angular/material/input';
+import {environment} from '../../../environments/environment';
+import {MakerService} from '../../services/maker.service';
+import {Notify} from '../../services/notify.service';
+import {TranslatePipe} from '../../translate.pipe';
+import {MakerChatComponent} from '../maker-chat/maker-chat.component';
+import {openReveal} from '../reveal-dialog/reveal-dialog.component';
 
-// "Aktuelt": what's new and what's planned, written by the maker. Admins can post here.
+// "Aktuelt": what's new and what's planned, written by the maker, next to the chat with him.
+// Admins can post here.
 @Component({
   selector: 'app-aktuelt',
+  imports: [DatePipe, FormsModule, RouterLink, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
+    TranslatePipe, MakerChatComponent],
   templateUrl: './aktuelt.component.html',
-  styleUrls: ['./aktuelt.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false
+  styleUrl: './aktuelt.component.scss',
 })
 export class AktueltComponent {
-  announcements: Observable<Announcement[]> = this.maker.announcements();
-  isAdmin = this.maker.isAdmin;
-  coffeeUrl = environment.maker.coffeeUrl;
-  title = '';
-  body = '';
+  private readonly maker = inject(MakerService);
+  private readonly notify = inject(Notify);
+  private readonly dialog = inject(MatDialog);
 
-  constructor(private maker: MakerService, private snackBar: MatSnackBar, private dialog: MatDialog) {
+  protected readonly announcements = toSignal(this.maker.announcements(), {initialValue: []});
+  protected readonly isAdmin = this.maker.isAdmin;
+  protected readonly coffeeUrl = environment.maker.coffeeUrl;
+  protected readonly title = signal('');
+  protected readonly body = signal('');
+
+  protected showReveal() {
+    openReveal(this.dialog);
   }
 
-  showReveal() {
-    this.dialog.open(RevealDialogComponent, {maxWidth: '96vw', autoFocus: false});
-  }
-
-  post() {
-    this.maker.postAnnouncement(this.title.trim(), this.body.trim())
-      .then(() => {
-        this.title = '';
-        this.body = '';
-      }, err => this.snackBar.open(err.message, 'OK', {duration: 6000}));
+  protected post() {
+    this.maker.postAnnouncement(this.title().trim(), this.body().trim()).then(() => {
+      this.title.set('');
+      this.body.set('');
+    }, this.notify.error);
   }
 }

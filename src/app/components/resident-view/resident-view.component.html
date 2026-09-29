@@ -1,31 +1,31 @@
 <div class="page">
-  @if (loading) {
-    <mat-spinner diameter="40"></mat-spinner>
-  } @else if (notFound) {
+  @if (loading()) {
+    <mat-spinner diameter="40" />
+  } @else if (!tab()) {
     <h1>{{ "ME_NOT_FOUND_TITLE" | translate }}</h1>
     <p class="muted">{{ "ME_NOT_FOUND" | translate }}</p>
-  } @else if (tab) {
+  } @else if (tab(); as tab) {
     <h1>{{ tab.name }}</h1>
     @if (tab.room) {
       <p class="muted">{{ "ROOM" | translate }} {{ tab.room }}</p>
     }
 
     <div class="tile">
-      <div class="value">{{ months[0].kr | number:'1.0-2' }} kr.</div>
-      <div class="label">{{ "ME_THIS_MONTH" | translate }} ({{ months[0].count }} {{ "PIECES" | translate }})</div>
+      <div class="value">{{ months()[0].kr | number:'1.0-2' }} kr.</div>
+      <div class="label">{{ "ME_THIS_MONTH" | translate }} ({{ months()[0].count }} {{ "PIECES" | translate }})</div>
     </div>
 
     <h2>{{ "ME_MONTHS" | translate }}</h2>
     <table class="data">
-      @for (m of months; track m.label) {
+      @for (m of months(); track m.label) {
         <tr><td>{{ m.label | date:'MMMM y' }}</td><td class="num">{{ m.count }} {{ "PIECES" | translate }}</td><td class="num">{{ m.kr | number:'1.0-2' }} kr.</td></tr>
       }
     </table>
 
     <h2>{{ "ME_RECENT" | translate }}</h2>
     <table class="data">
-      @for (p of recent; track $index) {
-        <tr><td>{{ p.timestamp?.toDate() | date:'d/M HH:mm' }}</td><td>{{ p.amount }} × {{ p.productName }}</td><td class="num">{{ p.price | number:'1.0-2' }} kr.</td></tr>
+      @for (p of recent(); track $index) {
+        <tr><td>{{ p.timestamp.toDate() | date:'d/M HH:mm' }}</td><td>{{ p.amount }} × {{ p.productName }}</td><td class="num">{{ p.price | number:'1.0-2' }} kr.</td></tr>
       } @empty {
         <tr><td class="muted">{{ "ME_NONE" | translate }}</td></tr>
       }

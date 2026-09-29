@@ -1,29 +1,31 @@
-.export-button {
+.filters {
   display: flex;
-  align-items: center;
-  margin-left: 12px;
-  padding-bottom: 20px;
-}
-
-[layout="row"] {
   flex-wrap: wrap;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .accounting-scroll {
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 12px;
+  max-height: calc(100vh - 220px);
 }
 
 .accounting-table {
   th, td {
     white-space: nowrap;
     padding: 0 12px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 
-  // Product names are long: up to two lines, right-aligned over the numbers, full name on hover.
-  th:not(.mat-column-name):not(.mat-column-room):not(.mat-column-total) {
+  .mat-column-name {
+    text-align: left;
+  }
+
+  // Product names are long: up to two lines, centred over the counts, full name on hover.
+  th.product {
     white-space: normal;
     min-width: 64px;
     max-width: 120px;
@@ -42,11 +44,6 @@
   th:not(.mat-column-name) ::ng-deep .mat-sort-header-container {
     justify-content: center;
     padding-left: 18px;
-  }
-
-  td:not(.mat-column-name) {
-    text-align: center;
-    font-variant-numeric: tabular-nums;
   }
 
   .mat-mdc-table-sticky {

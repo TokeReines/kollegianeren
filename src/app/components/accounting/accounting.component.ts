@@ -1,109 +1,84 @@
-import {Subscription} from 'rxjs';
-import {Component, ElementRef, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
+import {Component, computed, effect, inject, signal, viewChild} from '@angular/core';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {DecimalPipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {switchMap} from 'rxjs';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatSort, MatSortModule} from '@angular/material/sort';
+import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {PurchaseService} from '../../services/purchase.service';
-import { MatSort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
-import {ExcelService} from '../../services/excel.service';
+import {Notify} from '../../services/notify.service';
+import {TranslateService} from '../../services/translate.service';
+import {sortValue} from '../../table-sort';
+import {TranslatePipe} from '../../translate.pipe';
+import {AccountRow, accounts} from './accounting';
 
+// Product columns get a prefix, so a product called "name" or "total" cannot clash.
+const PRODUCT = 'p:';
+
+// The treasurer's view: what each resident bought in a period, and the total to collect.
 @Component({
-    selector: 'app-accounting',
-    templateUrl: './accounting.component.html',
-    styleUrls: ['./accounting.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-accounting',
+  imports: [DecimalPipe, FormsModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSortModule,
+    MatTableModule, MatTooltipModule, TranslatePipe],
+  templateUrl: './accounting.component.html',
+  styleUrl: './accounting.component.scss',
 })
-export class AccountingComponent implements OnInit {
-  from_date = new Date();
-  to_date = new Date();
-  dataSource: MatTableDataSource<any>;
-  displayedColumns: any;
+export class AccountingComponent {
+  private readonly i18n = inject(TranslateService);
+  private readonly notify = inject(Notify);
+  private readonly purchaseService = inject(PurchaseService);
 
-  @ViewChild(MatSort, { static: true }) sort: MatSort;
-  private rangeSubscription: Subscription;
-  // The generated columns are product names; these three get translated headers.
-  fixedColumns: Record<string, string> = {name: 'NAME', room: 'ROOM', total: 'BEERSYSTEM_TOTAL'};
-  @ViewChild('accountingTable') accountingTable: any;
+  protected readonly from = signal(monthAgo());
+  protected readonly to = signal(new Date());
+  private readonly range = computed(() => ({from: this.from(), to: this.to()}));
+  private readonly purchases = toSignal(
+    toObservable(this.range).pipe(switchMap(({from, to}) => this.purchaseService.between(from, to))), {initialValue: []});
+  private readonly accounts = computed(() => accounts(this.purchases()));
+  protected readonly productColumns = computed(() => this.accounts().products.map(name => ({id: PRODUCT + name, name})));
+  protected readonly displayedColumns = computed(() => ['name', 'room', ...this.productColumns().map(c => c.id), 'total']);
+  protected readonly table = new MatTableDataSource<AccountRow>([]);
+  private readonly sort = viewChild.required(MatSort);
 
-  constructor(private purchaseService: PurchaseService, private excelService: ExcelService) {
-    this.from_date.setMonth(this.from_date.getMonth() - 1);
+  protected readonly fromFilter = (date: Date | null) => !date || date <= this.to();
+  protected readonly toFilter = (date: Date | null) => !date || date >= this.from();
+
+  constructor() {
+    this.table.sortingDataAccessor = (row, column) => column.startsWith(PRODUCT)
+      ? row.units[column.slice(PRODUCT.length)] ?? 0
+      : sortValue(row[column as 'name' | 'room' | 'total']);
+    effect(() => this.table.sort = this.sort());
+    effect(() => this.table.data = this.accounts().rows);
   }
 
-  ngOnInit() {
-    this._setTableData();
+  protected async export() {
+    const {rows, products} = this.accounts();
+    const t = (k: string) => this.i18n.t(k);
+    const bold = (value: string) => ({value, fontWeight: 'bold' as const});
+    const sheet = [
+      [bold(t('NAME')), bold(t('ROOM')), ...products.map(bold), bold(t('BEERSYSTEM_TOTAL'))],
+      ...rows.map(r => [r.name, r.room, ...products.map(p => r.units[p] ?? null), r.total]),
+    ];
+    try {
+      // Loaded on first use; only the treasurer ever needs it.
+      const {default: writeXlsxFile} = await import('write-excel-file/browser');
+      await writeXlsxFile(sheet).toFile(`${isoDate(this.from())}_${isoDate(this.to())}.xlsx`);
+    } catch (e) {
+      this.notify.error(e);
+    }
   }
+}
 
-  _setTableData() {
-    // Close the previous range's listener; otherwise every date change leaves one open and re-reads the range.
-    this.rangeSubscription?.unsubscribe();
-    this.rangeSubscription = this.purchaseService.list_from_to(this.from_date, this.to_date).subscribe(purchases => {
-      const rows = [];
-      let columns = ['name', 'room'];
-      const formatted_rows = {};
-      purchases.map(purchase => {
-        if (!(purchase.userId in formatted_rows)) {
-          formatted_rows[purchase.userId] = {
-            userId: purchase.userId,
-            name: purchase.userName,
-            room: purchase.userRoom,
-            products: {},
-            total: 0
-          };
-        }
-        const products = formatted_rows[purchase.userId]['products'];
-        if (!(purchase.productName in products)) {
-          products[purchase.productName] = {name: purchase.productName, amount: purchase.amount, price: purchase.price};
-        } else {
-          products[purchase.productName]['amount'] += purchase.amount;
-        }
+function monthAgo(): Date {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  return d;
+}
 
-        formatted_rows[purchase.userId]['total'] += purchase.price;
-      });
-      const product_columns = [];
-      Object.keys(formatted_rows).forEach(userId => {
-        const value = formatted_rows[userId];
-        const row = {name: value['name'], room: value['room'], total: Math.round(value['total'] * 100) / 100};
-        Object.keys(value['products']).forEach(key => {
-          const product = value['products'][key];
-          row[product.name] = product['amount'];
-          if (!product_columns.includes(product.name)) {
-            product_columns.push(product.name);
-          }
-        });
-        rows.push(row);
-      });
-      product_columns.sort();
-      columns = columns.concat(product_columns);
-      columns.push('total');
-      this.displayedColumns = columns;
-      this.dataSource = new MatTableDataSource(rows);
-      this.dataSource.sortingDataAccessor = (row, key) => {
-        const v = row[key];
-        return key === 'room' && /^\d+$/.test(String(v)) ? Number(v) : typeof v === 'string' ? v.toLocaleLowerCase('da') : (v ?? 0);
-      };
-      this.dataSource.sort = this.sort;
-    });
-  }
-
-  exportAsXLSX(): void {
-    const name = this.from_date.toLocaleDateString() + '_' + this.to_date.toLocaleDateString();
-    this.excelService.exportAsExcelFile(this.dataSource.data, name);
-  }
-
-
-  fromDateFilter = (date: Date): boolean => {
-    return !this.to_date || date <= this.to_date;
-  };
-
-  toDateFilter = (date: Date): boolean => {
-    return !this.from_date || date >= this.from_date;
-  };
-
-  fromDateChange() {
-    this._setTableData();
-  }
-
-  toDateChange() {
-    this._setTableData();
-  }
-
+function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

@@ -1,61 +1,58 @@
-import {AfterViewInit, ChangeDetectionStrategy, Component, OnDestroy, ViewChild} from '@angular/core';
-import {MatSort} from '@angular/material/sort';
-import {MatTableDataSource} from '@angular/material/table';
-import {Subscription} from 'rxjs';
+import {Component, computed, effect, inject, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {DatePipe, DecimalPipe} from '@angular/common';
+import {MatButtonModule} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSort, MatSortModule} from '@angular/material/sort';
+import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 import {Purchase} from '../../../interfaces/purchase';
-import {PurchaseService} from '../../../services/purchase.service';
+import {millis} from '../../../time';
 import {AuthService} from '../../../services/auth.service';
+import {Notify} from '../../../services/notify.service';
+import {PurchaseService} from '../../../services/purchase.service';
 import {TranslateService} from '../../../services/translate.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {sortValue} from '../../../table-sort';
+import {TranslatePipe} from '../../../translate.pipe';
 import {Confirm} from '../../confirm-dialog/confirm-dialog.component';
 
+// The latest purchases, from the buy page. Managers can delete one; tablets only look.
 @Component({
   selector: 'app-history',
+  imports: [DatePipe, DecimalPipe, MatButtonModule, MatIconModule, MatSortModule, MatTableModule, TranslatePipe],
   templateUrl: './history-bottom-sheet.component.html',
-  styleUrls: ['./history-bottom-sheet.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false
+  styleUrl: './history-bottom-sheet.component.scss',
 })
-export class HistoryBottomSheetComponent implements AfterViewInit, OnDestroy {
-  purchases = new MatTableDataSource<Purchase>([]);
-  displayedColumns = ['timestamp', 'name', 'amount', 'price', 'user', 'delete'];
-  @ViewChild(MatSort) sort: MatSort;
-  private sub: Subscription;
-  private roleSub: Subscription;
+export class HistoryBottomSheetComponent {
+  private readonly purchaseService = inject(PurchaseService);
+  private readonly auth = inject(AuthService);
+  private readonly confirm = inject(Confirm);
+  private readonly i18n = inject(TranslateService);
+  private readonly notify = inject(Notify);
 
-  constructor(public purchaseService: PurchaseService, auth: AuthService, private confirm: Confirm,
-              private translate: TranslateService, private snackBar: MatSnackBar) {
-    this.roleSub = auth.role.subscribe(role => this.displayedColumns = ['timestamp', 'name', 'amount', 'price', 'user', ...(role === 'tablet' ? [] : ['delete'])]);
+  private readonly purchases = toSignal(this.purchaseService.newest(), {initialValue: []});
+  private readonly sort = viewChild.required(MatSort);
+  protected readonly table = new MatTableDataSource<Purchase>([]);
+  protected readonly displayedColumns = computed(() =>
+    ['timestamp', 'name', 'amount', 'price', 'user', ...(this.auth.canManage() ? ['delete'] : [])]);
+
+  constructor() {
     // Column ids differ from the field names, and time sorts by value, not by its text.
-    this.purchases.sortingDataAccessor = (p, column) => {
+    this.table.sortingDataAccessor = (p, column) => {
       switch (column) {
-        case 'timestamp': return p.timestamp?.toMillis?.() || 0;
-        case 'name': return (p.productName || '').toLowerCase();
-        case 'user': return (p.userName || '').toLowerCase();
-        case 'amount': return Number(p.amount) || 0;
-        case 'price': return Number(p.price) || 0;
-        default: return '';
+        case 'timestamp': return millis(p.timestamp);
+        case 'name': return sortValue(p.productName);
+        case 'user': return sortValue(p.userName);
+        default: return Number(p[column as 'amount' | 'price']) || 0;
       }
     };
-    this.sub = this.purchaseService.list_newest().subscribe(list => this.purchases.data = list);
+    effect(() => this.table.sort = this.sort());
+    effect(() => this.table.data = this.purchases());
   }
 
-  async remove(p: Purchase) {
-    const t = (k: string) => this.translate.data[k] || k;
-    const ok = await this.confirm.ask({
-      title: t('HISTORY_DELETE_TITLE'), message: `${p.amount} × ${p.productName}, ${p.userName}`, confirm: t('DELETE'), danger: true,
-    });
-    if (ok) {
-      this.purchaseService.delete(p).catch(e => this.snackBar.open(e.message, 'OK', {duration: 6000}));
+  protected async remove(p: Purchase) {
+    const t = (k: string) => this.i18n.t(k);
+    if (await this.confirm.ask({title: t('HISTORY_DELETE_TITLE'), message: `${p.amount} × ${p.productName}, ${p.userName}`, confirm: t('DELETE'), danger: true})) {
+      this.purchaseService.delete(p).catch(this.notify.error);
     }
-  }
-
-  ngAfterViewInit() {
-    this.purchases.sort = this.sort;
-  }
-
-  ngOnDestroy() {
-    this.sub.unsubscribe();
-    this.roleSub.unsubscribe();
   }
 }

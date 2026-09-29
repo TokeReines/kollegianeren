@@ -1,7 +1,7 @@
 import {initializeApp} from 'firebase/app';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {
-  CollectionReference, DocumentData, Query, SnapshotOptions, connectFirestoreEmulator, initializeFirestore, onSnapshot,
+  DocumentReference, Query, SnapshotOptions, connectFirestoreEmulator, initializeFirestore, onSnapshot,
   persistentLocalCache, persistentMultipleTabManager,
 } from 'firebase/firestore';
 import {Observable} from 'rxjs';
@@ -18,13 +18,22 @@ if (environment.emulators) {
 }
 
 // Purchases written with serverTimestamp() show an estimated time until the server confirms.
-const snapshotOptions: SnapshotOptions = {serverTimestamps: 'estimate'};
+export const snapshotOptions: SnapshotOptions = {serverTimestamps: 'estimate'};
 
 // Live query results as an Observable, each document's data plus its id.
-export function watch<T>(q: Query<DocumentData> | CollectionReference<DocumentData>): Observable<T[]> {
+export function watch<T>(q: Query): Observable<T[]> {
   return new Observable<T[]>(subscriber => onSnapshot(
     q,
     snap => subscriber.next(snap.docs.map(d => ({id: d.id, ...d.data(snapshotOptions)}) as T)),
+    err => subscriber.error(err),
+  ));
+}
+
+// One live document, or null while it does not exist.
+export function watchDoc<T>(ref: DocumentReference): Observable<T | null> {
+  return new Observable<T | null>(subscriber => onSnapshot(
+    ref,
+    snap => subscriber.next(snap.exists() ? {id: snap.id, ...snap.data(snapshotOptions)} as T : null),
     err => subscriber.error(err),
   ));
 }

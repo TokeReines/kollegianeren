@@ -31,3 +31,14 @@
     flex: 0 0 168px;
   }
 }
+
+.stock-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stock {
+  min-width: 2ch;
+  text-align: right;
+}

@@ -23,9 +23,20 @@ Kollegianeren is a dorm kitchen beer-tab app that is used every day. Read this b
 - After editing `firestore.rules` from Windows (`\\wsl.localhost`), restart the Firestore emulator; it does not see the change.
 - Check UI changes in a browser in light and dark, at tablet (1280x800) and phone (390x844) sizes, before calling them done.
 
+## Code
+
+- Modern Angular only: standalone components, `inject()`, signals (`signal`, `computed`, `input`, `model`, `viewChild`, `resource`), `toSignal` for Firestore streams, typed reactive forms, `@if`/`@for`. No NgModules, no constructor injection, no `@Input`/`@ViewChild`, no `async` pipe for component state.
+- Zoneless with OnPush-by-default change detection: state that the template reads must be a signal.
+- `strict` TypeScript and `strictTemplates`. No `any`; Firestore timestamps are `Timestamp`.
+- Pages are lazy routes (`app.routes.ts`); the buy page stays eager. Management pages use `manageGuard`.
+- Business logic lives in plain functions next to the model (`interfaces/*.ts`, `services/residency.ts`, `components/*/accounting.ts`, `stats.ts`) and is unit tested in `domain.spec.ts`. Services only do I/O.
+- Reuse the shared pieces instead of copying: `Notify` (snackbars, clipboard), `Confirm`, `ProductPictureComponent`, `ResidentAvatarComponent`, `ImagePickerComponent`, `CloudinaryService`, `kr()`, `millis()`, `sortValue()`.
+- Partial updates only (`updateDoc` with the edited fields); never write a whole document back, it can undo sales made meanwhile.
+- Before pushing: `npm run lint`, `npm test`, `npx ng build -c production`. CI runs all three.
+
 ## UI
 
-- Angular with Angular Material 3 (`mat.theme()` in `src/styles.scss`). Use the `--mat-sys-*` tokens, never hard-coded colours (product photo tiles are the one exception).
+- Angular Material 3 (`mat.theme()` in `src/styles.scss`). Use the `--mat-sys-*` tokens, never hard-coded colours (product photo tiles are the one exception).
 - Outlined cards, outlined form fields, `matTooltip` rather than `title`, and `Confirm` (confirm-dialog) rather than `confirm()`/`prompt()`.
 - Every user-facing string goes through `src/assets/i18n/da.json` and `en.json`.
 - No long dashes (em or en dash) in user-facing text in either language. Use a full stop, comma or colon.

@@ -1,3 +1,7 @@
+.mat-toolbar {
+  padding: 0 4px;
+}
+
 // M3 top app bar title.
 .title {
   font: var(--mat-sys-title-large);
@@ -8,14 +12,10 @@
   min-width: 0;
 }
 
-// The account button: the dorm's picture as a 32px avatar in a 48px touch target.
-.mat-toolbar-row {
-  padding: 0 4px 0 4px;
-}
-
-// Tablets: the menu button lines up with the rail's icons (88px rail, 48px button).
+// Tablets: the menu button lines up with the rail's icons (88px rail, 48px button), and the title
+// with the page's left edge.
 @media (min-width: 761px) {
-  .mat-toolbar-row {
+  .mat-toolbar {
     padding-left: 20px;
   }
 
@@ -28,6 +28,7 @@
   }
 }
 
+// The account button: the dorm's picture filling a 48px touch target.
 .account-button.mat-mdc-icon-button {
   margin-right: 4px;
   width: 48px;
@@ -36,12 +37,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
 
-.account-button img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  display: block;
+  img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
 }

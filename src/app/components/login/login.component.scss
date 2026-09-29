@@ -1,15 +1,24 @@
+.register-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.error {
+  color: var(--mat-sys-error);
+  margin: 0;
+}
+
 .reset-password-link {
-    text-decoration: underline;
-    color: var(--mat-sys-primary);
-    cursor: pointer;
-    align-self: center;
-    margin: 24px 0 8px;
+  align-self: center;
+  margin: 24px 0 8px;
 }
-
-.mat-mdc-card-header {
-  justify-content: center;
-}
-
 
 .privacy-link {
   align-self: center;

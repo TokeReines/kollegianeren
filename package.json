@@ -7,11 +7,12 @@
     "build": "ng build",
     "build:dev": "ng build -c dev",
     "build:prod": "ng build -c production",
-    "deploy:dev": "ng build -c dev && firebase deploy --only hosting --project dev"
+    "deploy:dev": "ng build -c dev && firebase deploy --only hosting --project dev",
+    "lint": "ng lint",
+    "test": "ng test --watch=false"
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "~22.2.0",
     "@angular/cdk": "~22.2.0",
     "@angular/common": "~22.2.0",
     "@angular/compiler": "~22.2.0",
@@ -19,22 +20,25 @@
     "@angular/forms": "~22.2.0",
     "@angular/material": "~22.2.0",
     "@angular/platform-browser": "~22.2.0",
-    "@angular/platform-browser-dynamic": "~22.2.0",
     "@angular/router": "~22.2.0",
     "@angular/service-worker": "~22.2.0",
-    "file-saver": "^2.0.0",
     "firebase": "^12.19.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.3.0",
-    "xlsx": "^0.14.1",
-    "zone.js": "~0.16.3"
+    "write-excel-file": "^4.1.1"
   },
   "devDependencies": {
     "@angular/build": "~22.2.0",
     "@angular/cli": "~22.2.0",
     "@angular/compiler-cli": "~22.2.0",
     "@angular/language-service": "~22.2.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.0.0",
-    "typescript": "~6.0.3"
+    "angular-eslint": "22.5.0",
+    "eslint": "^10.9.1",
+    "jsdom": "^30.1.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "^4.1.11"
   }
 }

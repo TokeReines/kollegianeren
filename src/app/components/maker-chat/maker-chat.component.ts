@@ -1,56 +1,62 @@
-import {AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnDestroy, ViewChild} from '@angular/core';
+import {Component, ElementRef, afterNextRender, booleanAttribute, effect, inject, input, signal, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {Subscription} from 'rxjs';
-import {Message, MakerService} from '../../services/maker.service';
+import {MatButtonModule} from '@angular/material/button';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MakerService} from '../../services/maker.service';
+import {Notify} from '../../services/notify.service';
+import {TranslatePipe} from '../../translate.pipe';
 
 // The kitchen's side of "Message your maker": one thread per kitchen.
 @Component({
   selector: 'app-maker-chat',
+  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
   templateUrl: './maker-chat.component.html',
-  styleUrls: ['./maker-chat.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false
+  styleUrl: './maker-chat.component.scss',
 })
-export class MakerChatComponent implements AfterViewInit, OnDestroy {
+export class MakerChatComponent {
+  private readonly maker = inject(MakerService);
+  private readonly notify = inject(Notify);
+
   // Shown inside Aktuelt rather than as its own page.
-  @Input() embedded = false;
-  photos = [
+  readonly embedded = input(false, {transform: booleanAttribute});
+  protected readonly photos = [
     {src: 'assets/img/maker/then.jpg', caption: 'MAKER_PHOTO_THEN'},
     {src: 'assets/img/maker/dorm-802.jpg', caption: 'MAKER_PHOTO_DORM'},
     {src: 'assets/img/maker/today.jpg', caption: 'MAKER_PHOTO_TODAY'},
   ];
-  @ViewChild('composer') composer: ElementRef<HTMLTextAreaElement>;
-  messages: Message[] = [];
-  text = '';
-  private sub: Subscription;
+  protected readonly messages = toSignal(this.maker.thread(), {initialValue: []});
+  protected readonly text = signal('');
+  private readonly composer = viewChild<ElementRef<HTMLTextAreaElement>>('composer');
 
-  constructor(private maker: MakerService, private snackBar: MatSnackBar, private route: ActivatedRoute) {
-    this.sub = this.maker.thread().subscribe(messages => {
-      this.messages = messages;
-      this.maker.markSeenByKitchen(messages);
+  constructor() {
+    // Reading the thread marks the maker's replies as seen.
+    effect(() => {
+      this.maker.markSeenByKitchen(this.messages()).catch(() => undefined);
+    });
+    // Linked from the welcome as /aktuelt#chat: bring the composer into view.
+    const fragment = inject(ActivatedRoute).snapshot.fragment;
+    afterNextRender(() => {
+      if (fragment === 'chat') {
+        const el = this.composer()?.nativeElement;
+        el?.closest('section, .page')?.scrollIntoView({behavior: 'smooth'});
+        el?.focus();
+      }
     });
   }
 
-  send() {
-    const text = this.text.trim();
-    this.text = '';
-    this.maker.send(text).catch(err => {
-      this.text = text;
-      this.snackBar.open(err.message, 'OK', {duration: 6000});
-    });
-  }
-
-  ngAfterViewInit() {
-    if (this.route.snapshot.fragment === 'chat') {
-      setTimeout(() => {
-        this.composer?.nativeElement.closest('section, .page')?.scrollIntoView({behavior: 'smooth'});
-        this.composer?.nativeElement.focus();
-      });
+  protected send() {
+    const text = this.text().trim();
+    if (!text) {
+      return;
     }
-  }
-
-  ngOnDestroy() {
-    this.sub.unsubscribe();
+    this.text.set('');
+    this.maker.send(text).catch(err => {
+      this.text.set(text);
+      this.notify.error(err);
+    });
   }
 }

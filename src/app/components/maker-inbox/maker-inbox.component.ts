@@ -1,51 +1,57 @@
-import {ChangeDetectionStrategy, Component, OnDestroy} from '@angular/core';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {Subscription} from 'rxjs';
-import {MakerService, Thread} from '../../services/maker.service';
+import {Component, computed, effect, inject, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatListModule} from '@angular/material/list';
+import {MakerService} from '../../services/maker.service';
+import {Thread} from '../../interfaces/message';
+import {Notify} from '../../services/notify.service';
+import {TranslatePipe} from '../../translate.pipe';
 
 // The maker's inbox: every kitchen's thread, newest activity first. Admins only.
 @Component({
   selector: 'app-maker-inbox',
+  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatListModule, TranslatePipe],
   templateUrl: './maker-inbox.component.html',
-  styleUrls: ['./maker-inbox.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false
+  styleUrl: './maker-inbox.component.scss',
 })
-export class MakerInboxComponent implements OnDestroy {
-  isAdmin = this.maker.isAdmin;
-  threads: Thread[] = [];
-  selectedId: string | null = null;
-  text = '';
-  private sub: Subscription;
+export class MakerInboxComponent {
+  private readonly maker = inject(MakerService);
+  private readonly notify = inject(Notify);
 
-  constructor(private maker: MakerService, private snackBar: MatSnackBar) {
-    this.sub = this.maker.inbox().subscribe(threads => {
-      this.threads = threads;
-      if (this.selected) {
-        this.maker.markSeenByMaker(this.selected);
+  protected readonly isAdmin = this.maker.isAdmin;
+  protected readonly threads = toSignal(this.maker.inbox(), {initialValue: []});
+  protected readonly selectedId = signal<string | null>(null);
+  protected readonly selected = computed(() => this.threads().find(t => t.kitchenId === this.selectedId()));
+  protected readonly text = signal('');
+
+  constructor() {
+    // An open thread is read: new messages in it are marked seen as they arrive.
+    effect(() => {
+      const thread = this.selected();
+      if (thread) {
+        this.maker.markSeenByMaker(thread).catch(() => undefined);
       }
     });
   }
 
-  get selected(): Thread | undefined {
-    return this.threads.find(t => t.kitchenId === this.selectedId);
+  protected open(thread: Thread) {
+    this.selectedId.set(thread.kitchenId);
   }
 
-  open(thread: Thread) {
-    this.selectedId = thread.kitchenId;
-    this.maker.markSeenByMaker(thread);
-  }
-
-  reply() {
-    const text = this.text.trim();
-    this.text = '';
-    this.maker.reply(this.selectedId, text).catch(err => {
-      this.text = text;
-      this.snackBar.open(err.message, 'OK', {duration: 6000});
+  protected reply() {
+    const text = this.text().trim();
+    const kitchenId = this.selectedId();
+    if (!text || !kitchenId) {
+      return;
+    }
+    this.text.set('');
+    this.maker.reply(kitchenId, text).catch(err => {
+      this.text.set(text);
+      this.notify.error(err);
     });
-  }
-
-  ngOnDestroy() {
-    this.sub.unsubscribe();
   }
 }

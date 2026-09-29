@@ -1,23 +1,13 @@
-import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
-import {AuthService} from './services/auth.service';
-import { MatSidenav } from '@angular/material/sidenav';
-import {SidenavService} from './services/sidenav.service';
+import {Component, inject} from '@angular/core';
+import {RouterOutlet} from '@angular/router';
 import {ThemeService} from './services/theme.service';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  template: '<router-outlet />',
 })
-export class AppComponent implements OnInit {
-  @ViewChild('sidenav') public sidenav: MatSidenav;
-
-  constructor(public auth: AuthService, private sidenavService: SidenavService, theme: ThemeService) {
-  }
-
-  ngOnInit(): void {
-    this.sidenavService.setSidenav(this.sidenav);
-  }
+export class AppComponent {
+  // Applies the saved light/dark choice before the first page renders.
+  private readonly theme = inject(ThemeService);
 }

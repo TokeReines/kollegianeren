@@ -1,36 +1,36 @@
-<app-language-button></app-language-button>
-<div class="register-form" layout="column">
+<app-language-button />
+<div class="register-form">
   <mat-card>
     <mat-card-header>
       <mat-card-title>{{ "REGISTER_KITCHEN" | translate }}</mat-card-title>
     </mat-card-header>
-    <mat-card-content>
-      <form name="registerForm" layout="column" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-card-content class="fields">
         <p class="hint">{{ "REGISTER_INVITE_HINT" | translate }}</p>
         <mat-form-field>
           <mat-label>{{ "REGISTER_INVITE_CODE" | translate }}</mat-label>
-          <input matInput formControlName="code" autocomplete="off" (blur)="check()" (keyup.enter)="check()">
-          @if (inviteError) {
-            <mat-hint class="error">{{ inviteError }}</mat-hint>
+          <input matInput formControlName="code" autocomplete="off" (blur)="check()" (keydown.enter)="check(); $event.preventDefault()">
+          @if (inviteError()) {
+            <mat-hint class="error">{{ inviteError() }}</mat-hint>
           }
         </mat-form-field>
 
-        @if (invite) {
+        @if (validInvite(); as i) {
           <p class="grant">
-            @if (isReferral) {
+            @if (isReferral()) {
               {{ "REGISTER_GRANT_NEW" | translate }}
             } @else {
-              {{ "REGISTER_GRANT_JOIN" | translate }} <b>{{ inviteKitchen }}</b>
-              ({{ ("ROLE_" + invite.role.toUpperCase()) | translate }}).
+              {{ "REGISTER_GRANT_JOIN" | translate }} <b>{{ inviteKitchen() }}</b>
+              ({{ ("ROLE_" + i.role.toUpperCase()) | translate }}).
             }
           </p>
 
-          @if (isReferral) {
+          @if (isReferral()) {
             <mat-form-field>
               <mat-label>{{ "REGISTER_KITCHEN_NAME" | translate }}</mat-label>
               <input matInput formControlName="kitchenName" maxlength="40" list="dorm-kitchens">
               <datalist id="dorm-kitchens">
-                @for (name of suggestions; track name) {
+                @for (name of suggestions(); track name) {
                   <option [value]="name"></option>
                 }
               </datalist>
@@ -44,21 +44,20 @@
 
           <mat-form-field>
             <mat-label>{{ "REGISTER_CHOOSE_PASSWORD" | translate }}</mat-label>
-            <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" autocomplete="new-password">
-            <mat-icon matSuffix (click)="hidePassword = !hidePassword">{{ hidePassword ? "visibility_off" : "visibility" }}</mat-icon>
+            <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password" autocomplete="new-password">
+            <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())" [attr.aria-label]="'PASSWORD' | translate">
+              <mat-icon>{{ hidePassword() ? "visibility_off" : "visibility" }}</mat-icon>
+            </button>
           </mat-form-field>
-          @if (submitError) {
-            <p class="error">{{ submitError }}</p>
+          @if (submitError()) {
+            <p class="error" role="alert">{{ submitError() }}</p>
           }
         }
-
-        <mat-card-actions>
-          <button mat-flat-button type="submit" [disabled]="form.invalid || !invite || busy">
-            {{ "REGISTER" | translate }}
-          </button>
-          <button mat-button type="button" [routerLink]="['/login']">{{ "REGISTER_TO_LOGIN" | translate }}</button>
-        </mat-card-actions>
-      </form>
-    </mat-card-content>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-flat-button type="submit" [disabled]="form.invalid || !validInvite() || busy()">{{ "REGISTER" | translate }}</button>
+        <a mat-button routerLink="/login">{{ "REGISTER_TO_LOGIN" | translate }}</a>
+      </mat-card-actions>
+    </form>
   </mat-card>
 </div>

@@ -1,44 +1,41 @@
-import {Injectable} from '@angular/core';
-import {MatSidenav} from '@angular/material/sidenav';
-import {BehaviorSubject} from 'rxjs';
+import {BreakpointObserver} from '@angular/cdk/layout';
+import {Injectable, computed, effect, inject, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {map} from 'rxjs';
 
 const RAIL_KEY = 'kollegianeren.rail.hidden';
 
-@Injectable()
+// The navigation: a slide-over menu on phones, a rail on tablets that can be hidden (kiosk mode,
+// so the kitchen tablet shows only the buy page; remembered on the device).
+@Injectable({providedIn: 'root'})
 export class SidenavService {
-  private sidenav: MatSidenav;
-  // Tablets: the rail can be hidden, so the kitchen tablet shows only the buy page.
-  readonly railHidden = new BehaviorSubject<boolean>(read());
+  readonly narrow = toSignal(inject(BreakpointObserver).observe('(max-width: 760px)').pipe(map(s => s.matches)), {initialValue: false});
+  readonly railHidden = signal(readRailHidden());
+  readonly phoneMenuOpen = signal(false);
+  readonly opened = computed(() => this.narrow() ? this.phoneMenuOpen() : !this.railHidden());
+  readonly showsRail = computed(() => !this.narrow() && !this.railHidden());
 
-  public setSidenav(sidenav: MatSidenav) {
-    this.sidenav = sidenav;
-  }
-
-  public open() {
-    return this.sidenav.open();
-  }
-
-  public close() {
-    return this.sidenav.close();
-  }
-
-  // Phones: open or close the slide-over menu. Tablets: hide or show the rail.
-  public toggle(): void {
-    if (this.sidenav.mode === 'side') {
-      const hidden = !this.railHidden.value;
-      this.railHidden.next(hidden);
+  constructor() {
+    effect(() => {
+      const hidden = this.railHidden();
       try {
         localStorage.setItem(RAIL_KEY, hidden ? '1' : '0');
       } catch {
         // Not remembered; still applies until reload.
       }
+    });
+  }
+
+  toggle(): void {
+    if (this.narrow()) {
+      this.phoneMenuOpen.update(open => !open);
     } else {
-      this.sidenav.toggle();
+      this.railHidden.update(hidden => !hidden);
     }
   }
 }
 
-function read(): boolean {
+function readRailHidden(): boolean {
   try {
     return localStorage.getItem(RAIL_KEY) === '1';
   } catch {

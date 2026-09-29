@@ -1,156 +1,136 @@
-import {Component, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
-import {Subscription} from 'rxjs';
-import {UserService} from '../../services/user.service';
-import {User} from '../../interfaces/user';
+import {Component, computed, effect, inject, signal, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {DatePipe} from '@angular/common';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatDialog} from '@angular/material/dialog';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {MatSort} from '@angular/material/sort';
-import {MatTableDataSource} from '@angular/material/table';
-import {EditUserDialogComponent} from './edit-user-dialog/edit-user-dialog.component';
-import {AddUserDialogComponent} from './add-user-dialog/add-user-dialog.component';
-import {RETENTION_MONTHS, ResidencyService} from '../../services/residency.service';
-import {TranslateService} from '../../services/translate.service';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSort, MatSortModule} from '@angular/material/sort';
+import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {User, UserFields} from '../../interfaces/user';
+import {millis} from '../../time';
+import {kr} from '../../format';
+import {UserService} from '../../services/user.service';
+import {ResidencyService} from '../../services/residency.service';
+import {RETENTION_MONTHS, isDueForAnonymising} from '../../services/residency';
 import {ResidentLinkService, residentLink} from '../../services/resident-link.service';
+import {Notify} from '../../services/notify.service';
+import {TranslateService} from '../../services/translate.service';
+import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
+import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
+import {sortValue} from '../../table-sort';
+import {ResidentDialogComponent} from './resident-dialog.component';
 
 @Component({
   selector: 'app-users',
+  imports: [DatePipe, MatButtonModule, MatCheckboxModule, MatIconModule, MatSortModule, MatTableModule, MatTooltipModule,
+    TranslatePipe, ResidentAvatarComponent],
   templateUrl: './users.component.html',
-  styleUrls: ['./users.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false
+  styleUrl: './users.component.scss',
 })
-export class UsersComponent implements OnInit, OnDestroy {
-  users = new MatTableDataSource<User>([]);
-  movedOut: User[] = [];
-  dueForAnonymising: User[] = [];
-  retentionMonths = RETENTION_MONTHS;
-  busy = false;
-  @ViewChild(MatSort, {static: true}) sort: MatSort;
-  displayedColumns = ['image', 'name', 'room', 'active', 'link', 'edit', 'moveOut', 'delete'];
-  private sub: Subscription;
+export class UsersComponent {
+  private readonly userService = inject(UserService);
+  private readonly residency = inject(ResidencyService);
+  private readonly links = inject(ResidentLinkService);
+  private readonly dialog = inject(MatDialog);
+  private readonly notify = inject(Notify);
+  private readonly i18n = inject(TranslateService);
+  private readonly confirm = inject(Confirm);
 
-  constructor(
-    public userService: UserService,
-    private residency: ResidencyService,
-    private translate: TranslateService,
-    private snackBar: MatSnackBar,
-    private links: ResidentLinkService,
-    private confirm: Confirm,
-    public dialog: MatDialog,
-  ) {
-  }
+  private readonly all = toSignal(this.userService.list(), {initialValue: []});
+  private readonly sort = viewChild.required(MatSort);
+  protected readonly table = new MatTableDataSource<User>([]);
+  protected readonly displayedColumns = ['image', 'name', 'room', 'active', 'link', 'edit', 'moveOut', 'delete'];
+  protected readonly movedOut = computed(() => this.all().filter(u => !!u.movedOutAt).sort((a, b) => millis(b.movedOutAt) - millis(a.movedOutAt)));
+  protected readonly dueForAnonymising = computed(() => this.movedOut().filter(u => isDueForAnonymising(u)));
+  protected readonly retentionMonths = RETENTION_MONTHS;
+  protected readonly busy = signal(false);
 
-  ngOnInit() {
-    this.users.sortingDataAccessor = (u, key) => {
-      const v = u[key];
-      return key === 'room' && /^\d+$/.test(String(v)) ? Number(v) : typeof v === 'string' ? v.toLocaleLowerCase('da') : v;
-    };
-    this.users.sort = this.sort;
-    this.sub = this.userService.list().subscribe(all => {
-      this.users.data = all.filter(u => !u.movedOutAt);
-      this.movedOut = all.filter(u => !!u.movedOutAt)
-        .sort((a, b) => (b.movedOutAt?.toMillis?.() || 0) - (a.movedOutAt?.toMillis?.() || 0));
-      this.dueForAnonymising = this.movedOut.filter(u => this.residency.isDueForAnonymising(u));
-    });
-  }
-
-  ngOnDestroy() {
-    this.sub.unsubscribe();
+  constructor() {
+    this.table.sortingDataAccessor = (u, key) => sortValue(u[key as keyof User]);
+    effect(() => this.table.sort = this.sort());
+    effect(() => this.table.data = this.all().filter(u => !u.movedOutAt));
   }
 
   private t(key: string) {
-    return this.translate.data[key] || key;
+    return this.i18n.t(key);
   }
 
-  private fail = (e: Error) => this.snackBar.open(e.message, 'OK', {duration: 6000});
-
-  openEditDialog(user: User) {
-    this.dialog.open(EditUserDialogComponent, {width: '400px', data: {...user}}).afterClosed().subscribe(edited => {
-      if (edited) {
-        this.userService.update(edited).catch(this.fail);
-      }
-    });
+  protected edit(user: User | null = null) {
+    this.dialog.open<ResidentDialogComponent, User | null, UserFields>(ResidentDialogComponent, {width: '440px', maxWidth: '94vw', data: user})
+      .afterClosed().subscribe(fields => {
+        if (fields) {
+          (user ? this.userService.update(user, fields) : this.userService.add(fields)).catch(this.notify.error);
+        }
+      });
   }
 
-  openAddDialog() {
-    this.dialog.open(AddUserDialogComponent, {width: '400px', data: {}}).afterClosed().subscribe(newUser => {
-      if (newUser) {
-        this.userService.add(newUser).catch(this.fail);
-      }
-    });
+  protected setActive(user: User, active: boolean) {
+    this.userService.update(user, {active}).catch(this.notify.error);
   }
 
   async remove(user: User) {
-    const ok = await this.confirm.ask({
-      title: `${this.t('DELETE')} ${user.name}?`, message: this.t('RESIDENTS_DELETE_CONFIRM'),
-      confirm: this.t('DELETE'), danger: true,
-    });
-    if (ok) {
-      this.userService.delete(user).catch(this.fail);
+    if (await this.confirm.ask({title: `${this.t('DELETE')} ${user.name}?`, message: this.t('RESIDENTS_DELETE_CONFIRM'), confirm: this.t('DELETE'), danger: true})) {
+      this.userService.delete(user).catch(this.notify.error);
     }
   }
 
   async moveOut(user: User) {
-    this.busy = true;
-    try {
+    await this.whileBusy(async () => {
       const s = await this.residency.summary(user);
-      const kr = (n: number) => new Intl.NumberFormat('da-DK', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(n) + ' kr.';
       const ok = await this.confirm.ask({
         title: `${this.t('RESIDENTS_MOVE_OUT')}: ${user.name}`,
-        details: [[this.t('RESIDENTS_THIS_MONTH'), kr(s.thisMonth)], [this.t('RESIDENTS_LAST_12'), kr(s.last12Months)]],
+        details: [[this.t('RESIDENTS_THIS_MONTH'), kr(s.thisMonth, 2)], [this.t('RESIDENTS_LAST_12'), kr(s.last12Months, 2)]],
         message: this.t('RESIDENTS_MOVE_OUT_CONFIRM'),
         confirm: this.t('RESIDENTS_MOVE_OUT'),
       });
       if (ok) {
         await this.residency.moveOut(user);
       }
-    } catch (e) {
-      this.fail(e);
-    } finally {
-      this.busy = false;
-    }
+    });
   }
 
   async shareLink(user: User, renew = false) {
     try {
-      const token = renew ? await this.links.renew(user) : await this.links.linkFor(user);
-      const url = residentLink(token);
-      try {
-        await navigator.clipboard.writeText(url);
-        this.snackBar.open(`${this.t('RESIDENTS_LINK_COPIED')} ${user.name}`, this.t('RESIDENTS_LINK_RENEW'), {duration: 8000})
-          .onAction().subscribe(() => this.shareLink(user, true));
-      } catch {
-        this.snackBar.open(url, 'OK', {duration: 20000});
-      }
+      const url = residentLink(renew ? await this.links.renew(user) : await this.links.linkFor(user));
+      await this.notify.copy(url, `${this.t('RESIDENTS_LINK_COPIED')} ${user.name}`,
+        {label: this.t('RESIDENTS_LINK_RENEW'), run: () => this.shareLink(user, true)});
     } catch (e) {
-      this.fail(e);
+      this.notify.error(e);
     }
   }
 
   moveIn(user: User) {
-    this.residency.moveIn(user).catch(this.fail);
+    this.residency.moveIn(user).catch(this.notify.error);
   }
 
   async anonymise(users: User[]) {
+    const who = users.length === 1 ? users[0].name : `${users.length} ${this.t('RESIDENTS_COUNT')}`;
     const ok = await this.confirm.ask({
-      title: `${this.t('RESIDENTS_ANONYMISE')} ${users.length === 1 ? users[0].name : users.length + ' ' + this.t('RESIDENTS_COUNT')}?`,
-      message: this.t('RESIDENTS_ANONYMISE_CONFIRM'), confirm: this.t('RESIDENTS_ANONYMISE'), danger: true,
+      title: `${this.t('RESIDENTS_ANONYMISE')} ${who}?`, message: this.t('RESIDENTS_ANONYMISE_CONFIRM'), confirm: this.t('RESIDENTS_ANONYMISE'), danger: true,
     });
     if (!ok) {
       return;
     }
-    this.busy = true;
-    try {
+    await this.whileBusy(async () => {
       let purchases = 0;
       for (const u of users) {
         purchases += await this.residency.anonymise(u);
       }
-      this.snackBar.open(`${this.t('RESIDENTS_ANONYMISED')} ${users.length} / ${purchases}`, undefined, {duration: 5000});
+      this.notify.info(`${this.t('RESIDENTS_ANONYMISED')} ${users.length} / ${purchases}`, 5000);
+    });
+  }
+
+  private async whileBusy(work: () => Promise<void>) {
+    this.busy.set(true);
+    try {
+      await work();
     } catch (e) {
-      this.fail(e);
+      this.notify.error(e);
     } finally {
-      this.busy = false;
+      this.busy.set(false);
     }
   }
 }
