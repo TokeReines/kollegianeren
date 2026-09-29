@@ -18,7 +18,14 @@ const app = initializeApp({ projectId: 'demo-kollegianeren' });
 const auth = getAuth(app);
 const db = getFirestore(app);
 const accounts = JSON.parse(fs.readFileSync(ACCOUNTS, 'utf8'));
-const ago = (days, hour = 20) => { const d = new Date(); d.setDate(d.getDate() - days); d.setHours(hour, Math.floor(Math.random() * 60), 0, 0); return Timestamp.fromDate(d); };
+// A time `days` ago at about `hour`, never in the future: a future-dated purchase would sit on top
+// of the buy page's history and hide the ones people actually make.
+const ago = (days, hour = 20) => {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  d.setHours(hour, Math.floor(Math.random() * 60), 0, 0);
+  return Timestamp.fromMillis(Math.min(d.getTime(), Date.now() - 60e3 - Math.floor(Math.random() * 3600e3)));
+};
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 async function login(uid, email) {

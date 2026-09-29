@@ -11,6 +11,7 @@ import {AddUserDialogComponent} from './add-user-dialog/add-user-dialog.componen
 import {RETENTION_MONTHS, ResidencyService} from '../../services/residency.service';
 import {TranslateService} from '../../services/translate.service';
 import {ResidentLinkService, residentLink} from '../../services/resident-link.service';
+import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-users',
@@ -35,6 +36,7 @@ export class UsersComponent implements OnInit, OnDestroy {
     private translate: TranslateService,
     private snackBar: MatSnackBar,
     private links: ResidentLinkService,
+    private confirm: Confirm,
     public dialog: MatDialog,
   ) {
   }
@@ -75,8 +77,12 @@ export class UsersComponent implements OnInit, OnDestroy {
     });
   }
 
-  remove(user: User) {
-    if (confirm(`${this.t('RESIDENTS_DELETE_CONFIRM')} ${user.name}?`)) {
+  async remove(user: User) {
+    const ok = await this.confirm.ask({
+      title: `${this.t('DELETE')} ${user.name}?`, message: this.t('RESIDENTS_DELETE_CONFIRM'),
+      confirm: this.t('DELETE'), danger: true,
+    });
+    if (ok) {
       this.userService.delete(user).catch(this.fail);
     }
   }
@@ -85,8 +91,14 @@ export class UsersComponent implements OnInit, OnDestroy {
     this.busy = true;
     try {
       const s = await this.residency.summary(user);
-      const text = `${user.name}: ${this.t('RESIDENTS_MOVE_OUT_SUMMARY')} ${s.thisMonth.toFixed(2)} kr. / ${s.last12Months.toFixed(2)} kr.\n\n${this.t('RESIDENTS_MOVE_OUT_CONFIRM')}`;
-      if (confirm(text)) {
+      const kr = (n: number) => new Intl.NumberFormat('da-DK', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(n) + ' kr.';
+      const ok = await this.confirm.ask({
+        title: `${this.t('RESIDENTS_MOVE_OUT')}: ${user.name}`,
+        details: [[this.t('RESIDENTS_THIS_MONTH'), kr(s.thisMonth)], [this.t('RESIDENTS_LAST_12'), kr(s.last12Months)]],
+        message: this.t('RESIDENTS_MOVE_OUT_CONFIRM'),
+        confirm: this.t('RESIDENTS_MOVE_OUT'),
+      });
+      if (ok) {
         await this.residency.moveOut(user);
       }
     } catch (e) {
@@ -117,7 +129,11 @@ export class UsersComponent implements OnInit, OnDestroy {
   }
 
   async anonymise(users: User[]) {
-    if (!confirm(`${this.t('RESIDENTS_ANONYMISE_CONFIRM')} (${users.length})`)) {
+    const ok = await this.confirm.ask({
+      title: `${this.t('RESIDENTS_ANONYMISE')} ${users.length === 1 ? users[0].name : users.length + ' ' + this.t('RESIDENTS_COUNT')}?`,
+      message: this.t('RESIDENTS_ANONYMISE_CONFIRM'), confirm: this.t('RESIDENTS_ANONYMISE'), danger: true,
+    });
+    if (!ok) {
       return;
     }
     this.busy = true;

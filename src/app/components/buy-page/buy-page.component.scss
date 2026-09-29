@@ -4,9 +4,12 @@
   width: 190px;
   mat-card-title {
     width: 120px;
-    white-space: nowrap;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
   }
 }
 .buypage-left {
@@ -67,4 +70,48 @@ table.ehp-table > tbody > tr > td {
 // Selected products and residents. MDC cards draw their own shadow, so elevation alone barely shows.
 .buypage-grid-card.mat-elevation-z5 {
   box-shadow: 0 0 0 3px var(--mat-sys-primary), var(--mat-sys-level3) !important;
+}
+
+// Phones: two cards per row, the cart docked along the bottom instead of covering the right side.
+@media (max-width: 760px) {
+  .buypage-group {
+    margin-right: 0;
+
+    &:last-child {
+      padding-bottom: 170px;
+    }
+  }
+
+  .buypage-grid-card {
+    width: calc(50% - 8px);
+
+    mat-card-title {
+      width: auto;
+    }
+  }
+
+  .buypage-cart-card {
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    z-index: 5;
+
+    mat-card {
+      height: auto;
+      display: grid;
+      grid-template-columns: 64px 1fr auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cart-image {
+      max-height: 64px;
+    }
+  }
+
+  .cart-buttons {
+    position: static !important;
+    margin: 0 !important;
+  }
 }

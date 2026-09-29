@@ -1,4 +1,5 @@
-import {ChangeDetectionStrategy, Component, OnDestroy} from '@angular/core';
+import {AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnDestroy, ViewChild} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subscription} from 'rxjs';
 import {Message, MakerService} from '../../services/maker.service';
@@ -11,12 +12,15 @@ import {Message, MakerService} from '../../services/maker.service';
   changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
-export class MakerChatComponent implements OnDestroy {
+export class MakerChatComponent implements AfterViewInit, OnDestroy {
+  // Shown inside Aktuelt rather than as its own page.
+  @Input() embedded = false;
+  @ViewChild('composer') composer: ElementRef<HTMLTextAreaElement>;
   messages: Message[] = [];
   text = '';
   private sub: Subscription;
 
-  constructor(private maker: MakerService, private snackBar: MatSnackBar) {
+  constructor(private maker: MakerService, private snackBar: MatSnackBar, private route: ActivatedRoute) {
     this.sub = this.maker.thread().subscribe(messages => {
       this.messages = messages;
       this.maker.markSeenByKitchen(messages);
@@ -30,6 +34,15 @@ export class MakerChatComponent implements OnDestroy {
       this.text = text;
       this.snackBar.open(err.message, 'OK', {duration: 6000});
     });
+  }
+
+  ngAfterViewInit() {
+    if (this.route.snapshot.fragment === 'chat') {
+      setTimeout(() => {
+        this.composer?.nativeElement.closest('section, .page')?.scrollIntoView({behavior: 'smooth'});
+        this.composer?.nativeElement.focus();
+      });
+    }
   }
 
   ngOnDestroy() {

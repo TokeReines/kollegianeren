@@ -1,5 +1,9 @@
-<div class="page">
-  <h1>{{ "MAKER_WRITE" | translate }}</h1>
+<div [class.page]="!embedded">
+  @if (embedded) {
+    <h2 class="title"><mat-icon>chat</mat-icon> {{ "MAKER_WRITE" | translate }}</h2>
+  } @else {
+    <h1>{{ "MAKER_WRITE" | translate }}</h1>
+  }
   <p class="intro">{{ "MAKER_INTRO" | translate }}</p>
 
   <div class="thread">
@@ -16,7 +20,7 @@
   <div class="composer">
     <mat-form-field appearance="outline" class="grow">
       <mat-label>{{ "MAKER_PLACEHOLDER" | translate }}</mat-label>
-      <textarea matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="text.trim() && send()"></textarea>
+      <textarea #composer matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="text.trim() && send()"></textarea>
     </mat-form-field>
     <button mat-flat-button [disabled]="!text.trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
   </div>

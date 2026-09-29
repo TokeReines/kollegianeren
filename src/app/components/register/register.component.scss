@@ -1,7 +1,6 @@
 .register-form {
-  max-width: 420px;
+  width: min(420px, calc(100vw - 32px));
   margin: 48px auto;
-  padding: 0 16px;
 }
 
 .hint,

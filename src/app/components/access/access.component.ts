@@ -6,6 +6,7 @@ import {AuthService, Role} from '../../services/auth.service';
 import {AccessService, Invite, Member, inviteLink} from '../../services/access.service';
 import {KitchenService} from '../../services/kitchen.service';
 import {TranslateService} from '../../services/translate.service';
+import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 
 // "Adgang": the kitchen's name, its logins, and invites. Owners and treasurers only.
 @Component({
@@ -33,6 +34,7 @@ export class AccessComponent {
     private kitchens: KitchenService,
     private translate: TranslateService,
     private snackBar: MatSnackBar,
+    private confirm: Confirm,
   ) {
   }
 
@@ -66,8 +68,11 @@ export class AccessComponent {
     this.access.revoke(invite).catch(e => this.snackBar.open(e.message, 'OK', {duration: 6000}));
   }
 
-  remove(member: Member) {
-    if (confirm(`${this.t('ACCESS_REMOVE_CONFIRM')} ${member.email}?`)) {
+  async remove(member: Member) {
+    const ok = await this.confirm.ask({
+      title: `${this.t('ACCESS_REMOVE_CONFIRM')} ${member.email}?`, message: this.t('ACCESS_REMOVE_HINT'), confirm: this.t('ACCESS_REMOVE'), danger: true,
+    });
+    if (ok) {
       this.access.removeMember(member).catch(e => this.snackBar.open(e.message, 'OK', {duration: 6000}));
     }
   }

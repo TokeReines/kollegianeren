@@ -2,15 +2,13 @@
   <div class="low-stock" role="status">
     <mat-icon>inventory_2</mat-icon>
     {{ "PRODUCTS_LOW_STOCK" | translate }}
-    @for (p of lowStock; track p.id; let last = $last) {
-      <b>{{ p.name }} ({{ p.stock }})</b>{{ last ? '' : ', ' }}
-    }
+    <b>{{ lowStockText }}</b>
   </div>
 }
 <mat-table #table [dataSource]="products" matSort class="animate">
 
   <ng-container matColumnDef="image">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product" class="table-image-wrapper">
       <!--<img [src]="product.image" alt="./assets/img/maribo.png" class="table-image">-->
       @if (!!product.clId) {
@@ -39,12 +37,12 @@
 
   <ng-container matColumnDef="retailPrice">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_RETAIL_PRICE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product"> {{ product.retailPrice }} </mat-cell>
+    <mat-cell *matCellDef="let product"> @if (product.retailPrice != null) { {{ product.retailPrice | number:'1.0-2' }} kr. } </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="price">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_SALES_PRICE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product"> {{ product.price }} </mat-cell>
+    <mat-cell *matCellDef="let product"> @if (product.price != null) { {{ product.price | number:'1.0-2' }} kr. } </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="margin">
@@ -60,8 +58,8 @@
     <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_STOCK" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
       @if (tracksStock(product)) {
-        <span class="stock" [class.low]="isLowStock(product)">{{ product.stock }}</span>
-        <button mat-icon-button (click)="receive(product)" [attr.aria-label]="'PRODUCTS_STOCK_RECEIVE' | translate"><mat-icon>add_box</mat-icon></button>
+        <span class="stock" [class.low]="isLowStock(product)">{{ product.stock > 0 ? product.stock : ("PRODUCTS_SOLD_OUT" | translate) }}</span>
+        <button mat-icon-button (click)="receive(product)" [attr.aria-label]="'PRODUCTS_RECEIVE_TITLE' | translate"><mat-icon>add_box</mat-icon></button>
         <button mat-icon-button (click)="stopTracking(product)" [attr.aria-label]="'PRODUCTS_STOCK_STOP' | translate"><mat-icon>block</mat-icon></button>
       } @else {
         <button mat-button (click)="trackStock(product)">{{ "PRODUCTS_STOCK_TRACK" | translate }}</button>
@@ -77,7 +75,7 @@
   </ng-container>
 
   <ng-container matColumnDef="edit">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "EDIT" | translate }}</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef>{{ "EDIT" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
       <button mat-icon-button (click)="openEditDialog(product)">
         <mat-icon>edit</mat-icon>
@@ -86,9 +84,9 @@
   </ng-container>
 
   <ng-container matColumnDef="delete">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product">
-      <button mat-icon-button (click)="productService.delete(product)">
+      <button mat-icon-button (click)="remove(product)" [attr.aria-label]="'DELETE' | translate">
         <mat-icon>delete</mat-icon>
       </button>
     </mat-cell>
@@ -97,4 +95,4 @@
   <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
   <mat-row *matRowDef="let product; columns: displayedColumns;" class="animate"></mat-row>
 </mat-table>
-<button mat-fab class="bottom-right" color="primary" (click)="openAddDialog()">+</button>
+<button mat-fab class="bottom-right" (click)="openAddDialog()" [attr.aria-label]="'PRODUCTS_NEW' | translate"><mat-icon>add</mat-icon></button>

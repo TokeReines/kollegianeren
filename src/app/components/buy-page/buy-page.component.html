@@ -19,7 +19,7 @@
               </div>
             }
             <mat-card-title>{{product.name}}</mat-card-title>
-            <mat-card-subtitle>{{product.price}} {{ "CURRENCY" | translate }}</mat-card-subtitle>
+            <mat-card-subtitle>{{ product.price | number:'1.0-2' }} kr.</mat-card-subtitle>
           </mat-card-title-group>
         </mat-card>
       }
@@ -65,7 +65,7 @@
           <tbody>
             <tr>
               <td>{{ "BEERSYSTEM_PRICE" | translate }}</td>
-              <td>{{selectedProduct.price}} {{ "CURRENCY" | translate }}</td>
+              <td>{{ selectedProduct.price | number:'1.0-2' }} kr.</td>
             </tr>
             <tr>
               <td>{{ "BEERSYSTEM_AMOUNT" | translate }}</td>
@@ -73,7 +73,7 @@
             </tr>
             <tr>
               <td>{{ "BEERSYSTEM_TOTAL" | translate }}</td>
-              <td><b>{{selectedProduct.amount * selectedProduct.price}} {{ "CURRENCY" | translate }}</b></td>
+              <td><b>{{ selectedProduct.amount * selectedProduct.price | number:'1.0-2' }} kr.</b></td>
             </tr>
           </tbody>
         </table>

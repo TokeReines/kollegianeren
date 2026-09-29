@@ -57,13 +57,14 @@ body {
   max-height: 46px;
 }
 
+// Login and register: a centred column.
 .register-form {
-  position: absolute;
-  width: 300px;
-  height: 200px;
-  z-index: 15;
-  left: 50%;
-  margin: 100px 0 0 -150px;
+  width: min(360px, calc(100vw - 32px));
+  margin: 72px auto 24px;
+}
+
+a {
+  color: var(--mat-sys-primary);
 }
 
 .image-wrapper {
@@ -159,4 +160,17 @@ mat-sidenav-container {
 .mat-toolbar .mat-mdc-icon-button,
 .mat-toolbar .lang-button {
   color: inherit;
+}
+
+// Tables: 48px pictures keep rows compact (the buy page keeps its larger tiles).
+.mat-mdc-table .image-wrapper {
+  height: 48px !important;
+  width: 48px !important;
+
+  .product,
+  .avatar,
+  img {
+    max-height: 48px !important;
+    max-width: 48px !important;
+  }
 }

@@ -31,9 +31,9 @@ export class RevealDialogComponent {
     }
   }
 
-  go(path: string) {
+  go(path: string, fragment?: string) {
     this.dialogRef.close();
-    this.router.navigate([path]);
+    this.router.navigate([path], {fragment});
   }
 
   close() {
