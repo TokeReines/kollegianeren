@@ -167,8 +167,8 @@
   }
 }
 
-// One row along the bottom: the last purchase (with its undo) on the left, the basket on the
-// right, so neither ever covers the other.
+// One row along the bottom: a short confirmation of the last purchase on the left, the basket
+// on the right, so neither ever covers the other.
 .bar {
   position: sticky;
   bottom: 0;

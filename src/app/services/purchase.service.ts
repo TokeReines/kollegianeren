@@ -1,5 +1,5 @@
 import {Injectable, inject} from '@angular/core';
-import {DocumentReference, deleteDoc, doc, increment, limit, orderBy, query, serverTimestamp, where, writeBatch} from 'firebase/firestore';
+import {doc, increment, limit, orderBy, query, serverTimestamp, where, writeBatch} from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {Product, tracksStock} from '../interfaces/product';
 import {Purchase} from '../interfaces/purchase';
@@ -13,14 +13,8 @@ export interface BasketLine {
   amount: number;
 }
 
-// What a sale wrote, so it can be taken back.
-export interface Sale {
-  refs: DocumentReference[];
-  // Units per product, for the stock and sold counters.
-  units: {product: Product, units: number}[];
-  // Resolves once the server has the purchases (only when the tablet is online).
-  saved: Promise<void>;
-}
+// Units per product, for the stock and sold counters.
+type Units = {product: Pick<Product, 'id' | 'stock'>, units: number}[];
 
 @Injectable({providedIn: 'root'})
 export class PurchaseService {
@@ -43,42 +37,41 @@ export class PurchaseService {
       query(kitchenCollection(kid, 'purchases'), orderBy('timestamp', 'desc'), limit(count)));
   }
 
-  // Every buyer gets every line of the basket: one purchase per buyer and product.
-  // The purchases go in one batch (queued while offline, like any write). The stock and sold
-  // counters go in a second one: if that fails, for a product deleted meanwhile, the purchases
-  // still count.
-  sell(basket: BasketLine[], buyers: User[]): Sale {
+  // Every buyer gets every line of the basket: one purchase per buyer and product, sharing a
+  // saleId so the basket can be taken back as one. The purchases go in one batch (queued while
+  // offline, like any write). The stock and sold counters go in a second one: if that fails, for
+  // a product deleted meanwhile, the purchases still count. Resolves once the server has them.
+  sell(basket: BasketLine[], buyers: User[]): Promise<void> {
     const batch = writeBatch(db);
-    const refs: DocumentReference[] = [];
+    const saleId = doc(this.purchases()).id;
     for (const buyer of buyers) {
       for (const {product, amount} of basket) {
-        const ref = doc(this.purchases());
-        batch.set(ref, {
+        batch.set(doc(this.purchases()), {
           productId: product.id, productName: product.name, amount, price: product.price * amount,
-          userId: buyer.id, userName: buyer.name, userRoom: buyer.room, timestamp: serverTimestamp(),
+          userId: buyer.id, userName: buyer.name, userRoom: buyer.room, timestamp: serverTimestamp(), saleId,
         });
-        refs.push(ref);
       }
     }
-    const units = basket.map(({product, amount}) => ({product, units: amount * buyers.length}));
-    this.moveCounters(units, -1).catch(() => undefined);
-    return {refs, units, saved: batch.commit()};
+    this.moveCounters(basket.map(({product, amount}) => ({product, units: amount * buyers.length})), -1).catch(() => undefined);
+    return batch.commit();
   }
 
-  // The undo on the buy screen (the rules allow it for a minute).
-  async unsell(sale: Sale): Promise<void> {
+  // Takes purchases back (a wrong tap, or a correction by the treasurer), and gives their units
+  // back to the stock and sold counters. Tablets may do this for a minute after buying.
+  async remove(purchases: Purchase[], products: Pick<Product, 'id' | 'stock'>[]): Promise<void> {
     const batch = writeBatch(db);
-    sale.refs.forEach(ref => batch.delete(ref));
+    purchases.forEach(p => batch.delete(doc(this.purchases(), p.id)));
     await batch.commit();
-    await this.moveCounters(sale.units, 1).catch(() => undefined);
+    const byId = new Map(products.map(p => [p.id, p]));
+    const units = new Map<string, number>();
+    purchases.forEach(p => units.set(p.productId, (units.get(p.productId) ?? 0) + (Number(p.amount) || 0)));
+    const counters = [...units].map(([id, n]) => ({product: byId.get(id), units: n}))
+      .filter((u): u is Units[number] => !!u.product);
+    await this.moveCounters(counters, 1).catch(() => undefined);
   }
 
-  delete(purchase: Purchase) {
-    return deleteDoc(doc(this.purchases(), purchase.id));
-  }
-
-  // direction -1 for a sale (stock down, sold up), 1 for its undo.
-  private moveCounters(units: Sale['units'], direction: 1 | -1) {
+  // direction -1 for a sale (stock down, sold up), 1 for taking it back.
+  private moveCounters(units: Units, direction: 1 | -1) {
     const batch = writeBatch(db);
     for (const {product, units: n} of units) {
       batch.update(doc(kitchenCollection(this.auth.currentKitchenId, 'products'), product.id), {

@@ -40,11 +40,10 @@
 </div>
 
 <footer class="bar">
-  @if (lastSale(); as last) {
+  @if (confirmation(); as text) {
     <div class="last-sale" role="status" [class.compact]="lines().length">
       <mat-icon>check_circle</mat-icon>
-      <span class="text" [title]="last.text">{{ last.text }}</span>
-      <button mat-button (click)="undo()">{{ "BEERSYSTEM_UNDO" | translate }} ({{ last.secondsLeft }} s)</button>
+      <span class="text" [title]="text">{{ text }}</span>
     </div>
   }
   @if (lines().length) {
@@ -77,7 +76,7 @@
         <button mat-flat-button class="buy-button" [disabled]="!buyers().length" (click)="buy()">{{ "BEERSYSTEM_BUY" | translate }}</button>
       </div>
     </div>
-  } @else if (!lastSale()) {
+  } @else if (!confirmation()) {
     <p class="hint start">{{ "BUY_START" | translate }}</p>
   }
 </footer>

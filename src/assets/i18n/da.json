@@ -6,7 +6,7 @@
   "LOG_OUT": "Log ud",
   "PIECES": "stk.",
   "SAVE": "Gem",
-  "CANCEL": "Fortryd",
+  "CANCEL": "Annuller",
   "REGISTER": "Registrér",
   "PASSWORD": "Kode",
   "EMAIL": "Email",
@@ -163,7 +163,6 @@
   "PRODUCTS_STOCK_STOP_OK": "Stop",
   "PRODUCTS_DELETE_CONFIRM": "Varen slettes. Gamle køb beholder navnet. Brug hellere \"Aktiv\" for at skjule den.",
   "ACCESS_REMOVE_HINT": "Loginet kan ikke længere se køkkenet. I kan invitere igen senere.",
-  "HISTORY_DELETE_TITLE": "Slet køb?",
   "MAKER_ABOUT": "Hvem står bag",
   "MAKER_PHOTO_THEN": "Første gang Toke tænkte på at lave kollegianeren",
   "MAKER_PHOTO_DORM": "Toke 802/822, da han endelig startede projektet",
@@ -211,5 +210,9 @@
   "BUY_CLEAR": "Ryd",
   "BUY_START": "Tryk på varer og beboere. Alle valgte beboere får det hele.",
   "BUY_EACH": " hver",
-  "BUY_TOTAL": "I alt"
+  "BUY_TOTAL": "I alt",
+  "HISTORY_UNDO_TITLE": "Fortryd købet?",
+  "HISTORY_UNDO_BASKET": "Fortryd hele købet",
+  "HISTORY_UNDO_ONE": "Kun denne",
+  "HISTORY_KEEP": "Behold"
 }

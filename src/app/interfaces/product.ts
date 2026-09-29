@@ -22,7 +22,7 @@ export type EditableProduct = Pick<Product, 'name' | 'price' | 'retailPrice' | '
 
 export const LOW_STOCK_DEFAULT = 5;
 
-export function tracksStock(p: Product): p is Product & {stock: number} {
+export function tracksStock<T extends object>(p: T & Pick<Product, 'stock'>): p is T & {stock: number} {
   return typeof p.stock === 'number';
 }
 

@@ -49,8 +49,10 @@ service cloud.firestore {
 
     // Shape of a purchase as both the 2019 app and the current app write it. Checked against
     // the backed-up purchases: price is null in a few old ones, userRoom is sometimes a number.
+    // saleId groups the purchases of one basket, so they can be taken back together.
     function validPurchase(d) {
-      return d.keys().hasOnly(['amount', 'price', 'productId', 'productName', 'userId', 'userName', 'userRoom', 'timestamp'])
+      return d.keys().hasOnly(['amount', 'price', 'productId', 'productName', 'userId', 'userName', 'userRoom', 'timestamp', 'saleId'])
+        && (d.get('saleId', '') is string && d.get('saleId', '').size() <= 40)
         && d.keys().hasAll(['amount', 'productId', 'userId', 'timestamp'])
         && d.amount is int && d.amount >= 1 && d.amount <= 200
         && (d.get('price', null) == null || (d.price is number && d.price >= 0 && d.price <= 20000))

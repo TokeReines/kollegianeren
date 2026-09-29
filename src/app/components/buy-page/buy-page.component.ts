@@ -11,7 +11,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import {Product} from '../../interfaces/product';
 import {User, byRoom} from '../../interfaces/user';
 import {ProductService} from '../../services/product.service';
-import {PurchaseService, Sale} from '../../services/purchase.service';
+import {PurchaseService} from '../../services/purchase.service';
 import {UserService} from '../../services/user.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
@@ -21,12 +21,12 @@ import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 import {basketTotals, describeSale, productOrder} from './basket';
 
-// How long a purchase can be taken back from the buy screen (the rules allow a minute).
-const UNDO_S = 30;
+// How long the confirmation of a purchase stays in the bar.
+const CONFIRM_MS = 4000;
 
 // The tablet's screen. Tap products to fill a basket (tap again for more), tap one or more
 // residents, buy: every chosen resident gets the whole basket. Right-click or long-press a
-// product to take one off. The last purchase can be taken back from the bar at the bottom.
+// product to take one off. A wrong purchase is taken back under "Seneste køb".
 @Component({
   selector: 'app-buy-page',
   imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatCardModule, MatIconModule, MatTooltipModule, TranslatePipe,
@@ -65,12 +65,12 @@ export class BuyPageComponent {
     .map(id => this.residents().find(u => u.id === id)).filter((u): u is User => !!u));
   protected readonly totals = computed(() => basketTotals(this.lines(), this.buyers().length));
 
-  // The last purchase, with a countdown for its undo.
-  protected readonly lastSale = signal<{text: string, sale: Sale, secondsLeft: number} | null>(null);
-  private timer: ReturnType<typeof setInterval> | undefined;
+  // A short confirmation of the last purchase.
+  protected readonly confirmation = signal('');
+  private timer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => clearInterval(this.timer));
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
   }
 
   protected amountOf(product: Product): number {
@@ -112,43 +112,20 @@ export class BuyPageComponent {
     if (!lines.length || !buyers.length) {
       return;
     }
-    const sale = this.purchaseService.sell(lines, buyers);
-    sale.saved.catch(this.notify.error);
+    this.purchaseService.sell(lines, buyers).catch(this.notify.error);
     const t = (k: string) => this.i18n.t(k);
-    this.showLastSale(describeSale(buyers.map(u => u.name), lines.map(l => [l.amount, l.product.name]),
-      {and: t('BEERSYSTEM_AND'), bought: t('BEERSYSTEM_BOUGHT'), each: t('BUY_EACH')}), sale);
+    this.confirm(describeSale(buyers.map(u => u.name), lines.map(l => [l.amount, l.product.name]),
+      {and: t('BEERSYSTEM_AND'), bought: t('BEERSYSTEM_BOUGHT'), each: t('BUY_EACH')}));
     this.clear();
-  }
-
-  // Deletes queue like any other write, so this works offline too.
-  protected undo() {
-    const last = this.lastSale();
-    if (!last) {
-      return;
-    }
-    this.hideLastSale();
-    this.purchaseService.unsell(last.sale).then(() => this.notify.info(this.i18n.t('BEERSYSTEM_UNDONE')), this.notify.error);
   }
 
   protected openHistory() {
     this.bottomSheet.open(HistoryBottomSheetComponent);
   }
 
-  private showLastSale(text: string, sale: Sale) {
-    clearInterval(this.timer);
-    this.lastSale.set({text, sale, secondsLeft: UNDO_S});
-    this.timer = setInterval(() => {
-      const last = this.lastSale();
-      if (!last || last.secondsLeft <= 1) {
-        this.hideLastSale();
-      } else {
-        this.lastSale.set({...last, secondsLeft: last.secondsLeft - 1});
-      }
-    }, 1000);
-  }
-
-  private hideLastSale() {
-    clearInterval(this.timer);
-    this.lastSale.set(null);
+  private confirm(text: string) {
+    clearTimeout(this.timer);
+    this.confirmation.set(text);
+    this.timer = setTimeout(() => this.confirmation.set(''), CONFIRM_MS);
   }
 }

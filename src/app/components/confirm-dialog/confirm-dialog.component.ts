@@ -16,6 +16,8 @@ export interface ConfirmOptions {
   cancel?: string;
   // Red confirm button for things that cannot be undone.
   danger?: boolean;
+  // A second, quieter choice next to the confirm button (see Confirm.choose).
+  alternative?: string;
 }
 
 export interface NumberOptions extends ConfirmOptions {
@@ -23,7 +25,7 @@ export interface NumberOptions extends ConfirmOptions {
   number: {label: string, value: number, min?: number};
 }
 
-type Result = boolean | number;
+type Result = boolean | number | 'alternative';
 
 // The app's replacement for window.confirm / window.prompt.
 @Component({
@@ -42,6 +44,10 @@ export class ConfirmDialogComponent {
     return !n || (v !== null && Number.isFinite(Number(v)) && Number(v) >= (n.min ?? -Infinity));
   });
 
+  protected alternative() {
+    this.ref.close('alternative');
+  }
+
   protected ok() {
     if (this.valid()) {
       this.ref.close(this.data.number ? Math.round(Number(this.value())) : true);
@@ -56,6 +62,12 @@ export class Confirm {
   // Resolves true when confirmed, false when cancelled.
   async ask(options: ConfirmOptions): Promise<boolean> {
     return (await this.open(options)) === true;
+  }
+
+  // Two ways to confirm: 'confirm', 'alternative', or undefined when cancelled.
+  async choose(options: ConfirmOptions & {alternative: string}): Promise<'confirm' | 'alternative' | undefined> {
+    const result = await this.open(options);
+    return result === true ? 'confirm' : result === 'alternative' ? 'alternative' : undefined;
   }
 
   // Resolves the number entered, or undefined when cancelled.
