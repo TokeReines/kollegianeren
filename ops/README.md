@@ -55,3 +55,13 @@ Later: `firebase emulators:start --only firestore --project demo-kollegianeren -
 ## Credentials for cron
 
 The cron service account needs only `roles/datastore.viewer` and `roles/monitoring.viewer` on `firebase-ehp`.
+
+## Tokeserver (current setup)
+
+ runs hourly from cron on tokeserver in a  container;  makes it work only in the last 30 minutes of the quota day. It needs a key for a read-only service account at  and skips until that exists. Log: .
+
+## Rules
+
+-  publishes rules through the Firebase Rules API. The CLI's  needs the Service Usage API, which is disabled on prod.  prints the live rules and compiles the new ones server-side.
+-  shows ALLOW / DENY / ERROR counts, to confirm a rules change does not block the kitchens.
+- Prod rules before the lockdown (2026-09-29): ruleset .
