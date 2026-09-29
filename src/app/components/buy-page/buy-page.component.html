@@ -78,7 +78,7 @@
           </tbody>
         </table>
         <mat-card-actions class="cart-buttons">
-          <button mat-raised-button color="primary" [disabled]="!selectedUsers.length" (click)="purchase()">{{ "BEERSYSTEM_BUY" | translate }}</button>
+          <button mat-flat-button [disabled]="!selectedUsers.length" (click)="purchase()">{{ "BEERSYSTEM_BUY" | translate }}</button>
           <button mat-button color="warning" (click)="cancel()">{{ "CANCEL" | translate }}</button>
         </mat-card-actions>
       </mat-card>

@@ -19,7 +19,7 @@
         <mat-label>{{ "AKTUELT_POST_BODY" | translate }}</mat-label>
         <textarea matInput [(ngModel)]="body" rows="6" maxlength="5000"></textarea>
       </mat-form-field>
-      <button mat-raised-button color="primary" [disabled]="!title.trim() || !body.trim()" (click)="post()">{{ "AKTUELT_PUBLISH" | translate }}</button>
+      <button mat-flat-button [disabled]="!title.trim() || !body.trim()" (click)="post()">{{ "AKTUELT_PUBLISH" | translate }}</button>
     </mat-card>
   }
 

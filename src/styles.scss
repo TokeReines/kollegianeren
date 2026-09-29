@@ -1,5 +1,28 @@
-/* You can add global styles to this file, and also import other style files */
-@import '@angular/material/prebuilt-themes/deeppurple-amber.css';
+@use '@angular/material' as mat;
+@use './theme-colors' as brand;
+
+// Material 3, with palettes generated from the original purple (#673ab7) and amber (#ffc107)
+// (ng generate @angular/material:theme-color). Light or dark follows the tablet.
+html {
+  color-scheme: light dark;
+  @include mat.theme((
+    color: (primary: brand.$primary-palette, tertiary: brand.$tertiary-palette),
+    typography: Roboto,
+    density: 0,
+  ));
+  // The purple app bar and the amber history button from the original design.
+  @include mat.toolbar-overrides((
+    container-background-color: var(--mat-sys-primary),
+    container-text-color: var(--mat-sys-on-primary),
+  ));
+  @include mat.icon-button-overrides((
+    icon-color: inherit,
+  ));
+  @include mat.fab-overrides((
+    container-color: var(--mat-sys-tertiary-container),
+    foreground-color: var(--mat-sys-on-tertiary-container),
+  ));
+}
 
 html, body {
   height: 100%;
@@ -7,7 +30,9 @@ html, body {
 
 body {
   margin: 0;
-  font-family: 'Roboto', sans-serif;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
 }
 
 .basic-container {
@@ -128,4 +153,10 @@ mat-sidenav-container {
 // Material 15 (MDC) cards have no padding of their own; the layouts here assume the old 16px.
 .mat-mdc-card {
   padding: 16px;
+}
+
+// App-bar buttons (menu, more, language) take the app bar's on-primary colour in both themes.
+.mat-toolbar .mat-mdc-icon-button,
+.mat-toolbar .lang-button {
+  color: inherit;
 }

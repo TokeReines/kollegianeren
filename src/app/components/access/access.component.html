@@ -43,7 +43,7 @@
             <mat-option value="treasurer">{{ "ROLE_TREASURER" | translate }}</mat-option>
           </mat-select>
         </mat-form-field>
-        <button mat-raised-button color="primary" (click)="invite(false)"><mat-icon>person_add</mat-icon> {{ "ACCESS_INVITE" | translate }}</button>
+        <button mat-flat-button (click)="invite(false)"><mat-icon>person_add</mat-icon> {{ "ACCESS_INVITE" | translate }}</button>
       </div>
       <p class="muted small">{{ "ACCESS_ROLES_EXPLAINED" | translate }}</p>
     </mat-card>

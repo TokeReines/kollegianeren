@@ -53,7 +53,7 @@
         }
 
         <mat-card-actions>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || !invite || busy">
+          <button mat-flat-button type="submit" [disabled]="form.invalid || !invite || busy">
             {{ "REGISTER" | translate }}
           </button>
           <button mat-button type="button" [routerLink]="['/login']">{{ "REGISTER_TO_LOGIN" | translate }}</button>

@@ -19,12 +19,12 @@
   margin: 0 auto;
   border-radius: 50%;
   overflow: hidden;
-  background: #ede7f6;
+  background: var(--mat-sys-primary-container);
   display: flex;
   align-items: center;
   justify-content: center;
   animation: haunt 3s ease-in-out infinite;
-  box-shadow: 0 0 40px 8px rgba(103, 58, 183, .35);
+  box-shadow: 0 0 40px 8px color-mix(in srgb, var(--mat-sys-primary) 35%, transparent);
 
   img {
     width: 100%;
