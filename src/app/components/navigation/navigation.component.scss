@@ -1,15 +1,75 @@
 .nav-container {
   height: 100%;
+
   mat-sidenav {
-    width: 200px;
+    width: 240px;
+  }
+
+  &.with-rail mat-sidenav {
+    width: 88px;
+    border-right: none;
+    background: var(--mat-sys-surface-container-low);
   }
 }
 
-.front-page-logo {
-  display: inline-block;
-  height: 140px;
-  width: 140px;
-  margin: 5px;
-  border-radius: 50%;
-  pointer-events: none;
+// Material 3 navigation rail: an icon in a pill-shaped indicator with a short label under it.
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0;
+}
+
+.rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 80px;
+  padding: 6px 0 8px;
+  text-decoration: none;
+  color: var(--mat-sys-on-surface-variant);
+  -webkit-tap-highlight-color: transparent;
+
+  .indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 32px;
+    border-radius: 16px;
+    transition: background-color 150ms;
+  }
+
+  .label {
+    font: var(--mat-sys-label-medium);
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  &:hover .indicator {
+    background: color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent);
+  }
+
+  &:focus-visible {
+    outline: none;
+
+    .indicator {
+      outline: 2px solid var(--mat-sys-primary);
+    }
+  }
+
+  &.active {
+    color: var(--mat-sys-on-surface);
+
+    .indicator {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+
+    .label {
+      font-weight: 700;
+    }
+  }
 }

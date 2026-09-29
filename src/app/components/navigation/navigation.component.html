@@ -1,45 +1,29 @@
-<mat-sidenav-container class="nav-container">
+<mat-sidenav-container class="nav-container" [class.with-rail]="!(narrow | async)">
   <mat-sidenav #sidenav [mode]="(narrow | async) ? 'over' : 'side'" [opened]="!(narrow | async)" role="navigation">
-    <mat-nav-list>
-      <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['']" routerLinkActive #rla0="routerLinkActive" [activated]="rla0.isActive" [routerLinkActiveOptions]="{exact: true}">
-        <mat-icon matListItemIcon>local_grocery_store</mat-icon>
-        <span matListItemTitle>{{ "MENU_BEERSYSTEM" | translate }}</span>
-      </a>
-      @if (canManage | async) {
-        <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['/products']" routerLinkActive #rla1="routerLinkActive" [activated]="rla1.isActive" [routerLinkActiveOptions]="{exact: true}">
-          <mat-icon matListItemIcon>local_bar</mat-icon>
-          <span matListItemTitle>{{ "MENU_PRODUCTS" | translate }}</span>
-        </a>
-        <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['/users']" routerLinkActive #rla2="routerLinkActive" [activated]="rla2.isActive" [routerLinkActiveOptions]="{exact: true}">
-          <mat-icon matListItemIcon>people</mat-icon>
-          <span matListItemTitle>{{ "MENU_RESIDENTS" | translate }}</span>
-        </a>
-        <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['/accounting']" routerLinkActive #rla3="routerLinkActive" [activated]="rla3.isActive" [routerLinkActiveOptions]="{exact: true}">
-          <mat-icon matListItemIcon>receipt</mat-icon>
-          <span matListItemTitle>{{ "MENU_ACCOUNTING" | translate }}</span>
-        </a>
-      }
-      <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['/stats']" routerLinkActive #rla8="routerLinkActive" [activated]="rla8.isActive">
-        <mat-icon matListItemIcon>insights</mat-icon>
-        <span matListItemTitle>{{ "MENU_STATS" | translate }}</span>
-      </a>
-      <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['/aktuelt']" routerLinkActive #rla4="routerLinkActive" [activated]="rla4.isActive">
-        <mat-icon matListItemIcon [matBadge]="(kitchenUnread | async) || null" matBadgeColor="accent" matBadgeSize="small">campaign</mat-icon>
-        <span matListItemTitle>{{ "MENU_AKTUELT" | translate }}</span>
-      </a>
-      @if (canManage | async) {
-        <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['/access']" routerLinkActive #rla7="routerLinkActive" [activated]="rla7.isActive">
-          <mat-icon matListItemIcon>key</mat-icon>
-          <span matListItemTitle>{{ "MENU_ACCESS" | translate }}</span>
-        </a>
-      }
-      @if (isAdmin | async) {
-        <a mat-list-item (click)="closeIfNarrow()" [routerLink]="['/inbox']" routerLinkActive #rla6="routerLinkActive" [activated]="rla6.isActive">
-          <mat-icon matListItemIcon [matBadge]="(makerUnread | async) || null" matBadgeColor="accent" matBadgeSize="small">inbox</mat-icon>
-          <span matListItemTitle>{{ "MENU_INBOX" | translate }}</span>
-        </a>
-      }
-    </mat-nav-list>
+    @if (narrow | async) {
+      <!-- Phones: a slide-over list. -->
+      <mat-nav-list>
+        @for (item of items | async; track item.path) {
+          <a mat-list-item (click)="sidenav.close()" [routerLink]="item.path" routerLinkActive #rla="routerLinkActive" [activated]="rla.isActive"
+             [routerLinkActiveOptions]="{exact: !!item.exact}">
+            <mat-icon matListItemIcon [matBadge]="(item.badge | async) || null" matBadgeColor="accent" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label | translate }}</span>
+          </a>
+        }
+      </mat-nav-list>
+    } @else {
+      <!-- Tablets and up: a Material 3 navigation rail, so the buy grid keeps its width. -->
+      <nav class="rail">
+        @for (item of items | async; track item.path) {
+          <a class="rail-item" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact: !!item.exact}">
+            <span class="indicator">
+              <mat-icon [matBadge]="(item.badge | async) || null" matBadgeColor="accent" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
+            </span>
+            <span class="label">{{ item.label | translate }}</span>
+          </a>
+        }
+      </nav>
+    }
   </mat-sidenav>
   <mat-sidenav-content class="sidenav-content">
     <router-outlet></router-outlet>

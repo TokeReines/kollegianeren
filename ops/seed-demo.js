@@ -113,9 +113,11 @@ async function kitchenByName(name) {
   await db.doc(`invites/DEMO-REFERRAL`).set({ kitchenId: null, role: 'owner', createdBy: kid, createdAt: ago(4), expiresAt: Timestamp.fromMillis(Date.now() + 10 * 864e5), usedBy: 'demo-m7-owner', usedAt: ago(4) });
   await db.doc(`memberships/demo-m7-owner`).set({ kitchenId: newKid, role: 'owner', invite: 'DEMO-REFERRAL', joinedAt: ago(4) });
   await db.doc(`kitchens/${newKid}/members/demo-m7-owner`).set({ role: 'owner', email: ownerEmail, joinedAt: ago(4) });
-  const m7products = [['Tuborg Grøn', 7, 5.2, 36], ['Carlsberg', 7, 5.4, 4], ['Cola', 6, 4.1, 20], ['Sodavand', 5, 3.5, null]];
-  for (const [i, [name, price, retailPrice, stock]] of m7products.entries()) {
-    await db.doc(`kitchens/${newKid}/products/p${i}`).set({ name, price, retailPrice, active: true, image: '', clId: '', ...(stock === null ? {} : { stock }) });
+  // Pictures borrowed from Ny2's matching products.
+  const ny2Pictures = new Map(products.map(p => [p.get('name'), p.get('clId') || '']));
+  const m7products = [['Tuborg Grøn', 7, 5.2, 36, 'Grøn tuborg'], ['Carlsberg', 7, 5.4, 4, 'Classic Tuborg'], ['Cola', 6, 4.1, 20, 'Coke'], ['Sodavand', 5, 3.5, null, 'Faxe kondi']];
+  for (const [i, [name, price, retailPrice, stock, lookalike]] of m7products.entries()) {
+    await db.doc(`kitchens/${newKid}/products/p${i}`).set({ name, price, retailPrice, active: true, image: '', clId: ny2Pictures.get(lookalike) || '', ...(stock === null ? {} : { stock }) });
   }
   const m7residents = ['Anna', 'Bo', 'Cecilie', 'Dan', 'Emma', 'Frederik'];
   for (const [i, name] of m7residents.entries()) {

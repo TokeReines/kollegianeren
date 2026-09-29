@@ -2,23 +2,12 @@
 // #15121a dark): primary tone 40 / 50 for bars, and a five-step ramp per scheme whose
 // lightest step still clears the surface. Empty heatmap cells use the neutral surface tone.
 :host {
-  --bar: #6f43c0;
-  --heat-0: #a478f7;
-  --heat-1: #895edb;
-  --heat-2: #6f43c0;
-  --heat-3: #4b169b;
-  --heat-4: #250059;
-}
-
-@media (prefers-color-scheme: dark) {
-  :host {
-    --bar: #895edb;
-    --heat-0: #6f43c0;
-    --heat-1: #895edb;
-    --heat-2: #a478f7;
-    --heat-3: #bc99ff;
-    --heat-4: #ebddff;
-  }
+  --bar: light-dark(#6f43c0, #895edb);
+  --heat-0: light-dark(#a478f7, #6f43c0);
+  --heat-1: light-dark(#895edb, #895edb);
+  --heat-2: light-dark(#6f43c0, #a478f7);
+  --heat-3: light-dark(#4b169b, #bc99ff);
+  --heat-4: light-dark(#250059, #ebddff);
 }
 
 .page {

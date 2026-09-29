@@ -1,15 +1,21 @@
+// Cards fill the width that is there (more columns on wider tablets) instead of a fixed 190px.
+.buypage-group {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
+}
+
 .buypage-grid-card {
-  margin-left: 5px;
-  margin-bottom:5px;
-  width: 190px;
+  min-width: 0;
   mat-card-title {
-    width: 120px;
+    width: 100%;
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    overflow-wrap: anywhere;
+    font-size: 18px;
+    hyphens: auto;
   }
 }
 .buypage-left {
@@ -82,12 +88,8 @@ table.ehp-table > tbody > tr > td {
     }
   }
 
-  .buypage-grid-card {
-    width: calc(50% - 8px);
-
-    mat-card-title {
-      width: auto;
-    }
+  .buypage-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .buypage-cart-card {

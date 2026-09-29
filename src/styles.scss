@@ -174,3 +174,19 @@ mat-sidenav-container {
     max-width: 48px !important;
   }
 }
+
+// Products without a picture.
+.image-wrapper.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+}

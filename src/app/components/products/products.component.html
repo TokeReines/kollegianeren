@@ -17,9 +17,7 @@
         </div>
       }
       @if (!product.image && !product.clId) {
-        <div class="image-wrapper">
-          <img src="/assets/img/avatar.png" class="avatar"/>
-        </div>
+        <div class="image-wrapper placeholder"><mat-icon>local_drink</mat-icon></div>
       }
       @if (!!product.image) {
         <div class="image-wrapper" matBadge="{{product.amount}}">
