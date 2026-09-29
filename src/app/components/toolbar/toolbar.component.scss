@@ -8,35 +8,39 @@
   min-width: 0;
 }
 
-// Tablets have the navigation rail, so the menu button is for phones only.
-@media (min-width: 761px) {
-  .menu-button {
-    display: none;
-  }
-
-  .title {
-    margin-left: 0;
-  }
-}
-
 // The account button: the dorm's picture as a 32px avatar in a 48px touch target.
 .mat-toolbar-row {
   padding: 0 4px 0 4px;
 }
 
+// Tablets: the menu button lines up with the rail's icons (88px rail, 48px button).
 @media (min-width: 761px) {
   .mat-toolbar-row {
-    padding-left: 16px;
+    padding-left: 20px;
+  }
+
+  .title {
+    margin-left: 44px;
+
+    &.kiosk {
+      margin-left: 12px;
+    }
   }
 }
 
-.account-button {
+.account-button.mat-mdc-icon-button {
   margin-right: 4px;
+  width: 48px;
+  height: 48px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .account-button img {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   display: block;

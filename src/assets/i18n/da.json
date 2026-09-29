@@ -188,5 +188,7 @@
   "THEME_OPT_AUTO": "Følg enheden",
   "THEME_OPT_LIGHT": "Lyst",
   "THEME_OPT_DARK": "Mørkt",
-  "LANGUAGE": "Sprog"
+  "LANGUAGE": "Sprog",
+  "MENU_HIDE": "Skjul menuen (kiosk)",
+  "MENU_SHOW": "Vis menuen"
 }

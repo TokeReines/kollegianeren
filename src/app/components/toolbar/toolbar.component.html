@@ -1,9 +1,10 @@
 <mat-toolbar>
   <mat-toolbar-row>
-    <button class="menu-button" mat-icon-button (click)="toggleSidenav()" [attr.aria-label]="'MENU' | translate">
-      <mat-icon>menu</mat-icon>
+    <button class="menu-button" mat-icon-button (click)="toggleSidenav()" [attr.aria-label]="'MENU' | translate"
+            [matTooltip]="((sidenav.railHidden | async) ? 'MENU_SHOW' : 'MENU_HIDE') | translate">
+      <mat-icon>{{ (sidenav.railHidden | async) ? 'menu' : 'menu_open' }}</mat-icon>
     </button>
-    <span class="title">{{ kitchenName | async }}</span>
+    <span class="title" [class.kiosk]="sidenav.railHidden | async">{{ kitchenName | async }}</span>
     <span class="fill-space"></span>
     <button class="account-button" mat-icon-button [matMenuTriggerFor]="account" [attr.aria-label]="'ACCOUNT' | translate" [matTooltip]="'ACCOUNT' | translate">
       <img src="./assets/img/navbar_logo.jpg" alt="" />

@@ -31,10 +31,10 @@ export class ToolbarComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
-    private sidenav: SidenavService,
     private router: Router,
     private translate: TranslateService,
     private kitchens: KitchenService,
+    public sidenav: SidenavService,
     public theme: ThemeService) {
   }
 

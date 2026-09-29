@@ -29,6 +29,13 @@ html {
   @include mat.table-overrides((
     background-color: transparent,
   ));
+  @include mat.menu-overrides((
+    item-label-text-font: var(--mat-sys-body-large-font),
+    item-label-text-size: var(--mat-sys-body-large-size),
+    item-label-text-weight: var(--mat-sys-body-large-weight),
+    item-label-text-line-height: var(--mat-sys-body-large-line-height),
+    item-label-text-tracking: var(--mat-sys-body-large-tracking),
+  ));
   @include mat.icon-button-overrides((
     icon-color: inherit,
   ));
