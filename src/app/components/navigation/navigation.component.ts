@@ -3,6 +3,7 @@ import { MatSidenav } from '@angular/material/sidenav';
 import {map} from 'rxjs/operators';
 import {SidenavService} from '../../services/sidenav.service';
 import {MakerService} from '../../services/maker.service';
+import {AuthService} from '../../services/auth.service';
 
 @Component({
     selector: 'app-navigation',
@@ -15,10 +16,11 @@ export class NavigationComponent implements OnInit {
   @ViewChild('sidenav', { static: true }) public sidenav: MatSidenav;
 
   isAdmin = this.maker.isAdmin;
+  canManage = this.auth.role.pipe(map(role => role !== 'tablet'));
   kitchenUnread = this.maker.unreadForKitchen();
   makerUnread = this.maker.inbox().pipe(map(threads => threads.reduce((n, t) => n + t.unread, 0)));
 
-  constructor(private sidenavService: SidenavService, private maker: MakerService) {
+  constructor(private sidenavService: SidenavService, private maker: MakerService, private auth: AuthService) {
   }
 
   ngOnInit() {

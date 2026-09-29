@@ -1,66 +1,62 @@
 <app-language-button></app-language-button>
 <div class="register-form" layout="column">
-  <mat-card appearance="outlined">
-    <mat-card-header class="mat-card-header">
+  <mat-card>
+    <mat-card-header>
       <mat-card-title>{{ "REGISTER_KITCHEN" | translate }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <form name="registerForm" layout="column" [formGroup]="form">
+      <form name="registerForm" layout="column" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <p class="hint">{{ "REGISTER_INVITE_HINT" | translate }}</p>
         <mat-form-field>
-          <mat-select
-            placeholder="{{ 'KITCHEN' | translate }}"
-            required
-            [(ngModel)]="registration.kitchen"
-            formControlName="kitchen"
-            >
-            @for (kitchen of kitchens; track kitchen) {
-              <mat-option
-                [value]="kitchen.value"
-                >
-                {{ kitchen.viewValue }}
-              </mat-option>
+          <mat-label>{{ "REGISTER_INVITE_CODE" | translate }}</mat-label>
+          <input matInput formControlName="code" autocomplete="off" (blur)="check()" (keyup.enter)="check()">
+          @if (inviteError) {
+            <mat-hint class="error">{{ inviteError }}</mat-hint>
+          }
+        </mat-form-field>
+
+        @if (invite) {
+          <p class="grant">
+            @if (isReferral) {
+              {{ "REGISTER_GRANT_NEW" | translate }}
+            } @else {
+              {{ "REGISTER_GRANT_JOIN" | translate }} <b>{{ inviteKitchen }}</b>
+              ({{ ("ROLE_" + invite.role.toUpperCase()) | translate }}).
             }
-          </mat-select>
-        </mat-form-field>
+          </p>
 
-        <mat-form-field>
-          <input
-            matInput
-            required
-            placeholder="{{ 'REGISTER_ENTER_EMAIL' | translate }}"
-            formControlName="email"
-            [(ngModel)]="registration.email"
-            name="email"
-            (keyup.enter)="onSubmit(registration)"
-            />
-        </mat-form-field>
+          @if (isReferral) {
+            <mat-form-field>
+              <mat-label>{{ "REGISTER_KITCHEN_NAME" | translate }}</mat-label>
+              <input matInput formControlName="kitchenName" maxlength="40" list="dorm-kitchens">
+              <datalist id="dorm-kitchens">
+                @for (name of suggestions; track name) {
+                  <option [value]="name"></option>
+                }
+              </datalist>
+            </mat-form-field>
+          }
 
-        <mat-form-field>
-          <input
-            matInput
-            required
-            placeholder="{{ 'REGISTER_CHOOSE_PASSWORD' | translate }}"
-            [type]="hidePassword ? 'password' : 'text'"
-            [(ngModel)]="registration.password"
-            formControlName="password"
-            (keyup.enter)="onSubmit(registration)"
-            />
-          <mat-icon matSuffix (click)="hidePassword = !hidePassword">{{
-            hidePassword ? "visibility_off" : "visibility"
-          }}</mat-icon>
-        </mat-form-field>
+          <mat-form-field>
+            <mat-label>{{ "REGISTER_ENTER_EMAIL" | translate }}</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email">
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ "REGISTER_CHOOSE_PASSWORD" | translate }}</mat-label>
+            <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" autocomplete="new-password">
+            <mat-icon matSuffix (click)="hidePassword = !hidePassword">{{ hidePassword ? "visibility_off" : "visibility" }}</mat-icon>
+          </mat-form-field>
+          @if (submitError) {
+            <p class="error">{{ submitError }}</p>
+          }
+        }
+
         <mat-card-actions>
-          <button
-            mat-raised-button
-            color="primary"
-            (click)="onSubmit(registration)"
-            [disabled]="form.invalid"
-            >
+          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || !invite || busy">
             {{ "REGISTER" | translate }}
           </button>
-          <button mat-raised-button color="secondary" [routerLink]="['/login']">
-            {{ "REGISTER_TO_LOGIN" | translate }}
-          </button>
+          <button mat-button type="button" [routerLink]="['/login']">{{ "REGISTER_TO_LOGIN" | translate }}</button>
         </mat-card-actions>
       </form>
     </mat-card-content>

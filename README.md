@@ -29,13 +29,21 @@ The seed data is an anonymised copy of prod made with `ops/restore.js` (see `ops
 ## Data model
 
 ```
-kitchens/{uid}                 one doc per kitchen, id == the kitchen's auth uid: {id, name}
-kitchens/{uid}/products/{id}   name, price, retailPrice, active, clId (Cloudinary id)
-kitchens/{uid}/users/{id}      residents: name, room, active, clId
-kitchens/{uid}/purchases/{id}  productId/Name, userId/Name/Room, amount, price, timestamp
+kitchens/{kid}                 {id, name}; public (register suggestions, maker inbox names)
+kitchens/{kid}/products/{id}   name, price, retailPrice, active, clId (Cloudinary id)
+kitchens/{kid}/users/{id}      residents: name, room, active, clId
+kitchens/{kid}/purchases/{id}  productId/Name, userId/Name/Room, amount, price, timestamp
+kitchens/{kid}/messages/{id}   "Skriv til Toke" thread: text, from, createdAt, seenByMaker/Kitchen
+kitchens/{kid}/members/{uid}   extra logins: role, email, joinedAt
+memberships/{uid}              which kitchen an invited login belongs to: kitchenId, role, invite
+invites/{code}                 join a kitchen (treasurer/tablet) or, kitchenId null, create one (owner)
+announcements/{id}             "Aktuelt" posts
+admins/{uid}                   the maker; created only in the Firebase console
 ```
 
-Security rules (`firestore.rules`) let a kitchen reach only its own subtree; tests in `rules-test/`.
+Kitchens from before 2026 have `kid ==` their original login's uid and no membership: that login is the owner. Everyone else joins with an invite. Roles: **owner** (everything, removes logins), **treasurer** (products, residents, accounting, invites), **tablet** (buy, undo within a minute).
+
+Security rules (`firestore.rules`) enforce all of this; tests in `rules-test/` (`npm test` there).
 
 ## Deploy
 

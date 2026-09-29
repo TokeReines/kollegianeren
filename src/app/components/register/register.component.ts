@@ -1,96 +1,108 @@
 import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
+import {ActivatedRoute, Router} from '@angular/router';
 import {AuthService} from '../../services/auth.service';
-import {Router} from '@angular/router';
-import {Registration} from '../../models/registration';
+import {AccessService, Invite} from '../../services/access.service';
 import {KitchenService} from '../../services/kitchen.service';
-import {Kitchen} from '../../interfaces/kitchen';
+import {TranslateService} from '../../services/translate.service';
 
-export interface KitchenSelect {
-  value: string;
-  viewValue: string;
-}
+// The dorm's kitchens, offered as suggestions when an invite creates a new kitchen.
+const DORM_KITCHENS = [
+  'Gamle 1', 'Gamle 2', 'Gamle 3', 'Gamle 4', 'Gamle 5', 'Gamle 6', 'Gamle 7', 'Gamle 8',
+  'Mellemste 2', 'Mellemste 3', 'Mellemste 4', 'Mellemste 5', 'Mellemste 6', 'Mellemste 7', 'Mellemste 8',
+  'Ny 2', 'Ny 3', 'Ny 4', 'Ny 5', 'Ny 6', 'Ny 7', 'Ny 8',
+];
 
+// Registration is by invite only: a code from an existing kitchen (join it) or a referral
+// (create a new kitchen). The code is checked before any account is created.
 @Component({
-    selector: 'app-register',
-    templateUrl: './register.component.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-register',
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  standalone: false
 })
 export class RegisterComponent implements OnInit {
-  registration: Registration = new Registration();
   form: UntypedFormGroup;
   hidePassword = true;
-  kitchens: KitchenSelect[] = [
-    {value: 'gl8', viewValue: 'Gamle 8.'},
-    {value: 'gl7', viewValue: 'Gamle 7.'},
-    {value: 'gl6', viewValue: 'Gamle 6.'},
-    {value: 'gl5', viewValue: 'Gamle 5.'},
-    {value: 'gl4', viewValue: 'Gamle 4.'},
-    {value: 'gl3', viewValue: 'Gamle 3.'},
-    {value: 'gl2', viewValue: 'Gamle 2.'},
-    {value: 'gl1', viewValue: 'Gamle 1.'},
-    {value: 'm8', viewValue: 'Mellemste 8.'},
-    {value: 'm7', viewValue: 'Mellemste 7.'},
-    {value: 'm6', viewValue: 'Mellemste 6.'},
-    {value: 'm5', viewValue: 'Mellemste 5.'},
-    {value: 'm4', viewValue: 'Mellemste 4.'},
-    {value: 'm3', viewValue: 'Mellemste 3.'},
-    {value: 'm2', viewValue: 'Mellemste 2.'},
-    {value: 'ny8', viewValue: 'Ny 8.'},
-    {value: 'ny7', viewValue: 'Ny 7.'},
-    {value: 'ny6', viewValue: 'Ny 6.'},
-    {value: 'ny5', viewValue: 'Ny 5.'},
-    {value: 'ny4', viewValue: 'Ny 4.'},
-    {value: 'ny3', viewValue: 'Ny 3.'},
-    {value: 'ny2', viewValue: 'Ny 2.'}
-  ];
+  invite: Invite | null = null;
+  inviteKitchen: string | null = null;
+  inviteError = '';
+  submitError = '';
+  busy = false;
+  suggestions: string[] = DORM_KITCHENS;
 
   constructor(
     private authService: AuthService,
+    private access: AccessService,
+    private kitchens: KitchenService,
+    private translate: TranslateService,
+    private route: ActivatedRoute,
     private router: Router,
-    private kitchenService: KitchenService
   ) {
   }
 
   ngOnInit() {
     this.form = new UntypedFormGroup({
+      code: new UntypedFormControl('', [Validators.required]),
+      kitchenName: new UntypedFormControl(''),
       email: new UntypedFormControl('', [Validators.required, Validators.email]),
-      kitchen: new UntypedFormControl('', [Validators.required]),
       password: new UntypedFormControl('', [Validators.required, Validators.minLength(6)]),
     });
-    this.kitchenService.list().subscribe(kitchens => {
-      // Registered names vary in case and prefix (Gl4, gl4, Ml8, m8). A miss must not remove anything:
-      // splice(-1, 1) used to drop the last option instead.
-      const key = (name: string) => String(name).toLowerCase().replace(/^ml/, 'm');
-      const taken = new Set(kitchens.map(k => key(k.name)));
-      this.kitchens = this.kitchens.filter(k => !taken.has(key(k.value)));
+    this.kitchens.list().subscribe(taken => {
+      const key = (name: string) => String(name).toLowerCase().replace(/[\s.]/g, '').replace(/^gamle/, 'gl').replace(/^(mellemste|ml)/, 'm');
+      const used = new Set(taken.map(k => key(k.name)));
+      this.suggestions = DORM_KITCHENS.filter(name => !used.has(key(name)));
     });
+    const code = this.route.snapshot.queryParamMap.get('invite');
+    if (code) {
+      this.form.patchValue({code});
+      this.check();
+    }
   }
 
-  get f() {
-    return this.form.controls;
+  private t(key: string) {
+    return this.translate.data[key] || key;
   }
 
-  onSubmit(registration) {
-    if (this.form.invalid) {
+  async check() {
+    this.inviteError = '';
+    this.invite = null;
+    const code = String(this.form.value.code || '').trim();
+    if (!code) {
       return;
     }
+    const found = await this.access.lookup(code).catch(() => null);
+    const expired = found && found.invite.expiresAt?.toMillis() < Date.now();
+    if (!found || found.invite.usedBy || expired) {
+      this.inviteError = this.t(!found ? 'REGISTER_INVITE_UNKNOWN' : found.invite.usedBy ? 'REGISTER_INVITE_USED' : 'REGISTER_INVITE_EXPIRED');
+      return;
+    }
+    this.invite = found.invite;
+    this.inviteKitchen = found.kitchenName;
+    const name = this.form.get('kitchenName');
+    name.setValidators(this.isReferral ? [Validators.required, Validators.maxLength(40)] : []);
+    name.updateValueAndValidity();
+  }
 
-    this.authService.emailSignup(registration.email, registration.password)
-      .then(res => {
-        console.log(res);
-        console.log(registration);
-        const user = res.user;
-        const kitchen = <Kitchen>{
-          id: user.uid,
-          name: registration.kitchen
-        };
-        console.log(kitchen);
-        this.kitchenService.set(kitchen);
-        this.router.navigate(['']);
-      }, err => {
+  get isReferral() {
+    return !!this.invite && !this.invite.kitchenId;
+  }
 
-      });
+  async onSubmit() {
+    if (this.form.invalid || !this.invite || this.busy) {
+      return;
+    }
+    this.busy = true;
+    this.submitError = '';
+    try {
+      await this.authService.emailSignup(this.form.value.email, this.form.value.password);
+      await this.access.redeem(this.invite, this.form.value.kitchenName);
+      this.router.navigate(['']);
+    } catch (e) {
+      this.submitError = e.message;
+    } finally {
+      this.busy = false;
+    }
   }
 }
