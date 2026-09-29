@@ -110,5 +110,19 @@
   "ACCESS_REVOKE": "Revoke",
   "ACCESS_REMOVE": "Remove login",
   "ACCESS_REMOVE_CONFIRM": "Remove access for",
-  "ACCESS_TABLET_ONLY": "Tablet logins cannot manage access."
+  "ACCESS_TABLET_ONLY": "Tablet logins cannot manage access.",
+  "RESIDENTS_MOVE_OUT": "Move out",
+  "RESIDENTS_MOVE_IN": "Move back in",
+  "RESIDENTS_MOVED_OUT": "Moved out",
+  "RESIDENTS_MOVED_OUT_ON": "Moved out",
+  "RESIDENTS_MOVE_OUT_SUMMARY": "purchases this month / last 12 months:",
+  "RESIDENTS_MOVE_OUT_CONFIRM": "Remember to settle up. Mark as moved out? The resident leaves the beer system, but their purchases stay in the accounts.",
+  "RESIDENTS_DELETE_CONFIRM": "Delete this resident completely? Prefer \"Move out\". Delete",
+  "RESIDENTS_ANONYMISE": "Anonymise",
+  "RESIDENTS_ANONYMISE_NOW": "Anonymise now",
+  "RESIDENTS_ANONYMISE_CONFIRM": "Name, room and photo are removed, also on their purchases. Amounts and dates stay. This cannot be undone. Continue?",
+  "RESIDENTS_ANONYMISED": "Anonymised: residents / purchases",
+  "RESIDENTS_DUE": "moved-out residents have been gone for more than",
+  "RESIDENTS_MONTHS": "months",
+  "PRIVACY": "Privacy"
 }
