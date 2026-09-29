@@ -10,10 +10,6 @@ export const environment = {
     cloud_name: 'egmontkollegiet',
     upload_preset: 'l8l2znwi'
   },
-  // Buy me a coffee link on Aktuelt (#87); hidden while empty.
-  maker: {
-    coffeeUrl: ''
-  },
   firebase: {
     apiKey: 'AIzaSyBbDKH9Nm0tyzvCyM8JzUVRZhaCegjlKP4',
     authDomain: 'ehp.firebaseapp.com',
