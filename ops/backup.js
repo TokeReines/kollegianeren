@@ -55,9 +55,19 @@ function saveState(state) {
 
 // Refreshes the project's quota-day usage at most once a minute, and adds our own reads
 // since then so Monitoring's lag cannot make us overshoot.
+// Cloud Monitoring needs billing when called as a service account on a Spark project. Without it
+// the day's usage is unknown and only --max-reads limits the run, so keep that budget modest.
+let monitoring = true;
 async function projectReadsToday() {
+  if (!monitoring) return reads;
   if (Date.now() - lastQuotaCheck.at > 60000) {
-    lastQuotaCheck = { at: Date.now(), used: await usedToday(accessToken, projectId), readsAtCheck: reads };
+    try {
+      lastQuotaCheck = { at: Date.now(), used: await usedToday(accessToken, projectId), readsAtCheck: reads };
+    } catch (e) {
+      monitoring = false;
+      log(`WARN quota check unavailable (${e.message.slice(0, 80)}...), relying on --max-reads ${MAX_READS} only`);
+      return reads;
+    }
   }
   return lastQuotaCheck.used + (reads - lastQuotaCheck.readsAtCheck);
 }

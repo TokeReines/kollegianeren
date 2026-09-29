@@ -65,3 +65,5 @@ The cron service account needs only `roles/datastore.viewer` and `roles/monitori
 - `node deploy-rules.js prod ../firestore.rules [--dry]` publishes rules through the Firebase Rules API. The CLI's `firebase deploy --only firestore:rules` needs the Service Usage API, which is disabled on prod. `--dry` prints the live rules and compiles the new ones server-side.
 - `node rules-evaluations.js [sinceISO]` shows ALLOW / DENY / ERROR counts, to confirm a rules change does not block the kitchens.
 - Prod rules before the lockdown (2026-09-29): ruleset `575c2f72-ae7b-49a8-8a96-a1d157473644`.
+
+With a service account, Cloud Monitoring refuses reads on a Spark project ("requires billing"), so on tokeserver the ceiling check is skipped and `--max-reads 25000` is the only limit. The run happens in the last 30 minutes before the reset, when kitchens are quiet.

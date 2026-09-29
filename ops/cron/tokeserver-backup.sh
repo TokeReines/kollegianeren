@@ -10,4 +10,4 @@ git -C "$HOME/kollegianeren" pull -q --ff-only || echo "$(date -Is) git pull fai
 docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$OPS:/ops" -v "$OUT:/backups" -v "$KEY:/key.json:ro" \
   -e GOOGLE_APPLICATION_CREDENTIALS=/key.json -w /ops node:22-slim \
-  sh -c '[ -d node_modules ] || npm install --silent --no-audit --no-fund; node backup.js --project prod --out /backups/firebase-ehp --before-reset 30 --max-reads 40000 --ceiling 46000'
+  sh -c '[ -d node_modules ] || npm install --silent --no-audit --no-fund; node backup.js --project prod --out /backups/firebase-ehp --before-reset 30 --max-reads 25000 --ceiling 46000'
