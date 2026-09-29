@@ -26,7 +26,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 32%, 440px);
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 38%, 520px);
   gap: 16px;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .residents {
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
 }
 
 // Tiles are buttons styled as M3 outlined cards.
@@ -143,8 +143,9 @@
 .resident {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px;
+  gap: 12px;
+  min-height: 72px;
+  padding: 10px 12px;
   text-align: left;
 
   .text {
@@ -154,14 +155,14 @@
   }
 
   .name {
-    font: var(--mat-sys-title-small);
+    font: var(--mat-sys-title-medium);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .room {
-    font: var(--mat-sys-body-small);
+    font: var(--mat-sys-body-medium);
     color: var(--mat-sys-on-surface-variant);
   }
 }

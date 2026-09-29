@@ -28,7 +28,7 @@
       @for (u of residents(); track u.id) {
         <button type="button" class="tile resident" [class.selected]="isBuyer(u)" [attr.aria-pressed]="isBuyer(u)" [attr.aria-label]="u.name + ', ' + u.room"
                 (click)="toggleBuyer(u, $event)" (contextmenu)="toggleBuyer(u, $event)">
-          <app-resident-avatar [resident]="u" [size]="40" />
+          <app-resident-avatar [resident]="u" [size]="48" />
           <span class="text">
             <span class="name">{{ u.name }}</span>
             <span class="room">{{ u.room }}</span>
