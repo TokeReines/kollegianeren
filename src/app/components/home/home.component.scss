@@ -5,7 +5,7 @@
   justify-content: center;
   gap: 8px;
   padding: 6px 12px;
-  background: #ffc107;
-  color: rgba(0, 0, 0, .87);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
   font-size: 14px;
 }

@@ -26,7 +26,7 @@ mat-card {
 
   td {
     padding: 6px 8px;
-    border-bottom: 1px solid rgba(0, 0, 0, .08);
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
   }
 
   .actions {
@@ -36,7 +36,7 @@ mat-card {
 }
 
 .muted {
-  color: rgba(0, 0, 0, .6);
+  color: var(--mat-sys-on-surface-variant);
   line-height: 1.5;
 }
 

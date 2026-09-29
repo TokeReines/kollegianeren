@@ -10,11 +10,12 @@
 }
 
 .grant {
-  background: #ede7f6;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
   padding: 10px 12px;
   border-radius: 8px;
 }
 
 .error {
-  color: #c62828;
+  color: var(--mat-sys-error);
 }

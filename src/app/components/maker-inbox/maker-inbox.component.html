@@ -25,7 +25,7 @@
             <mat-label>{{ "INBOX_REPLY" | translate }}</mat-label>
             <textarea matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="text.trim() && reply()"></textarea>
           </mat-form-field>
-          <button mat-raised-button color="primary" [disabled]="!text.trim()" (click)="reply()">{{ "MAKER_SEND" | translate }}</button>
+          <button mat-flat-button [disabled]="!text.trim()" (click)="reply()">{{ "MAKER_SEND" | translate }}</button>
         </div>
       } @else {
         <p class="empty">{{ "INBOX_PICK" | translate }}</p>

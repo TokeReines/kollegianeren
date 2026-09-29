@@ -18,6 +18,6 @@
       <mat-label>{{ "MAKER_PLACEHOLDER" | translate }}</mat-label>
       <textarea matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="text.trim() && send()"></textarea>
     </mat-form-field>
-    <button mat-raised-button color="primary" [disabled]="!text.trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
+    <button mat-flat-button [disabled]="!text.trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
   </div>
 </div>
