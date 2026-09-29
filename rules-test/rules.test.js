@@ -285,3 +285,18 @@ test('invites: managers list their kitchen invites and can revoke them', async (
   await assertFails(getDocs(query(collection(asKitchen(B), 'invites'), where('kitchenId', '==', A))));
   await assertSucceeds(deleteDoc(doc(asKitchen(A), 'invites', 't1')));
 });
+
+// Stock (#90).
+test('stock: tablets move the stock count, nothing else on a product', async () => {
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'kitchens', A, 'products', 'p1'), { stock: 20 }));
+  await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
+  const db = asKitchen('tab');
+  const p = doc(db, 'kitchens', A, 'products', 'p1');
+  await assertSucceeds(updateDoc(p, { stock: 18 }));
+  await assertSucceeds(updateDoc(p, { stock: 20 }));
+  await assertFails(updateDoc(p, { stock: 5000 }));
+  await assertFails(updateDoc(p, { price: 1 }));
+  await assertFails(updateDoc(p, { stock: 19, price: 1 }));
+  await assertSucceeds(updateDoc(doc(asKitchen(A), 'kitchens', A, 'products', 'p1'), { price: 7, stock: null }));
+  await assertFails(updateDoc(p, { stock: 3 })); // not tracked any more
+});

@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {addDoc, collection, deleteDoc, doc, updateDoc} from 'firebase/firestore';
+import {addDoc, collection, deleteDoc, doc, increment, updateDoc} from 'firebase/firestore';
 import {switchMap} from 'rxjs/operators';
 import {Product} from '../interfaces/product';
 import {AuthService} from './auth.service';
@@ -27,6 +27,15 @@ export class ProductService {
 
   delete(product: Product) {
     return deleteDoc(doc(this.products(), product.id));
+  }
+
+  // Stock moves by delta (negative when sold). Every member may do this; see firestore.rules.
+  adjustStock(productId: string, delta: number) {
+    return updateDoc(doc(this.products(), productId), {stock: increment(delta)});
+  }
+
+  setStock(productId: string, stock: number | null) {
+    return updateDoc(doc(this.products(), productId), {stock});
   }
 
   add(product) {

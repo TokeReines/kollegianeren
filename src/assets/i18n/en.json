@@ -141,5 +141,13 @@
   "STATS_MORE": "More",
   "STATS_PRODUCT": "Product",
   "STATS_DAY": "Day",
-  "STATS_EMPTY": "No purchases in this period."
+  "STATS_EMPTY": "No purchases in this period.",
+  "PRODUCTS_MARGIN": "Margin",
+  "PRODUCTS_STOCK": "Stock",
+  "PRODUCTS_STOCK_TRACK": "Track stock",
+  "PRODUCTS_STOCK_START": "How many do you have in stock now?",
+  "PRODUCTS_STOCK_RECEIVE": "Goods received, units:",
+  "PRODUCTS_STOCK_STOP": "Stop tracking stock for",
+  "PRODUCTS_LOW_STOCK": "Running low:",
+  "STATS_PROFIT": "Estimated profit (at current cost prices)"
 }

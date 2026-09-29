@@ -141,5 +141,13 @@
   "STATS_MORE": "Flere",
   "STATS_PRODUCT": "Vare",
   "STATS_DAY": "Dag",
-  "STATS_EMPTY": "Ingen køb i perioden."
+  "STATS_EMPTY": "Ingen køb i perioden.",
+  "PRODUCTS_MARGIN": "Avance",
+  "PRODUCTS_STOCK": "Lager",
+  "PRODUCTS_STOCK_TRACK": "Følg lager",
+  "PRODUCTS_STOCK_START": "Hvor mange har I på lager nu?",
+  "PRODUCTS_STOCK_RECEIVE": "Varemodtagelse, antal stk.:",
+  "PRODUCTS_STOCK_STOP": "Stop med at følge lageret for",
+  "PRODUCTS_LOW_STOCK": "Snart udsolgt:",
+  "STATS_PROFIT": "Anslået overskud (efter nuværende indkøbspriser)"
 }
