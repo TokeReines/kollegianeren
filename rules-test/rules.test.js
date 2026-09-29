@@ -6,7 +6,7 @@ const path = require('path');
 const {
   initializeTestEnvironment, assertSucceeds, assertFails,
 } = require('@firebase/rules-unit-testing');
-const {
+const { increment,
   doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup, writeBatch,
 } = require('firebase/firestore');
@@ -287,6 +287,18 @@ test('invites: managers list their kitchen invites and can revoke them', async (
 });
 
 // Stock (#90).
+test('sold: tablets move the sold counter, also on untracked products', async () => {
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'kitchens', A, 'products', 'p1'), { stock: null, sold: 10 }));
+  await seedInvite('t2', unused()); await redeem('tab2', 't2', A, 'tablet');
+  const p = doc(asKitchen('tab2'), 'kitchens', A, 'products', 'p1');
+  await assertSucceeds(updateDoc(p, { sold: increment(3) }));
+  await assertSucceeds(updateDoc(p, { sold: increment(-3) }));
+  await assertFails(updateDoc(p, { sold: 5000 }));
+  await assertFails(updateDoc(p, { sold: 11.5 }));
+  await assertFails(updateDoc(p, { sold: increment(1), stock: 5 })); // cannot start tracking stock
+  await assertFails(updateDoc(p, { sold: increment(1), price: 0 }));
+});
+
 test('stock: tablets move the stock count, nothing else on a product', async () => {
   await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'kitchens', A, 'products', 'p1'), { stock: 20 }));
   await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');

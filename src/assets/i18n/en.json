@@ -163,7 +163,6 @@
   "PRODUCTS_STOCK_STOP_OK": "Stop",
   "PRODUCTS_DELETE_CONFIRM": "The product is deleted. Old purchases keep its name. Prefer \"Active\" to hide it.",
   "ACCESS_REMOVE_HINT": "The login can no longer see the kitchen. You can invite again later.",
-  "HISTORY_DELETE_TITLE": "Delete purchase?",
   "MAKER_ABOUT": "Who is behind it",
   "MAKER_PHOTO_THEN": "The first time Toke thought of making Kollegianeren",
   "MAKER_PHOTO_DORM": "Toke 802/822, when he finally started the project",
@@ -201,5 +200,17 @@
   "ACCOUNTING_TOTAL_KR": "Total, kr.",
   "ACCOUNTING_SUM": "Total",
   "ACCOUNTING_EMPTY": "No purchases in this period.",
-  "ACCOUNTING_FILE": "accounts"
+  "ACCOUNTING_FILE": "accounts",
+  "BUY_CHOSEN": "chosen",
+  "BUY_PER_PERSON": "per person",
+  "BUY_START": "Tap a product and one or more residents.",
+  "BUY_EACH": " each",
+  "BUY_TOTAL": "Total",
+  "HISTORY_UNDO_TITLE": "Undo the purchase?",
+  "HISTORY_KEEP": "Keep",
+  "BUY_EACH_ONE": "each",
+  "BUY_PICK": "Choose one or more residents",
+  "BUY_ONE_LESS": "One less",
+  "BUY_ONE_MORE": "One more",
+  "HISTORY_UNDO_CONFIRM": "Undo purchase"
 }

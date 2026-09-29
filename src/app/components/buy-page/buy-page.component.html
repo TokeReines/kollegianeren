@@ -1,51 +1,79 @@
-<div class="buypage">
-  <h2 class="section-label">{{ "BUY_PRODUCTS" | translate }}</h2>
-  <div class="grid">
-    @for (p of products(); track p.id) {
-      <mat-card class="tile" [class.selected]="isSelected(p)" role="button" tabindex="0"
-                (click)="addOne(p)" (keydown.enter)="addOne(p)" (contextmenu)="takeOne(p, $event)">
-        <div class="text">
-          <div class="title">{{ p.name }}</div>
-          <div class="subtitle">{{ p.price | number:'1.0-2' }} kr.</div>
-        </div>
-        <app-product-picture [product]="p" [matBadge]="amount()" [matBadgeHidden]="!isSelected(p)" matBadgeSize="large" />
-      </mat-card>
-    }
-  </div>
+<div class="panes">
+  <section class="pane" [attr.aria-label]="'BUY_PRODUCTS' | translate">
+    <header>
+      <h2>{{ "BUY_PRODUCTS" | translate }}</h2>
+      <button mat-button class="history" (click)="openHistory()"><mat-icon>history</mat-icon> {{ "BEERSYSTEM_HISTORY" | translate }}</button>
+    </header>
+    <div class="grid products">
+      @for (p of products(); track p.id) {
+        @let n = amountOf(p);
+        <button type="button" class="tile product" [class.selected]="n > 0" (click)="addOne(p)" (contextmenu)="takeOne(p, $event)"
+                [attr.aria-label]="p.name + ', ' + p.price + ' kr.' + (n ? ', ' + n : '')">
+          <app-product-picture [product]="p" [size]="52" [matBadge]="n" [matBadgeHidden]="!n" matBadgeSize="large" />
+          <span class="name">{{ p.name }}</span>
+          <span class="price">{{ p.price | number:'1.0-2' }} kr.</span>
+        </button>
+      }
+    </div>
+  </section>
 
-  <h2 class="section-label">{{ "BUY_RESIDENTS" | translate }}</h2>
-  <div class="grid">
-    @for (u of residents(); track u.id) {
-      <mat-card class="tile" [class.selected]="isBuyer(u)" role="button" tabindex="0" [attr.aria-pressed]="isBuyer(u)"
-                (click)="toggleBuyer(u, $event)" (keydown.enter)="toggleBuyer(u, $event)" (contextmenu)="toggleBuyer(u, $event)">
-        <div class="text">
-          <div class="title">{{ u.name }}</div>
-          <div class="subtitle">{{ u.room }}</div>
-        </div>
-        <app-resident-avatar [resident]="u" [size]="56" />
-      </mat-card>
-    }
-  </div>
+  <section class="pane residents-pane" [attr.aria-label]="'BUY_RESIDENTS' | translate">
+    <header>
+      <h2>{{ "BUY_RESIDENTS" | translate }}</h2>
+      @if (buyers().length) {
+        <span class="chosen">{{ buyers().length }} {{ "BUY_CHOSEN" | translate }}</span>
+      }
+    </header>
+    <div class="grid residents">
+      @for (u of residents(); track u.id) {
+        <button type="button" class="tile resident" [class.selected]="isBuyer(u)" [attr.aria-pressed]="isBuyer(u)" [attr.aria-label]="u.name + ', ' + u.room"
+                (click)="toggleBuyer(u, $event)" (contextmenu)="toggleBuyer(u, $event)">
+          <app-resident-avatar [resident]="u" [size]="48" />
+          <span class="text">
+            <span class="name">{{ u.name }}</span>
+            <span class="room">{{ u.room }}</span>
+          </span>
+        </button>
+      }
+    </div>
+  </section>
 </div>
 
-@if (product(); as p) {
-  <div class="cart">
-    <mat-card>
-      <app-product-picture class="cart-picture" [product]="p" />
-      <div class="cart-title">{{ p.name }}</div>
-      <dl class="cart-sum">
-        <div><dt>{{ "BEERSYSTEM_PRICE" | translate }}</dt><dd>{{ p.price | number:'1.0-2' }} kr.</dd></div>
-        <div><dt>{{ "BEERSYSTEM_AMOUNT" | translate }}</dt><dd>{{ amount() }} {{ "PIECES" | translate }}</dd></div>
-        <div><dt>{{ "BEERSYSTEM_TOTAL" | translate }}</dt><dd><b>{{ amount() * p.price | number:'1.0-2' }} kr.</b></dd></div>
-      </dl>
-      <div class="cart-buttons">
-        <button mat-button (click)="cancel()">{{ "CANCEL" | translate }}</button>
-        <button mat-flat-button [disabled]="!buyers().length" (click)="purchase()">{{ "BEERSYSTEM_BUY" | translate }}</button>
+<footer class="bar">
+  @if (confirmation(); as text) {
+    <div class="last-sale" role="status" [class.compact]="!!product()">
+      <mat-icon>check_circle</mat-icon>
+      <span class="text" [title]="text">{{ text }}</span>
+    </div>
+  }
+  @if (product(); as p) {
+    <div class="basket">
+      <div class="lines">
+        <span class="line">
+          <app-product-picture [product]="p" [size]="32" />
+          <span class="what"><b>{{ amount() }} ×</b> {{ p.name }}</span>
+          <button mat-icon-button (click)="takeOne(p)" [attr.aria-label]="'BUY_ONE_LESS' | translate"><mat-icon>remove</mat-icon></button>
+          <button mat-icon-button (click)="addOne(p)" [attr.aria-label]="'BUY_ONE_MORE' | translate"><mat-icon>add</mat-icon></button>
+        </span>
       </div>
-    </mat-card>
-  </div>
-}
-
-<button mat-fab class="bottom-right" (click)="openHistory()" [attr.aria-label]="'BEERSYSTEM_HISTORY' | translate" [matTooltip]="'BEERSYSTEM_HISTORY' | translate">
-  <mat-icon>list</mat-icon>
-</button>
+      <div class="sum">
+        @if (buyers().length > 1) {
+          <span class="each">{{ amount() }} {{ "BUY_EACH_ONE" | translate }} · {{ perPerson() | number:'1.0-2' }} kr. {{ "BUY_PER_PERSON" | translate }}</span>
+          <span class="total">{{ "BUY_TOTAL" | translate }} <b>{{ perPerson() * buyers().length | number:'1.0-2' }} kr.</b> ({{ amount() * buyers().length }} {{ "PIECES" | translate }})</span>
+        } @else if (buyers().length === 1) {
+          <span class="each">{{ buyers()[0].name }}</span>
+          <span class="total">{{ "BUY_TOTAL" | translate }} <b>{{ perPerson() | number:'1.0-2' }} kr.</b></span>
+        } @else {
+          <span class="each hint">{{ "BUY_PICK" | translate }}</span>
+          <span class="total"><b>{{ perPerson() | number:'1.0-2' }} kr.</b></span>
+        }
+      </div>
+      <div class="actions">
+        <button mat-button (click)="clear()">{{ "CANCEL" | translate }}</button>
+        <button mat-flat-button class="buy-button" [disabled]="!buyers().length" (click)="buy()">{{ "BEERSYSTEM_BUY" | translate }}</button>
+      </div>
+    </div>
+  } @else if (!confirmation()) {
+    <p class="hint start">{{ "BUY_START" | translate }}</p>
+  }
+</footer>

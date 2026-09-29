@@ -77,3 +77,5 @@ On top of the anonymised prod copy (`restore.js --anonymise` into the emulator):
 - `node seed-avatars.js`: illustrated avatars (DiceBear Notionists, CC0, generated locally) for every other resident.
 
 Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
+
+- : a test kitchen on dev (products with pictures, 23 residents, two weeks of purchases) and two 14-day invite links, owner and tablet. The tester registers with their own email and password. Refuses prod.

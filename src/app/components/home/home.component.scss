@@ -1,3 +1,16 @@
+// The signed-in shell: banner and top app bar at their own height, the navigation and page in
+// the rest, so the document itself never scrolls (the page does, inside it).
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+app-navigation {
+  flex: 1;
+  min-height: 0;
+  display: block;
+}
 
 .offline {
   display: flex;

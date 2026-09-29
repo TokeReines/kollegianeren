@@ -90,14 +90,9 @@ h1 {
 
 // ---- Shell: top app bar, navigation, page
 
-mat-sidenav-container {
-  height: calc(100% - 64px);
-}
-
-@media (max-width: 599px) {
-  mat-sidenav-container {
-    height: calc(100% - 56px);
-  }
+app-root {
+  display: block;
+  height: 100%;
 }
 
 // The page: surface, with a rounded corner against the rail on tablets.
@@ -111,6 +106,10 @@ mat-sidenav-container {
 
 .with-rail .sidenav-content {
   border-top-left-radius: 24px;
+}
+
+.sidenav-content:has(app-buy-page) {
+  padding: 16px 20px;
 }
 
 @media (max-width: 760px) {

@@ -30,7 +30,7 @@ export class ProductService {
     return deleteDoc(doc(this.products(), product.id));
   }
 
-  // Stock moves by delta (negative when sold). Every member may do this; see firestore.rules.
+  // Receiving stock. Sales move stock and the sold counter in PurchaseService.sell.
   adjustStock(productId: string, delta: number) {
     return updateDoc(doc(this.products(), productId), {stock: increment(delta)});
   }
