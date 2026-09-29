@@ -7,13 +7,11 @@
     "build": "ng build",
     "build:dev": "ng build -c dev",
     "build:prod": "ng build -c production",
-    "deploy:dev": "ng build -c dev && firebase deploy --only hosting --project dev",
-    "test": "ng test"
+    "deploy:dev": "ng build -c dev && firebase deploy --only hosting --project dev"
   },
   "private": true,
   "dependencies": {
     "@angular/animations": "~22.2.0",
-    "@angular/build": "~22.2.0",
     "@angular/cdk": "~22.2.0",
     "@angular/common": "~22.2.0",
     "@angular/compiler": "~22.2.0",
@@ -23,31 +21,19 @@
     "@angular/platform-browser": "~22.2.0",
     "@angular/platform-browser-dynamic": "~22.2.0",
     "@angular/router": "~22.2.0",
-    "core-js": "^2.5.4",
     "file-saver": "^2.0.0",
     "firebase": "^12.19.0",
-    "rxjs": "~7.5.7",
+    "rxjs": "~7.8.2",
     "tslib": "^2.3.0",
     "xlsx": "^0.14.1",
     "zone.js": "~0.16.3"
   },
   "devDependencies": {
-    "@angular/build": "^22.2.0",
+    "@angular/build": "~22.2.0",
     "@angular/cli": "~22.2.0",
     "@angular/compiler-cli": "~22.2.0",
     "@angular/language-service": "~22.2.0",
-    "@types/jasmine": "~2.8.8",
-    "@types/node": "^12.11.1",
-    "angular-file": "^0.5.4",
-    "istanbul-lib-instrument": "^6.0.3",
-    "jasmine-core": "~3.5.0",
-    "jasmine-spec-reporter": "~5.0.0",
-    "karma": "~5.0.0",
-    "karma-chrome-launcher": "~3.1.0",
-    "karma-coverage-istanbul-reporter": "~3.0.2",
-    "karma-jasmine": "~4.0.0",
-    "karma-jasmine-html-reporter": "^1.5.0",
-    "typescript": "~6.0.3",
-    "vitest": "^5.0.0"
+    "@types/node": "^22.0.0",
+    "typescript": "~6.0.3"
   }
 }

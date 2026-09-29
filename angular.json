@@ -99,10 +99,6 @@
               "sourceMap": true,
               "namedChunks": true,
               "extractLicenses": false
-            },
-            "testing": {
-              "aot": false,
-              "polyfills": "src/polyfills.ts"
             }
           },
           "defaultConfiguration": "emulator"
@@ -129,20 +125,6 @@
           "builder": "@angular/build:extract-i18n",
           "options": {
             "buildTarget": "kollegianeren:build"
-          }
-        },
-        "test": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "tsConfig": "src/tsconfig.spec.json",
-            "reporters": [
-              "default"
-            ],
-            "setupFiles": [
-              "src/test.ts"
-            ],
-            "buildTarget": ":build:testing",
-            "runner": "vitest"
           }
         }
       }
