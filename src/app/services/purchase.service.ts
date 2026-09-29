@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {
-  QueryConstraint, addDoc, collection, deleteDoc, doc, limit as limitTo, orderBy, query, serverTimestamp, updateDoc, where,
+  DocumentReference, QueryConstraint, addDoc, collection, deleteDoc, doc, limit as limitTo, orderBy, query, serverTimestamp, updateDoc, where,
 } from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
@@ -44,6 +44,10 @@ export class PurchaseService {
 
   delete(purchase: Purchase) {
     return deleteDoc(doc(this.purchases(), purchase.id));
+  }
+
+  deleteRef(ref: DocumentReference) {
+    return deleteDoc(ref);
   }
 
   add(purchase: Purchase) {

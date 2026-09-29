@@ -8,6 +8,10 @@ import {PurchaseService} from '../../services/purchase.service';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
+import {TranslateService} from '../../services/translate.service';
+
+// How long a purchase can be taken back from the buy screen.
+const UNDO_MS = 30000;
 
 @Component({
     selector: 'app-buy-page',
@@ -23,7 +27,7 @@ export class BuyPageComponent implements OnInit {
   selectedUsers: Array<BuyableUser> = [];
 
   constructor(private productService: ProductService, private userService: UserService, private purchaseService: PurchaseService,
-              public snackBar: MatSnackBar, private historyBottomSheet: MatBottomSheet) {
+              public snackBar: MatSnackBar, private historyBottomSheet: MatBottomSheet, private translate: TranslateService) {
   }
 
   ngOnInit() {
@@ -94,8 +98,8 @@ export class BuyPageComponent implements OnInit {
   }
 
   purchase() {
-    const users = [];
-    this.selectedUsers.forEach(user => {
+    const t = (key: string) => this.translate.data[key] || key;
+    const writes = this.selectedUsers.map(user => {
       const p = <Purchase>{
         productName: this.selectedProduct.name,
         productId: this.selectedProduct.id,
@@ -105,12 +109,16 @@ export class BuyPageComponent implements OnInit {
         userName: user.name,
         userRoom: user.room
       };
-      users.push(user.name);
-      this.purchaseService.add(p);
+      return this.purchaseService.add(p);
     });
-    this.snackBar.open(this.selectedUsers.map(u => u.name).join(' og ') + ' købte ' +
-      this.selectedProduct.amount + ' ' + this.selectedProduct.name, 'Nice!', {
-      duration: 4000,
+    const message = this.selectedUsers.map(u => u.name).join(t('BEERSYSTEM_AND')) + t('BEERSYSTEM_BOUGHT') +
+      this.selectedProduct.amount + ' ' + this.selectedProduct.name;
+    // Wrong tap? The purchase can be taken back for a short while, straight from the buy screen.
+    this.snackBar.open(message, t('BEERSYSTEM_UNDO'), {duration: UNDO_MS}).onAction().subscribe(() => {
+      Promise.all(writes)
+        .then(refs => Promise.all(refs.map(ref => this.purchaseService.deleteRef(ref))))
+        .then(() => this.snackBar.open(t('BEERSYSTEM_UNDONE'), undefined, {duration: 4000}),
+          err => this.snackBar.open(err.message, 'OK', {duration: 6000}));
     });
     this.cancel();
   }
