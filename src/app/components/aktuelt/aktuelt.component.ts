@@ -3,6 +3,8 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {Observable} from 'rxjs';
 import {environment} from '../../../environments/environment';
 import {Announcement, MakerService} from '../../services/maker.service';
+import {MatDialog} from '@angular/material/dialog';
+import {RevealDialogComponent} from '../reveal-dialog/reveal-dialog.component';
 
 // "Aktuelt": what's new and what's planned, written by the maker. Admins can post here.
 @Component({
@@ -19,7 +21,11 @@ export class AktueltComponent {
   title = '';
   body = '';
 
-  constructor(private maker: MakerService, private snackBar: MatSnackBar) {
+  constructor(private maker: MakerService, private snackBar: MatSnackBar, private dialog: MatDialog) {
+  }
+
+  showReveal() {
+    this.dialog.open(RevealDialogComponent, {maxWidth: '96vw', autoFocus: false});
   }
 
   post() {

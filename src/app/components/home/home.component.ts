@@ -1,7 +1,9 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { AppUpdateService } from '../../services/app-update.service';
-import { RevealDialogComponent, revealSeen } from '../reveal-dialog/reveal-dialog.component';
+import { RevealDialogComponent, revealWanted } from '../reveal-dialog/reveal-dialog.component';
+import { AuthService } from '../../services/auth.service';
+import { filter, take } from 'rxjs/operators';
 
 @Component({
     selector: 'app-home',
@@ -14,13 +16,15 @@ export class HomeComponent implements OnInit {
 
   online = this.appUpdate.online;
 
-  constructor(private dialog: MatDialog, private appUpdate: AppUpdateService) { }
+  constructor(private dialog: MatDialog, private appUpdate: AppUpdateService, private auth: AuthService) { }
 
   ngOnInit() {
     this.appUpdate.start();
-    if (!revealSeen()) {
-      this.dialog.open(RevealDialogComponent, {maxWidth: '96vw', autoFocus: false});
-    }
+    this.auth.user.pipe(filter(u => !!u && !u.isAnonymous), take(1)).subscribe(user => {
+      if (revealWanted(user.uid)) {
+        this.dialog.open(RevealDialogComponent, {maxWidth: '96vw', autoFocus: false, data: {uid: user.uid}});
+      }
+    });
   }
 
 }

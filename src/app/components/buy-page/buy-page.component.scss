@@ -1,119 +1,232 @@
-// Cards fill the width that is there (more columns on wider tablets) instead of a fixed 190px.
+// Products and residents fill the width that is there: six columns on a 1280px tablet, so a
+// kitchen with 30 products and 23 residents fits with little scrolling.
 .buypage-group {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 8px;
+  margin: 0 0 16px;
 }
 
-.buypage-grid-card {
+.section-label {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 8px;
+}
+
+.buypage-left {
+  width: 100%;
+  // Room for the cart and the history button at the bottom.
+  padding-bottom: 104px;
+}
+
+.buypage-grid-card.mat-mdc-card {
   min-width: 0;
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms;
+
+  mat-card-title-group {
+    align-items: center;
+    gap: 8px;
+  }
+
   mat-card-title {
     width: 100%;
-    line-height: 1.2;
+    font: var(--mat-sys-title-medium);
+    line-height: 1.25;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 18px;
     hyphens: auto;
   }
-}
-.buypage-left {
-  width: 100%;
-}
 
-.buypage-cart-card {
-  position: fixed;
-  right: 0;
-  width: 200px;
-  height: 400px;
-  mat-card {
-    height: 100%;
-    mat-card-title-group {
-      height: 100%;
+  mat-card-subtitle {
+    font: var(--mat-sys-body-medium);
+    color: var(--mat-sys-on-surface-variant);
+    margin-top: 2px;
+  }
+
+  .image-wrapper {
+    flex: 0 0 auto;
+    height: 56px !important;
+    width: 56px !important;
+
+    img {
+      max-height: 100% !important;
+      max-width: 100% !important;
     }
   }
-}
-.cart-buttons {
-  position:absolute !important;
-  bottom:0 !important;
-  margin-bottom: 8px !important;
+
+  .initials {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, var(--mat-sys-surface));
+  }
 }
 
-table.ehp-table > tbody > tr > td {
-  padding: 5px 16px;
+// Selected products and residents: M3 selected state, a secondary container with a primary edge.
+.buypage-grid-card.mat-mdc-card.selected {
+  background: var(--mat-sys-secondary-container);
+  border-color: var(--mat-sys-primary);
+  box-shadow: inset 0 0 0 1px var(--mat-sys-primary);
+
+  mat-card-title,
+  mat-card-subtitle {
+    color: var(--mat-sys-on-secondary-container);
+  }
 }
 
-.cart-title {
-  text-align:center;
+// The cart docks along the bottom, next to the history button, so the grid never jumps.
+.buypage-cart-card {
+  position: fixed;
+  z-index: 5;
+  left: 112px;
+  right: 104px;
+  bottom: 16px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+
+  mat-card {
+    pointer-events: auto;
+    width: min(760px, 100%);
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--mat-sys-surface-container-high);
+    border-color: var(--mat-sys-outline-variant);
+    box-shadow: var(--mat-sys-level3);
+  }
 }
 
-.cart-image{
-  max-height: 223px;
-  max-width:168px;
-  //width:auto;
-  margin-left: auto;
-  margin-right: auto;
+.cart-image {
+  max-height: 56px;
+  max-width: 56px;
+  margin: 0 auto;
   display: block;
 }
 
-.buypage-group {
-  margin-bottom: 15px;
-  margin-top: 15px;
-  margin-right: 205px;
+.cart-title {
+  font: var(--mat-sys-title-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table.ehp-table {
+  border-collapse: collapse;
+
+  td {
+    padding: 0 8px;
+    white-space: nowrap;
+  }
+
+  tbody {
+    display: flex;
+    gap: 16px;
+  }
+
+  tr {
+    display: flex;
+    flex-direction: column;
+  }
+
+  td:first-child {
+    font: var(--mat-sys-label-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.cart-buttons.mat-mdc-card-actions {
+  padding: 0;
+  gap: 8px;
+  min-height: 0;
 }
 
 .disable-text-selection {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
-  -khtml-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
 }
 
-
-// Selected products and residents. MDC cards draw their own shadow, so elevation alone barely shows.
-.buypage-grid-card.mat-elevation-z5 {
-  box-shadow: 0 0 0 3px var(--mat-sys-primary), var(--mat-sys-level3) !important;
-}
-
-// Phones: two cards per row, the cart docked along the bottom instead of covering the right side.
+// Phones: three stacked cards per row (picture above the name), the cart across the bottom.
 @media (max-width: 760px) {
   .buypage-group {
-    margin-right: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
 
-    &:last-child {
-      padding-bottom: 170px;
+  .buypage-grid-card.mat-mdc-card {
+    padding: 8px;
+
+    mat-card-title-group {
+      flex-direction: column-reverse;
+      align-items: flex-start;
+    }
+
+    mat-card-title {
+      font: var(--mat-sys-title-small);
+    }
+
+    mat-card-subtitle {
+      font: var(--mat-sys-body-small);
+    }
+
+    .image-wrapper,
+    .initials {
+      height: 48px !important;
+      width: 48px !important;
     }
   }
 
-  .buypage-group {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .buypage-left {
+    padding-bottom: 176px;
   }
 
   .buypage-cart-card {
     left: 0;
+    right: 0;
     bottom: 0;
-    width: 100%;
-    height: auto;
-    z-index: 5;
 
     mat-card {
-      height: auto;
-      display: grid;
-      grid-template-columns: 64px 1fr auto;
-      align-items: center;
-      gap: 8px;
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      gap: 8px 12px;
     }
 
-    .cart-image {
-      max-height: 64px;
+    table.ehp-table {
+      grid-column: 1 / -1;
+    }
+
+    .cart-buttons {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
     }
   }
+}
 
-  .cart-buttons {
-    position: static !important;
-    margin: 0 !important;
+.cart-picture {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+@media (max-width: 760px) {
+  .cart-picture {
+    width: 48px !important;
+    height: 48px !important;
   }
+}
+
+.buypage-grid-card.mat-mdc-card {
+  overflow: visible;
 }

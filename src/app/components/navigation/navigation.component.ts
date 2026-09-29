@@ -27,6 +27,7 @@ export class NavigationComponent implements OnInit {
 
   // Phones get the menu as a slide-over; wider screens a navigation rail.
   narrow = this.breakpoints.observe('(max-width: 760px)').pipe(map(s => s.matches), shareReplay(1));
+  railHidden = this.sidenavService.railHidden;
   private kitchenUnread = this.maker.unreadForKitchen().pipe(shareReplay(1));
   private makerUnread = this.maker.inbox().pipe(map(threads => threads.reduce((n, t) => n + t.unread, 0)), shareReplay(1));
 

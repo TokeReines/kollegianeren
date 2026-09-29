@@ -67,3 +67,13 @@ The cron service account needs only `roles/datastore.viewer` and `roles/monitori
 - Prod rules before the lockdown (2026-09-29): ruleset `575c2f72-ae7b-49a8-8a96-a1d157473644`.
 
 With a service account, Cloud Monitoring refuses reads on a Spark project ("requires billing"), so on tokeserver the ceiling check is skipped and `--max-reads 25000` is the only limit. The run happens in the last 30 minutes before the reset, when kitchens are quiet.
+
+## Local demo data
+
+On top of the anonymised prod copy (`restore.js --anonymise` into the emulator):
+
+- `node seed-emulator.js`: the maker login and the launch post.
+- `node seed-demo.js`: extra logins with roles, invites, stock, moved-out residents, a week of purchases, maker threads, a small referred kitchen.
+- `node seed-avatars.js`: illustrated avatars (DiceBear Notionists, CC0, generated locally) for every other resident.
+
+Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
