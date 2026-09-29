@@ -67,7 +67,7 @@ export class HistoryBottomSheetComponent {
     const t = (k: string) => this.i18n.t(k);
     const ok = await this.confirm.ask({
       title: t('HISTORY_UNDO_TITLE'), message: `${p.amount} × ${p.productName}, ${p.userName}`,
-      confirm: this.canManage() ? t('DELETE') : t('BEERSYSTEM_UNDO'), cancel: t('HISTORY_KEEP'), danger: true,
+      confirm: t('BEERSYSTEM_UNDO'), cancel: t('HISTORY_KEEP'), danger: true,
     });
     if (ok) {
       this.purchaseService.remove(p, this.products().find(x => x.id === p.productId))
