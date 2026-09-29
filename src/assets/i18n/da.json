@@ -76,5 +76,6 @@
   "REVEAL_WHATS_NEW": "Se hvad der er nyt",
   "REVEAL_CLOSE": "Luk",
   "BEERSYSTEM_UNDO": "Fortryd",
-  "BEERSYSTEM_UNDONE": "Købet er fortrudt"
+  "BEERSYSTEM_UNDONE": "Købet er fortrudt",
+  "OFFLINE_BANNER": "Ingen forbindelse. Køb gemmes på tabletten og sendes, når nettet er tilbage."
 }

@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { AppUpdateService } from '../../services/app-update.service';
 import { RevealDialogComponent, revealSeen } from '../reveal-dialog/reveal-dialog.component';
 
 @Component({
@@ -11,9 +12,12 @@ import { RevealDialogComponent, revealSeen } from '../reveal-dialog/reveal-dialo
 })
 export class HomeComponent implements OnInit {
 
-  constructor(private dialog: MatDialog) { }
+  online = this.appUpdate.online;
+
+  constructor(private dialog: MatDialog, private appUpdate: AppUpdateService) { }
 
   ngOnInit() {
+    this.appUpdate.start();
     if (!revealSeen()) {
       this.dialog.open(RevealDialogComponent, {maxWidth: '96vw', autoFocus: false});
     }
