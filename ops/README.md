@@ -58,10 +58,10 @@ The cron service account needs only `roles/datastore.viewer` and `roles/monitori
 
 ## Tokeserver (current setup)
 
- runs hourly from cron on tokeserver in a  container;  makes it work only in the last 30 minutes of the quota day. It needs a key for a read-only service account at  and skips until that exists. Log: .
+`cron/tokeserver-backup.sh` runs hourly from cron on tokeserver in a `node:22-slim` container; `--before-reset` makes it work only in the last 30 minutes of the quota day. It needs a key for a read-only service account at `~/.config/kollegianeren/backup-sa.json` and skips until that exists. Log: `~/kollegianeren-backups/backup.log`.
 
 ## Rules
 
--  publishes rules through the Firebase Rules API. The CLI's  needs the Service Usage API, which is disabled on prod.  prints the live rules and compiles the new ones server-side.
--  shows ALLOW / DENY / ERROR counts, to confirm a rules change does not block the kitchens.
-- Prod rules before the lockdown (2026-09-29): ruleset .
+- `node deploy-rules.js prod ../firestore.rules [--dry]` publishes rules through the Firebase Rules API. The CLI's `firebase deploy --only firestore:rules` needs the Service Usage API, which is disabled on prod. `--dry` prints the live rules and compiles the new ones server-side.
+- `node rules-evaluations.js [sinceISO]` shows ALLOW / DENY / ERROR counts, to confirm a rules change does not block the kitchens.
+- Prod rules before the lockdown (2026-09-29): ruleset `575c2f72-ae7b-49a8-8a96-a1d157473644`.
