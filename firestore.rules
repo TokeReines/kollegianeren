@@ -32,6 +32,17 @@ service cloud.firestore {
       return exists(membershipPath(request.auth.uid))
         ? get(membershipPath(request.auth.uid)).data.kitchenId : request.auth.uid;
     }
+    // Resident self-view: a manager makes residentLinks/{token}; whoever opens the link registers the
+    // token under linkSessions/{their uid} and may then read that one resident's name and purchases.
+    function linkOf() {
+      return get(/databases/$(database)/documents/residentLinks/$(get(/databases/$(database)/documents/linkSessions/$(request.auth.uid)).data.token)).data;
+    }
+    function viewsResident(kid, userId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/linkSessions/$(request.auth.uid))
+        && linkOf().kitchenId == kid && linkOf().userId == userId;
+    }
+
     function invitePath(code) {
       return /databases/$(database)/documents/invites/$(code);
     }
@@ -111,6 +122,26 @@ service cloud.firestore {
         && (resource.data.createdBy == request.auth.uid || (resource.data.kitchenId != null && canManage(resource.data.kitchenId)));
     }
 
+    match /residentLinks/{token} {
+      allow get: if true;
+      allow list: if signedIn() && canManage(resource.data.kitchenId);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['kitchenId', 'userId', 'createdBy', 'createdAt'])
+        && canManage(request.resource.data.kitchenId)
+        && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time
+        && token.size() >= 20;
+      allow update: if false;
+      allow delete: if signedIn() && canManage(resource.data.kitchenId);
+    }
+
+    match /linkSessions/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['token'])
+        && exists(/databases/$(database)/documents/residentLinks/$(request.resource.data.token));
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
     // Which kitchen a (non-legacy) login belongs to. Created only while redeeming an invite in the
     // same batch, so an old, used code cannot be replayed after being removed from a kitchen.
     match /memberships/{uid} {
@@ -159,7 +190,7 @@ service cloud.firestore {
 
       // Tablets buy and may take back a purchase within a minute; managers may do anything.
       match /purchases/{purchaseId} {
-        allow read: if isMember(kid);
+        allow read: if isMember(kid) || viewsResident(kid, resource.data.userId);
         allow create: if isMember(kid) && validPurchase(request.resource.data)
           && request.resource.data.timestamp == request.time;
         allow update: if canManage(kid) && validPurchase(request.resource.data)
@@ -190,6 +221,11 @@ service cloud.firestore {
             && resource.data.stock is number && request.resource.data.stock is number
             && request.resource.data.stock - resource.data.stock >= -400
             && request.resource.data.stock - resource.data.stock <= 400);
+      }
+
+      // A resident's own entry, for the self-view link.
+      match /users/{userId} {
+        allow get: if viewsResident(kid, userId);
       }
 
       // users (residents): every member reads, managers write. Purchases, messages and

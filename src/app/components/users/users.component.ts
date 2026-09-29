@@ -10,6 +10,7 @@ import {EditUserDialogComponent} from './edit-user-dialog/edit-user-dialog.compo
 import {AddUserDialogComponent} from './add-user-dialog/add-user-dialog.component';
 import {RETENTION_MONTHS, ResidencyService} from '../../services/residency.service';
 import {TranslateService} from '../../services/translate.service';
+import {ResidentLinkService, residentLink} from '../../services/resident-link.service';
 
 @Component({
   selector: 'app-users',
@@ -25,7 +26,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   retentionMonths = RETENTION_MONTHS;
   busy = false;
   @ViewChild(MatSort, {static: true}) sort: MatSort;
-  displayedColumns = ['image', 'name', 'room', 'active', 'edit', 'moveOut', 'delete'];
+  displayedColumns = ['image', 'name', 'room', 'active', 'link', 'edit', 'moveOut', 'delete'];
   private sub: Subscription;
 
   constructor(
@@ -33,6 +34,7 @@ export class UsersComponent implements OnInit, OnDestroy {
     private residency: ResidencyService,
     private translate: TranslateService,
     private snackBar: MatSnackBar,
+    private links: ResidentLinkService,
     public dialog: MatDialog,
   ) {
   }
@@ -91,6 +93,22 @@ export class UsersComponent implements OnInit, OnDestroy {
       this.fail(e);
     } finally {
       this.busy = false;
+    }
+  }
+
+  async shareLink(user: User, renew = false) {
+    try {
+      const token = renew ? await this.links.renew(user) : await this.links.linkFor(user);
+      const url = residentLink(token);
+      try {
+        await navigator.clipboard.writeText(url);
+        this.snackBar.open(`${this.t('RESIDENTS_LINK_COPIED')} ${user.name}`, this.t('RESIDENTS_LINK_RENEW'), {duration: 8000})
+          .onAction().subscribe(() => this.shareLink(user, true));
+      } catch {
+        this.snackBar.open(url, 'OK', {duration: 20000});
+      }
+    } catch (e) {
+      this.fail(e);
     }
   }
 

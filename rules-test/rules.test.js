@@ -300,3 +300,31 @@ test('stock: tablets move the stock count, nothing else on a product', async () 
   await assertSucceeds(updateDoc(doc(asKitchen(A), 'kitchens', A, 'products', 'p1'), { price: 7, stock: null }));
   await assertFails(updateDoc(p, { stock: 3 })); // not tracked any more
 });
+
+// Resident self-view (#89).
+test('resident link: the holder sees one resident and nothing else', async () => {
+  const TOKEN = 'tok_' + 'x'.repeat(24);
+  await assertSucceeds(setDoc(doc(asKitchen(A), 'residentLinks', TOKEN), { kitchenId: A, userId: 'u1', createdBy: A, createdAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(asKitchen(A), 'residentLinks', 'short'), { kitchenId: A, userId: 'u1', createdBy: A, createdAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(asKitchen(B), 'residentLinks', 'tok_' + 'y'.repeat(24)), { kitchenId: A, userId: 'u1', createdBy: B, createdAt: serverTimestamp() }));
+  await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
+  await assertFails(setDoc(doc(asKitchen('tab'), 'residentLinks', 'tok_' + 'z'.repeat(24)), { kitchenId: A, userId: 'u1', createdBy: 'tab', createdAt: serverTimestamp() }));
+
+  const viewer = asKitchen('anon-viewer');
+  await assertFails(getDocs(query(collection(viewer, 'kitchens', A, 'purchases'), where('userId', '==', 'u1'))));
+  await assertFails(setDoc(doc(viewer, 'linkSessions', 'anon-viewer'), { token: 'no-such-token-xxxxxxxxxx' }));
+  await assertSucceeds(setDoc(doc(viewer, 'linkSessions', 'anon-viewer'), { token: TOKEN }));
+  await assertSucceeds(getDocs(query(collection(viewer, 'kitchens', A, 'purchases'), where('userId', '==', 'u1'))));
+  await assertSucceeds(getDoc(doc(viewer, 'kitchens', A, 'users', 'u1')));
+  // Everyone else's data stays closed.
+  await assertFails(getDocs(collection(viewer, 'kitchens', A, 'purchases')));
+  await assertFails(getDocs(query(collection(viewer, 'kitchens', A, 'purchases'), where('userId', '==', 'u2'))));
+  await assertFails(getDoc(doc(viewer, 'kitchens', A, 'users', 'u2')));
+  await assertFails(getDocs(collection(viewer, 'kitchens', A, 'users')));
+  await assertFails(getDocs(collection(viewer, 'kitchens', A, 'products')));
+  await assertFails(getDocs(query(collection(viewer, 'kitchens', B, 'purchases'), where('userId', '==', 'u1'))));
+  await assertFails(addDoc(collection(viewer, 'kitchens', A, 'purchases'), purchase()));
+  // Revoking the link ends access.
+  await assertSucceeds(deleteDoc(doc(asKitchen(A), 'residentLinks', TOKEN)));
+  await assertFails(getDocs(query(collection(viewer, 'kitchens', A, 'purchases'), where('userId', '==', 'u1'))));
+});

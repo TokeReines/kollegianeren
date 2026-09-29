@@ -47,6 +47,13 @@
     </mat-cell>
   </ng-container>
 
+  <ng-container matColumnDef="link">
+    <mat-header-cell *matHeaderCellDef>{{ "RESIDENTS_LINK" | translate }}</mat-header-cell>
+    <mat-cell *matCellDef="let user">
+      <button mat-icon-button (click)="shareLink(user)" [attr.aria-label]="'RESIDENTS_LINK' | translate"><mat-icon>link</mat-icon></button>
+    </mat-cell>
+  </ng-container>
+
   <ng-container matColumnDef="moveOut">
     <mat-header-cell *matHeaderCellDef>{{ "RESIDENTS_MOVE_OUT" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user">
