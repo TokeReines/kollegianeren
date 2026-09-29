@@ -9,6 +9,9 @@ import {AuthGuard} from './guards/auth.guard';
 import {BuyPageComponent} from './components/buy-page/buy-page.component';
 import {AccountingComponent} from './components/accounting/accounting.component';
 import {HomeComponent} from './components/home/home.component';
+import {AktueltComponent} from './components/aktuelt/aktuelt.component';
+import {MakerChatComponent} from './components/maker-chat/maker-chat.component';
+import {MakerInboxComponent} from './components/maker-inbox/maker-inbox.component';
 
 const routes: Routes = [
     {path: 'login', component: LoginComponent},
@@ -19,7 +22,10 @@ const routes: Routes = [
         {path: '', component: BuyPageComponent, canActivate: [AuthGuard]},
         {path: 'products', component: ProductsComponent, canActivate: [AuthGuard]},
         {path: 'users', component: UsersComponent, canActivate: [AuthGuard]},
-        {path: 'accounting', component: AccountingComponent, canActivate: [AuthGuard]}]
+        {path: 'accounting', component: AccountingComponent, canActivate: [AuthGuard]},
+        {path: 'aktuelt', component: AktueltComponent, canActivate: [AuthGuard]},
+        {path: 'maker', component: MakerChatComponent, canActivate: [AuthGuard]},
+        {path: 'inbox', component: MakerInboxComponent, canActivate: [AuthGuard]}]
     }
   ]
 ;

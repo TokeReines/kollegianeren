@@ -17,6 +17,20 @@
         <mat-icon matListItemIcon>receipt</mat-icon>
         <span matListItemTitle>{{ "MENU_ACCOUNTING" | translate }}</span>
       </a>
+      <a mat-list-item [routerLink]="['/aktuelt']" routerLinkActive #rla4="routerLinkActive" [activated]="rla4.isActive">
+        <mat-icon matListItemIcon>campaign</mat-icon>
+        <span matListItemTitle>{{ "MENU_AKTUELT" | translate }}</span>
+      </a>
+      <a mat-list-item [routerLink]="['/maker']" routerLinkActive #rla5="routerLinkActive" [activated]="rla5.isActive">
+        <mat-icon matListItemIcon [matBadge]="(kitchenUnread | async) || null" matBadgeColor="accent" matBadgeSize="small">chat</mat-icon>
+        <span matListItemTitle>{{ "MENU_MAKER" | translate }}</span>
+      </a>
+      @if (isAdmin | async) {
+        <a mat-list-item [routerLink]="['/inbox']" routerLinkActive #rla6="routerLinkActive" [activated]="rla6.isActive">
+          <mat-icon matListItemIcon [matBadge]="(makerUnread | async) || null" matBadgeColor="accent" matBadgeSize="small">inbox</mat-icon>
+          <span matListItemTitle>{{ "MENU_INBOX" | translate }}</span>
+        </a>
+      }
     </mat-nav-list>
   </mat-sidenav>
   <mat-sidenav-content class="sidenav-content">

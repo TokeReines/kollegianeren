@@ -8,7 +8,7 @@ const {
 } = require('@firebase/rules-unit-testing');
 const {
   doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, limit, Timestamp, serverTimestamp,
+  query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup,
 } = require('firebase/firestore');
 
 let env;
@@ -28,8 +28,10 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async ctx => {
     const db = ctx.firestore();
+    await setDoc(doc(db, 'admins', 'maker'), {});
     for (const k of [A, B]) {
       await setDoc(doc(db, 'kitchens', k), { id: k, name: k === A ? 'Ny2' : 'Gl4' });
+      await setDoc(doc(db, 'kitchens', k, 'messages', 'm1'), { text: 'hi', from: 'kitchen', createdAt: Timestamp.now(), seenByMaker: false, seenByKitchen: true });
       await setDoc(doc(db, 'kitchens', k, 'users', 'u1'), { name: 'Resident', room: '101', kitchen: k, active: true });
       await setDoc(doc(db, 'kitchens', k, 'products', 'p1'), { name: 'Beer', price: 5, retailPrice: 3, active: true });
       await setDoc(doc(db, 'kitchens', k, 'purchases', 'x1'), {
@@ -60,12 +62,20 @@ test('nobody can delete kitchen docs', async () => {
 });
 
 // Everything under the kitchen: ProductService, UserService, PurchaseService.
+const purchase = (extra = {}) => ({
+  amount: 1, productId: 'p1', productName: 'Beer', price: 5, userId: 'u1', userName: 'Resident', userRoom: '101',
+  timestamp: serverTimestamp(), ...extra,
+});
+// What the app writes for each collection.
+const sample = { products: () => ({ name: 'new' }), users: () => ({ name: 'new' }), purchases: () => purchase() };
+const change = { products: { name: 'changed' }, users: { name: 'changed' }, purchases: { amount: 2 } };
+
 for (const sub of ['products', 'users', 'purchases']) {
   test(`own kitchen: full CRUD on ${sub}`, async () => {
     const db = asKitchen(A);
     await assertSucceeds(getDocs(collection(db, 'kitchens', A, sub)));
-    const ref = await assertSucceeds(addDoc(collection(db, 'kitchens', A, sub), { name: 'new' }));
-    await assertSucceeds(updateDoc(doc(db, 'kitchens', A, sub, ref.id), { name: 'changed' }));
+    const ref = await assertSucceeds(addDoc(collection(db, 'kitchens', A, sub), sample[sub]()));
+    await assertSucceeds(updateDoc(doc(db, 'kitchens', A, sub, ref.id), change[sub]));
     await assertSucceeds(deleteDoc(doc(db, 'kitchens', A, sub, ref.id)));
   });
   test(`other kitchen: no access to ${sub}`, async () => {
@@ -98,4 +108,86 @@ test('accounting: purchases in a date range', async () => {
 test('no collection-group or root-level access to other paths', async () => {
   await assertFails(getDocs(collection(asKitchen(A), 'anything')));
   await assertFails(setDoc(doc(asKitchen(A), 'anything', 'x'), { a: 1 }));
+});
+
+// Purchase validation (#80).
+const addPurchase = p => addDoc(collection(asKitchen(A), 'kitchens', A, 'purchases'), p);
+test('purchases: historical quirks still accepted (null price, numeric room)', async () => {
+  await assertSucceeds(addPurchase(purchase({ price: null })));
+  await assertSucceeds(addPurchase(purchase({ userRoom: 101 })));
+});
+test('purchases: rejects bad shapes', async () => {
+  await assertFails(addPurchase(purchase({ amount: 0 })));
+  await assertFails(addPurchase(purchase({ amount: 1.5 })));
+  await assertFails(addPurchase(purchase({ amount: '1' })));
+  await assertFails(addPurchase(purchase({ price: -5 })));
+  await assertFails(addPurchase(purchase({ extra: true })));
+  await assertFails(addPurchase({ ...purchase(), timestamp: Timestamp.fromDate(new Date('2020-01-01')) }));
+  const { productId, ...noProduct } = purchase();
+  await assertFails(addPurchase(noProduct));
+});
+test('purchases: updates cannot move the timestamp', async () => {
+  const db = asKitchen(A);
+  await assertFails(updateDoc(doc(db, 'kitchens', A, 'purchases', 'x1'), { timestamp: Timestamp.fromDate(new Date('2020-01-01')) }));
+  await assertSucceeds(updateDoc(doc(db, 'kitchens', A, 'purchases', 'x1'), { amount: 3 }));
+});
+test('kitchen doc: only {id, name} with id == uid', async () => {
+  await assertFails(setDoc(doc(asKitchen('k2'), 'kitchens', 'k2'), { id: 'k2', name: 'x', admin: true }));
+  await assertFails(setDoc(doc(asKitchen('k2'), 'kitchens', 'k2'), { id: 'other', name: 'x' }));
+});
+
+// Replays the shapes of real purchases from the local backup, if there is one (not in CI).
+const backupDir = path.join(require('os').homedir(), 'kollegianeren-backups/firebase-ehp/purchases');
+test('purchases: every distinct real-world shape from the backup is accepted', { skip: !fs.existsSync(backupDir) && 'no local backup' }, async () => {
+  const zlib = require('zlib');
+  const shapes = new Map();
+  for (const k of fs.readdirSync(backupDir)) for (const f of fs.readdirSync(path.join(backupDir, k))) {
+    for (const l of zlib.gunzipSync(fs.readFileSync(path.join(backupDir, k, f))).toString().split(String.fromCharCode(10)).filter(Boolean)) {
+      const d = JSON.parse(l).data;
+      const key = Object.entries(d).map(([n, v]) => n + ':' + (v === null ? 'null' : v.__t || typeof v) + (n === 'amount' && v > 20 ? '>20' : '')).sort().join(',');
+      if (!shapes.has(key)) shapes.set(key, d);
+    }
+  }
+  for (const d of shapes.values()) {
+    const { timestamp, ...rest } = d;
+    await assertSucceeds(addPurchase({ ...rest, timestamp: serverTimestamp() }));
+  }
+  console.log(`# replayed ${shapes.size} distinct purchase shapes`);
+});
+
+// Maker features (#84, #85).
+const maker = () => asKitchen('maker');
+const msg = (from, extra = {}) => ({ text: 'Hej', from, createdAt: serverTimestamp(), seenByMaker: from === 'maker', seenByKitchen: from === 'kitchen', ...extra });
+test('announcements: every signed-in kitchen reads, only admins post', async () => {
+  await assertSucceeds(getDocs(collection(asKitchen(A), 'announcements')));
+  await assertFails(getDocs(collection(anon(), 'announcements')));
+  await assertFails(addDoc(collection(asKitchen(A), 'announcements'), { title: 'x', body: 'y', createdAt: serverTimestamp() }));
+  await assertSucceeds(addDoc(collection(maker(), 'announcements'), { title: 'Nyt', body: 'Tekst', createdAt: serverTimestamp() }));
+  await assertFails(addDoc(collection(maker(), 'announcements'), { title: '', body: 'Tekst', createdAt: serverTimestamp() }));
+});
+test('admins: nobody can make themselves admin', async () => {
+  await assertFails(setDoc(doc(asKitchen(A), 'admins', A), {}));
+  await assertSucceeds(getDoc(doc(maker(), 'admins', 'maker')));
+  await assertFails(getDoc(doc(asKitchen(A), 'admins', 'maker')));
+});
+test('messages: kitchen writes its own side only', async () => {
+  const col = collection(asKitchen(A), 'kitchens', A, 'messages');
+  await assertSucceeds(addDoc(col, msg('kitchen')));
+  await assertFails(addDoc(col, msg('maker')));
+  await assertFails(addDoc(col, msg('kitchen', { seenByMaker: true })));
+  await assertFails(addDoc(col, msg('kitchen', { text: '' })));
+  await assertFails(addDoc(collection(asKitchen(A), 'kitchens', B, 'messages'), msg('kitchen')));
+  await assertFails(getDocs(collection(asKitchen(A), 'kitchens', B, 'messages')));
+  await assertFails(updateDoc(doc(asKitchen(A), 'kitchens', A, 'messages', 'm1'), { text: 'edited' }));
+  await assertFails(updateDoc(doc(asKitchen(A), 'kitchens', A, 'messages', 'm1'), { seenByMaker: true }));
+  await assertFails(deleteDoc(doc(asKitchen(A), 'kitchens', A, 'messages', 'm1')));
+});
+test('messages: maker reads the inbox, replies, marks seen, and nothing else', async () => {
+  await assertSucceeds(getDocs(collectionGroup(maker(), 'messages')));
+  await assertFails(getDocs(collectionGroup(asKitchen(A), 'messages')));
+  await assertSucceeds(addDoc(collection(maker(), 'kitchens', A, 'messages'), msg('maker')));
+  await assertFails(addDoc(collection(maker(), 'kitchens', A, 'messages'), msg('kitchen')));
+  await assertSucceeds(updateDoc(doc(maker(), 'kitchens', A, 'messages', 'm1'), { seenByMaker: true }));
+  await assertFails(getDocs(collection(maker(), 'kitchens', A, 'purchases')));
+  await assertFails(getDocs(collection(maker(), 'kitchens', A, 'users')));
 });

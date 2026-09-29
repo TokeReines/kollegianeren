@@ -1,0 +1,58 @@
+.page {
+  max-width: 760px;
+  padding: 24px;
+}
+
+.intro {
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #ede7f6;
+  align-self: flex-start;
+
+  &.mine {
+    align-self: flex-end;
+    background: #673ab7;
+    color: #fff;
+
+    .meta {
+      color: rgba(255, 255, 255, .75);
+    }
+  }
+}
+
+.text {
+  white-space: pre-line;
+}
+
+.meta {
+  font-size: 11px;
+  margin-top: 4px;
+  color: rgba(0, 0, 0, .54);
+}
+
+.composer {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.grow {
+  flex: 1;
+}
+
+.empty {
+  color: rgba(0, 0, 0, .54);
+}

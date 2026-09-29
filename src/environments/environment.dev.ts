@@ -5,11 +5,14 @@
 export const environment = {
   emulators: false,
   production: false,
+  // Unsigned upload preset only; Cloudinary API keys and secrets never belong in the app.
   cloudinary: {
     cloud_name: 'egmontkollegiet-dev',
-    api_key: '847733283445576',
-    api_secret: 'oWrtkHnYekzL1ba-ks537vnWUXg',
     upload_preset: 'ml_default'
+  },
+  // Buy me a coffee link on Aktuelt (#87); hidden while empty.
+  maker: {
+    coffeeUrl: ''
   },
   firebase: {
     apiKey: 'AIzaSyBQYwdOvSjikzel3fLDmO7wY75byglR5T4',

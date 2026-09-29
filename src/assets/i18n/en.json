@@ -8,30 +8,24 @@
   "PIECES": "pcs.",
   "SAVE": "Save",
   "CANCEL": "Cancel",
-
   "REGISTER": "Register",
   "PASSWORD": "Password",
   "EMAIL": "Email",
   "KITCHEN": "Kitchen",
   "NAME": "Name",
-
   "LOGIN": "Sign In",
   "LOGIN_FORGOT_PASSWORD": "Forgot your password? Reset it here!",
-
   "REGISTER_KITCHEN": "Register new kitchen",
   "REGISTER_ENTER_EMAIL": "Enter your email",
   "REGISTER_CHOOSE_PASSWORD": "Choose a password",
   "REGISTER_TO_LOGIN": "Back to sign in",
-
   "RESET_ENTER_EMAIL": "Enter your email to reset password",
   "RESET_PASSWORD": "Reset password",
   "RESET_PASSWORD_CONFIRMATION": "A link to reset your password has been sent to ",
-
   "MENU_BEERSYSTEM": "Beer system",
   "MENU_PRODUCTS": "Products",
   "MENU_RESIDENTS": "Residents",
   "MENU_ACCOUNTING": "Accounting",
-
   "BEERSYSTEM_PRICE": "Price",
   "BEERSYSTEM_AMOUNT": "Amount",
   "BEERSYSTEM_TOTAL": "Total",
@@ -40,7 +34,6 @@
   "BEERSYSTEM_BOUGHT": " bought ",
   "BEERSYSTEM_TIME": "Time",
   "BEERSYSTEM_PURCHASER": "Purchaser",
-
   "ACTIVE": "Active",
   "PRODUCTS_PRODUCT_PICTURE": "Picture",
   "PRODUCTS_RETAIL_PRICE": "Retail price",
@@ -50,12 +43,36 @@
   "PRODUCTS_URL": "URL to online picture",
   "PRODUCTS_FRIDGE": "Is in fridge",
   "PRODUCTS_UPLOAD": "Upload",
-
   "ROOM": "Room",
   "RESIDENTS_EDIT_RESIDENT": "Edit resident",
   "RESIDENTS_NEW_RESIDENT": "New resident",
-
   "ACCOUNTING_FROM_DATE": "From date (inclusive)",
   "ACCOUNTING_TO_DATE": "To date (inclusive)",
-  "ACCOUNTING_EXPORT": "Export as .xlsx"
+  "ACCOUNTING_EXPORT": "Export as .xlsx",
+  "MENU_AKTUELT": "News",
+  "MENU_MAKER": "Message Toke",
+  "MENU_INBOX": "Inbox",
+  "AKTUELT_TITLE": "News",
+  "AKTUELT_COFFEE": "Buy Toke a coffee",
+  "AKTUELT_NEW_POST": "New post",
+  "AKTUELT_POST_TITLE": "Title",
+  "AKTUELT_POST_BODY": "Text",
+  "AKTUELT_PUBLISH": "Publish",
+  "AKTUELT_EMPTY": "No news yet.",
+  "MAKER_WRITE": "Message Toke",
+  "MAKER_INTRO": "Hi! I'm Toke, and I made Kollegianeren. Got an idea, found a bug, or just want to say hi? Write here. The message goes straight to me, and I answer in this thread.",
+  "MAKER_YOU": "You",
+  "MAKER_EMPTY": "No messages yet. Write the first one!",
+  "MAKER_PLACEHOLDER": "Write a message",
+  "MAKER_SEND": "Send",
+  "INBOX_EMPTY": "No messages yet.",
+  "INBOX_PICK": "Pick a kitchen on the left.",
+  "INBOX_REPLY": "Reply",
+  "INBOX_NOT_ADMIN": "Admins only.",
+  "REVEAL_TITLE": "Something has awakened in the machine",
+  "REVEAL_P1": "For almost ten years Kollegianeren has quietly kept track of your beer tab. Some of you have probably wondered who is actually behind it.",
+  "REVEAL_P2": "I am. My name is Toke, I used to live here, and I have been haunting your kitchen tablet ever since. I just gave the whole thing a proper overhaul: it looks almost the same, but everything under the hood is new, safer and faster.",
+  "REVEAL_P3": "From now on you can follow what is going on under News. And if something bugs you or you have a good idea, write to me directly.",
+  "REVEAL_WHATS_NEW": "See what's new",
+  "REVEAL_CLOSE": "Close"
 }
