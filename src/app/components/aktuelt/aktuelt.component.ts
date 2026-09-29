@@ -9,12 +9,15 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
-import {environment} from '../../../environments/environment';
 import {MakerService} from '../../services/maker.service';
 import {Notify} from '../../services/notify.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {MakerChatComponent} from '../maker-chat/maker-chat.component';
 import {openReveal} from '../reveal-dialog/reveal-dialog.component';
+
+// Coffee for the maker (#87): Toke's MobilePay Box. The link opens MobilePay on the box; the
+// number is shown too, for searching in the app.
+const MOBILEPAY = {box: '1041TA', url: 'https://qr.mobilepay.dk/box/d534dd5a-21a4-41a7-89dd-fba68884b6a6/pay-in'};
 
 // "Aktuelt": what's new and what's planned, written by the maker, next to the chat with him.
 // Admins can post here.
@@ -32,7 +35,7 @@ export class AktueltComponent {
 
   protected readonly announcements = toSignal(this.maker.announcements(), {initialValue: []});
   protected readonly isAdmin = this.maker.isAdmin;
-  protected readonly coffeeUrl = environment.maker.coffeeUrl;
+  protected readonly mobilePay = MOBILEPAY;
   protected readonly title = signal('');
   protected readonly body = signal('');
 
