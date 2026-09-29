@@ -74,5 +74,7 @@
   "REVEAL_P2": "I am. My name is Toke, I used to live here, and I have been haunting your kitchen tablet ever since. I just gave the whole thing a proper overhaul: it looks almost the same, but everything under the hood is new, safer and faster.",
   "REVEAL_P3": "From now on you can follow what is going on under News. And if something bugs you or you have a good idea, write to me directly.",
   "REVEAL_WHATS_NEW": "See what's new",
-  "REVEAL_CLOSE": "Close"
+  "REVEAL_CLOSE": "Close",
+  "BEERSYSTEM_UNDO": "Undo",
+  "BEERSYSTEM_UNDONE": "Purchase undone"
 }

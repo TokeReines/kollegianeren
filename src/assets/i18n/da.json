@@ -74,5 +74,7 @@
   "REVEAL_P2": "Det gør jeg. Jeg hedder Toke, jeg har selv boet her, og siden da har jeg spøgt i jeres køkkentablet. Nu har jeg givet det hele en ordentlig overhaling: det ser næsten ud som før, men alt under motorhjelmen er nyt, sikrere og hurtigere.",
   "REVEAL_P3": "Fremover kan I se, hvad der sker, under Aktuelt. Og driller noget, eller har I en god idé, så skriv direkte til mig.",
   "REVEAL_WHATS_NEW": "Se hvad der er nyt",
-  "REVEAL_CLOSE": "Luk"
+  "REVEAL_CLOSE": "Luk",
+  "BEERSYSTEM_UNDO": "Fortryd",
+  "BEERSYSTEM_UNDONE": "Købet er fortrudt"
 }
