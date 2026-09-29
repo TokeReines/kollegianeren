@@ -19,14 +19,16 @@ const LAUNCH = {
   title: 'Kollegianeren har fået en stor opdatering',
   body: `Hej alle sammen!
 
-Kollegianeren er bygget om indvendigt, men ser næsten ud som før. Det her er nyt:
+Kollegianeren er bygget om fra bunden. Det her er nyt:
 
+• Ny købsside: varerne til venstre, de mest købte først, og beboerne til højre. Vælg en vare og en eller flere beboere, og tryk Køb.
+• Fortryd: ramte I forkert, så åbn Seneste køb og tryk Fortryd inden for et minut.
 • Sikkerhed: jeres køkkens varer, beboere og køb kan nu kun ses af jeres eget køkken.
 • Hurtigere: appen er under halvt så stor og starter hurtigere på tablets.
 • Glemt kode: I kan selv nulstille koden fra login-siden.
-• Dansk og engelsk: tryk på EN eller DA i hjørnet.
-• Fortryd: tryk "Fortryd" lige efter et køb, hvis I ramte forkert.
+• Dansk og engelsk, lyst og mørkt tema: i menuen øverst til højre.
 • Virker uden net: tabletten husker købene og sender dem, når forbindelsen er tilbage.
+• Regnskab: vælg en periode, søg, og eksportér til Excel eller CSV.
 • Statistik, lager og avance: se hvad der bliver drukket, og hvornår varerne slipper op.
 • Flere logins: et tablet-login, der kun kan købe, og et til kassereren. Nye køkkener kommer ind med en invitation.
 • Aktuelt: nyheder her, og en direkte linje til mig lige ved siden af.

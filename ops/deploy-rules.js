@@ -1,5 +1,6 @@
 // Publishes a Firestore rules file via the Firebase Rules API (what `firebase deploy --only firestore:rules` does).
 //   node deploy-rules.js <project> <rules file> [--dry]
+//   node deploy-rules.js <project> projects/<id>/rulesets/<ruleset>   (roll back to an earlier ruleset)
 const fs = require('fs'), path = require('path');
 const { init } = require("./lib/firebase");
 const [project, file, dry] = process.argv.slice(2);
@@ -14,6 +15,13 @@ const call = async (method, url, body) => {
   const current = await call('GET', `https://firebaserules.googleapis.com/v1/${release.rulesetName}`);
   console.log('current release', release.rulesetName, 'updated', release.updateTime);
   console.log('current source:\n' + current.source.files.map(f => f.content).join('\n'));
+  if (/^projects\/[^/]+\/rulesets\/[^/]+$/.test(file)) {
+    await call('GET', `https://firebaserules.googleapis.com/v1/${file}`);
+    if (dry) { console.log(`would release ${file}; dry run`); return; }
+    const back = await call('PATCH', `${API}/releases/cloud.firestore`, { release: { name: `projects/${projectId}/releases/cloud.firestore`, rulesetName: file } });
+    console.log('released', back.rulesetName, 'at', back.updateTime, '(previous:', release.rulesetName + ')');
+    return;
+  }
   const content = fs.readFileSync(file, 'utf8');
   // Server-side compile check.
   const test = await call('POST', `${API}:test`, { source: { files: [{ name: 'firestore.rules', content }] } });

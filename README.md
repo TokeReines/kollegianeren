@@ -48,11 +48,25 @@ Security rules (`firestore.rules`) enforce all of this; tests in `rules-test/` (
 ## Deploy
 
 ```bash
-npm run deploy:dev                                              # dev hosting
-npm run build:prod && firebase deploy --only hosting --project prod   # prod: announce first
+npm run deploy:dev                                                    # dev hosting
+node ops/deploy-rules.js dev firestore.rules                          # dev rules
+npm run build:prod && firebase deploy --only hosting --project prod   # prod app: announce first
+node ops/deploy-rules.js prod firestore.rules                         # prod rules (the CLI cannot, see ops/README.md)
 ```
 
-Prod is used every day. Deploy there only after the change has run on dev, and tell the kitchens first.
+Prod is used every day. Deploy there only after the change has run on dev, try it on a preview channel first (`firebase hosting:channel:deploy <name> --project prod`), and tell the kitchens. The full procedure, with checks and timing, is in [docs/prod-release.md](docs/prod-release.md).
+
+Tablets pick up a new version by themselves: the service worker checks every four hours and reloads once the screen has been idle for two minutes. `index.html` and the worker files are served with `no-cache`, the hashed bundles as immutable (`firebase.json`).
+
+## Rollback
+
+- **Rules**: `node ops/deploy-rules.js prod projects/firebase-ehp/rulesets/<previous id>` (the id is printed by every deploy).
+- **App to an earlier new-style build** (one with the service worker): Hosting console, Release history, Roll back. The worker sees the older `ngsw.json` and switches.
+- **App to the 2019 build**: not the console. Deploy the bundle from `ops/make-rollback.js`, which also removes the service worker (see docs/prod-release.md).
+
+## Costs
+
+0 kr. Both projects are on the free Spark plan (no billing account). Backups and cron run on tokeserver at home. Cloudinary is on its free tier. The only thing that would cost money is a custom domain (#93).
 
 ## Quotas
 
