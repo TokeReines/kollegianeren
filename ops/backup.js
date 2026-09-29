@@ -12,6 +12,8 @@
 // It stops before this run's reads pass --max-reads, or before the project's reads for the
 // quota day pass --ceiling, so the kitchens always keep headroom.
 //
+// 4. Anonymises, in the backup files, residents the kitchen has anonymised since (lib/scrub.js).
+//
 // Limitations: purchases edited in place (same timestamp) or hard-deleted after being backed
 // up are not re-read. Once backfill is done, a cheap count() per kitchen flags mismatches.
 const fs = require('fs');
@@ -22,6 +24,7 @@ const { FieldPath, Timestamp } = require('firebase-admin/firestore');
 const { init, parseArgs } = require('./lib/firebase');
 const { encode } = require('./lib/codec');
 const { usedToday, pacificMidnight } = require('./lib/quota');
+const { scrubAnonymised } = require('./lib/scrub');
 
 const args = parseArgs();
 const { projectId, db, accessToken } = init(args.project);
@@ -86,6 +89,9 @@ async function get(query) {
 const cursorOf = d => ({ s: d.get('timestamp').seconds, n: d.get('timestamp').nanoseconds, id: d.id });
 const ts = c => new Timestamp(c.s, c.n);
 
+// Anonymised residents per kitchen, as seen in this run's snapshot.
+const anonymised = {};
+
 async function snapshotSmallCollections(kitchenRefs) {
   const dir = path.join(OUT, 'snapshots', runId.slice(0, 10));
   const kitchenDocs = kitchenRefs.length ? await db.getAll(...kitchenRefs) : [];
@@ -94,7 +100,9 @@ async function snapshotSmallCollections(kitchenRefs) {
   writeNdjson(path.join(dir, 'kitchens.ndjson.gz'), existing);
   for (const ref of kitchenRefs) {
     for (const c of ['users', 'products']) {
-      writeNdjson(path.join(dir, ref.id, `${c}.ndjson.gz`), await get(ref.collection(c)));
+      const docs = await get(ref.collection(c));
+      writeNdjson(path.join(dir, ref.id, `${c}.ndjson.gz`), docs);
+      if (c === 'users') anonymised[ref.id] = docs.filter(d => d.get('anonymisedAt')).map(d => d.id);
     }
   }
   const all = fs.readdirSync(path.join(OUT, 'snapshots')).sort();
@@ -174,6 +182,17 @@ async function reconcile(ref, st) {
       saveState(state);
     }
     pending = pending.filter(r => !state.kitchens[r.id].backfillDone);
+  }
+
+  // Only when someone new was anonymised: this rereads every backed-up purchase file.
+  const fresh = Object.fromEntries(Object.entries(anonymised).map(([kid, ids]) => {
+    const done = new Set(state.kitchens[kid]?.scrubbed || []);
+    return [kid, ids.filter(id => !done.has(id))];
+  }).filter(([, ids]) => ids.length));
+  if (Object.keys(fresh).length) {
+    const changed = scrubAnonymised(OUT, fresh);
+    for (const [kid, ids] of Object.entries(fresh)) state.kitchens[kid].scrubbed = [...(state.kitchens[kid].scrubbed || []), ...ids];
+    log(`anonymised in backups: ${Object.values(fresh).flat().length} residents, ${changed.purchases} purchases, ${changed.residents} snapshot entries`);
   }
 
   const weekAgo = Date.now() - 7 * 864e5;
