@@ -1,0 +1,34 @@
+<div class="page">
+  @if (translate.getLanguage() === 'en') {
+    <h1>Privacy</h1>
+    <p>Kollegianeren is a volunteer project run by Toke Reines, a former resident. Questions: write to Toke from inside the app ("Message Toke").</p>
+    <h2>What is stored</h2>
+    <p>For each kitchen: its name, the email addresses of its logins, residents' names, room numbers and optional photos, the products, and every purchase (who, what, when, price). Messages you send to Toke.</p>
+    <h2>Why</h2>
+    <p>So the kitchen can keep its beer tab and settle up. Nothing is sold, shared or used for anything else.</p>
+    <h2>Who can see it</h2>
+    <p>Only the kitchen's own logins. Toke sees the messages written to him, not the kitchens' residents or purchases. As the operator he has technical access to the database, used only for running it, backups and fixing faults.</p>
+    <h2>Where</h2>
+    <p>Google Firebase (servers in the USA) and Cloudinary (photos). Backups are kept on a server of Toke's in Denmark.</p>
+    <h2>How long</h2>
+    <p>Residents who moved out are anonymised when they have been gone for {{ retentionMonths }} months: name, room and photo are removed, also on their purchases. Amounts and dates stay for the accounts. The kitchen's treasurer is reminded when it is due.</p>
+    <h2>Your rights</h2>
+    <p>Ask your kitchen's treasurer to correct or remove you, or write to Toke.</p>
+  } @else {
+    <h1>Privatliv</h1>
+    <p>Kollegianeren er et frivilligt projekt, som drives af Toke Reines, tidligere beboer. Spørgsmål: skriv til Toke inde i appen ("Skriv til Toke").</p>
+    <h2>Hvad gemmes</h2>
+    <p>For hvert køkken: køkkenets navn, email-adresserne på dets logins, beboernes navne, værelsesnumre og eventuelle billeder, varerne og hvert køb (hvem, hvad, hvornår, pris). Beskeder, I skriver til Toke.</p>
+    <h2>Hvorfor</h2>
+    <p>Så køkkenet kan føre sit ølregnskab og gøre op. Intet bliver solgt, delt eller brugt til andet.</p>
+    <h2>Hvem kan se det</h2>
+    <p>Kun køkkenets egne logins. Toke ser de beskeder, der er skrevet til ham, men ikke køkkenernes beboere eller køb. Som driftsansvarlig har han teknisk adgang til databasen og bruger den kun til drift, backup og fejlretning.</p>
+    <h2>Hvor</h2>
+    <p>Google Firebase (servere i USA) og Cloudinary (billeder). Backups ligger på en server hos Toke i Danmark.</p>
+    <h2>Hvor længe</h2>
+    <p>Fraflyttede beboere anonymiseres, når de har været væk i {{ retentionMonths }} måneder: navn, værelse og billede fjernes, også på deres køb. Beløb og datoer bliver af hensyn til regnskabet. Køkkenets kasserer bliver mindet om det, når det er tid.</p>
+    <h2>Dine rettigheder</h2>
+    <p>Bed jeres køkkens kasserer om at rette eller fjerne dig, eller skriv til Toke.</p>
+  }
+  <a mat-button routerLink="/">{{ "REVEAL_CLOSE" | translate }}</a>
+</div>

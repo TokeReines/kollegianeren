@@ -110,5 +110,19 @@
   "ACCESS_REVOKE": "Træk tilbage",
   "ACCESS_REMOVE": "Fjern login",
   "ACCESS_REMOVE_CONFIRM": "Fjern adgangen for",
-  "ACCESS_TABLET_ONLY": "Tablet-logins kan ikke styre adgang."
+  "ACCESS_TABLET_ONLY": "Tablet-logins kan ikke styre adgang.",
+  "RESIDENTS_MOVE_OUT": "Fraflyt",
+  "RESIDENTS_MOVE_IN": "Flyt ind igen",
+  "RESIDENTS_MOVED_OUT": "Fraflyttede",
+  "RESIDENTS_MOVED_OUT_ON": "Flyttede",
+  "RESIDENTS_MOVE_OUT_SUMMARY": "køb denne måned / de sidste 12 måneder:",
+  "RESIDENTS_MOVE_OUT_CONFIRM": "Husk at gøre regnskabet op. Markér som fraflyttet? Beboeren forsvinder fra ølsystemet, men købene bliver i regnskabet.",
+  "RESIDENTS_DELETE_CONFIRM": "Slet beboeren helt? Brug hellere \"Fraflyt\". Slet",
+  "RESIDENTS_ANONYMISE": "Anonymisér",
+  "RESIDENTS_ANONYMISE_NOW": "Anonymisér nu",
+  "RESIDENTS_ANONYMISE_CONFIRM": "Navn, værelse og billede fjernes, også på deres køb. Beløb og datoer bliver. Det kan ikke fortrydes. Fortsæt?",
+  "RESIDENTS_ANONYMISED": "Anonymiseret: beboere / køb",
+  "RESIDENTS_DUE": "fraflyttede beboere har været væk i mere end",
+  "RESIDENTS_MONTHS": "måneder",
+  "PRIVACY": "Privatliv"
 }

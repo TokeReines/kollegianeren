@@ -3,6 +3,7 @@
 
   <div class="actions">
     <a mat-stroked-button routerLink="/maker"><mat-icon>chat</mat-icon> {{ "MAKER_WRITE" | translate }}</a>
+    <a mat-button routerLink="/privacy"><mat-icon>privacy_tip</mat-icon> {{ "PRIVACY" | translate }}</a>
     @if (coffeeUrl) {
       <a mat-stroked-button [href]="coffeeUrl" target="_blank" rel="noopener"><mat-icon>local_cafe</mat-icon> {{ "AKTUELT_COFFEE" | translate }}</a>
     }

@@ -47,10 +47,19 @@
     </mat-cell>
   </ng-container>
 
+  <ng-container matColumnDef="moveOut">
+    <mat-header-cell *matHeaderCellDef>{{ "RESIDENTS_MOVE_OUT" | translate }}</mat-header-cell>
+    <mat-cell *matCellDef="let user">
+      <button mat-icon-button [disabled]="busy" (click)="moveOut(user)" [attr.aria-label]="'RESIDENTS_MOVE_OUT' | translate">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-cell>
+  </ng-container>
+
   <ng-container matColumnDef="delete">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user">
-      <button mat-icon-button (click)="userService.delete(user)">
+      <button mat-icon-button (click)="remove(user)">
         <mat-icon>delete</mat-icon>
       </button>
     </mat-cell>
@@ -59,4 +68,32 @@
   <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
   <mat-row *matRowDef="let product; columns: displayedColumns;" class="animate"></mat-row>
 </mat-table>
-<button mat-fab class="bottom-right" color="primary" (click)="openAddDialog()">+</button>
+
+@if (dueForAnonymising.length) {
+  <div class="retention" role="status">
+    <mat-icon>privacy_tip</mat-icon>
+    <span>{{ dueForAnonymising.length }} {{ "RESIDENTS_DUE" | translate }} {{ retentionMonths }} {{ "RESIDENTS_MONTHS" | translate }}.</span>
+    <button mat-flat-button [disabled]="busy" (click)="anonymise(dueForAnonymising)">{{ "RESIDENTS_ANONYMISE_NOW" | translate }}</button>
+  </div>
+}
+
+@if (movedOut.length) {
+  <h2 class="moved-out-title">{{ "RESIDENTS_MOVED_OUT" | translate }}</h2>
+  <table class="moved-out">
+    @for (u of movedOut; track u.id) {
+      <tr>
+        <td>{{ u.name }}</td>
+        <td>{{ u.room }}</td>
+        <td>{{ "RESIDENTS_MOVED_OUT_ON" | translate }} {{ u.movedOutAt?.toDate() | date:'d. MMM y' }}</td>
+        <td class="actions">
+          <button mat-button [disabled]="busy" (click)="moveIn(u)">{{ "RESIDENTS_MOVE_IN" | translate }}</button>
+          @if (!u.anonymisedAt) {
+            <button mat-button [disabled]="busy" (click)="anonymise([u])">{{ "RESIDENTS_ANONYMISE" | translate }}</button>
+          }
+        </td>
+      </tr>
+    }
+  </table>
+}
+
+<button mat-fab class="bottom-right" (click)="openAddDialog()">+</button>

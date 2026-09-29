@@ -13,10 +13,12 @@ import {AktueltComponent} from './components/aktuelt/aktuelt.component';
 import {MakerChatComponent} from './components/maker-chat/maker-chat.component';
 import {MakerInboxComponent} from './components/maker-inbox/maker-inbox.component';
 import {AccessComponent} from './components/access/access.component';
+import {PrivacyComponent} from './components/privacy/privacy.component';
 
 const routes: Routes = [
     {path: 'login', component: LoginComponent},
     {path: 'register', component: RegisterComponent},
+    {path: 'privacy', component: PrivacyComponent},
     {
       path: '', canActivate: [AuthGuard], component: HomeComponent,
       children: [
