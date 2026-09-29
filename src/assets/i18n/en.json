@@ -76,5 +76,6 @@
   "REVEAL_WHATS_NEW": "See what's new",
   "REVEAL_CLOSE": "Close",
   "BEERSYSTEM_UNDO": "Undo",
-  "BEERSYSTEM_UNDONE": "Purchase undone"
+  "BEERSYSTEM_UNDONE": "Purchase undone",
+  "OFFLINE_BANNER": "No connection. Purchases are saved on the tablet and sent when the network is back."
 }

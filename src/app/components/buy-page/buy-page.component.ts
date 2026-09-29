@@ -115,8 +115,8 @@ export class BuyPageComponent implements OnInit {
       this.selectedProduct.amount + ' ' + this.selectedProduct.name;
     // Wrong tap? The purchase can be taken back for a short while, straight from the buy screen.
     this.snackBar.open(message, t('BEERSYSTEM_UNDO'), {duration: UNDO_MS}).onAction().subscribe(() => {
-      Promise.all(writes)
-        .then(refs => Promise.all(refs.map(ref => this.purchaseService.deleteRef(ref))))
+      // Deletes queue like any other write, so this works offline too.
+      Promise.all(writes.map(w => this.purchaseService.deleteRef(w.ref)))
         .then(() => this.snackBar.open(t('BEERSYSTEM_UNDONE'), undefined, {duration: 4000}),
           err => this.snackBar.open(err.message, 'OK', {duration: 6000}));
     });

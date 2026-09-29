@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {
-  DocumentReference, QueryConstraint, addDoc, collection, deleteDoc, doc, limit as limitTo, orderBy, query, serverTimestamp, updateDoc, where,
+  DocumentReference, QueryConstraint, collection, deleteDoc, doc, setDoc, limit as limitTo, orderBy, query, serverTimestamp, updateDoc, where,
 } from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
@@ -50,7 +50,10 @@ export class PurchaseService {
     return deleteDoc(ref);
   }
 
+  // Returns the new document's ref right away (ids are made on the device) and a promise for the
+  // server's acknowledgement, which only resolves once the tablet is online.
   add(purchase: Purchase) {
-    return addDoc(this.purchases(), {...purchase, timestamp: serverTimestamp()});
+    const ref = doc(this.purchases());
+    return {ref, saved: setDoc(ref, {...purchase, timestamp: serverTimestamp()})};
   }
 }

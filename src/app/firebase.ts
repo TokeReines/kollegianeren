@@ -1,14 +1,16 @@
 import {initializeApp} from 'firebase/app';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {
-  CollectionReference, DocumentData, Query, SnapshotOptions, connectFirestoreEmulator, getFirestore, onSnapshot,
+  CollectionReference, DocumentData, Query, SnapshotOptions, connectFirestoreEmulator, initializeFirestore, onSnapshot,
+  persistentLocalCache, persistentMultipleTabManager,
 } from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {environment} from '../environments/environment';
 
 export const app = initializeApp(environment.firebase);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Kitchen tablets lose Wi-Fi now and then: keep a local copy and queue writes until it is back.
+export const db = initializeFirestore(app, {localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})});
 
 if (environment.emulators) {
   connectAuthEmulator(auth, 'http://localhost:9099', {disableWarnings: true});

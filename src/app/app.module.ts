@@ -1,5 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { LOCALE_ID, NgModule, inject, provideAppInitializer } from '@angular/core';
+import { ServiceWorkerModule } from '@angular/service-worker';
 import { registerLocaleData } from '@angular/common';
 import localeDa from '@angular/common/locales/da';
 import { MaterialModule } from './material.module';
@@ -75,6 +76,8 @@ export function setupTranslateFactory(
         RevealDialogComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
+        // Built only for -c dev and -c production (angular.json); the emulator dev server has none.
+        ServiceWorkerModule.register('ngsw-worker.js', { enabled: !environment.emulators, registrationStrategy: 'registerWhenStable:30000' }),
         AppRoutingModule,
         BrowserAnimationsModule,
         MaterialModule,
