@@ -1,0 +1,243 @@
+// Chart colours checked with the dataviz validator against the M3 surfaces (#fef7ff light,
+// #15121a dark): primary tone 40 / 50 for bars, and a five-step ramp per scheme whose
+// lightest step still clears the surface. Empty heatmap cells use the neutral surface tone.
+:host {
+  --bar: #6f43c0;
+  --heat-0: #a478f7;
+  --heat-1: #895edb;
+  --heat-2: #6f43c0;
+  --heat-3: #4b169b;
+  --heat-4: #250059;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host {
+    --bar: #895edb;
+    --heat-0: #6f43c0;
+    --heat-1: #895edb;
+    --heat-2: #a478f7;
+    --heat-3: #bc99ff;
+    --heat-4: #ebddff;
+  }
+}
+
+.page {
+  position: relative;
+  max-width: 900px;
+  padding: 24px;
+}
+
+h2 {
+  font: var(--mat-sys-title-medium);
+  margin: 28px 0 12px;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+
+  .on {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+}
+
+.grow {
+  flex: 1;
+}
+
+.dim {
+  opacity: .5;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.tile {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container);
+
+  .value {
+    font: var(--mat-sys-headline-medium);
+    color: var(--mat-sys-on-surface);
+  }
+
+  .label {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.hbars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hbar {
+  display: grid;
+  grid-template-columns: 180px 1fr 80px;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+
+  .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track {
+    height: 14px;
+  }
+
+  .fill {
+    display: block;
+    height: 100%;
+    min-width: 2px;
+    background: var(--bar);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .val {
+    text-align: right;
+    color: var(--mat-sys-on-surface-variant);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &:hover .fill {
+    filter: brightness(1.15);
+  }
+}
+
+.vbars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 160px;
+  padding-top: 18px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  .ymax {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 12px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .col {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .bar {
+    width: 100%;
+    background: var(--bar);
+    border-radius: 4px 4px 0 0;
+  }
+
+  &.dense {
+    gap: 1px;
+
+    .bar {
+      border-radius: 2px 2px 0 0;
+    }
+  }
+
+  .col:hover .bar {
+    filter: brightness(1.15);
+  }
+}
+
+.xaxis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--mat-sys-on-surface-variant);
+  margin-top: 4px;
+}
+
+.heat {
+  display: grid;
+  grid-template-columns: 36px repeat(24, 1fr);
+  gap: 2px;
+
+  .hour,
+  .wd {
+    font-size: 11px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.cell {
+  display: block;
+  aspect-ratio: 1;
+  min-width: 10px;
+  border-radius: 3px;
+  background: var(--mat-sys-surface-container-high);
+
+  &[data-level="0"] { background: var(--heat-0); }
+  &[data-level="1"] { background: var(--heat-1); }
+  &[data-level="2"] { background: var(--heat-2); }
+  &[data-level="3"] { background: var(--heat-3); }
+  &[data-level="4"] { background: var(--heat-4); }
+}
+
+.heat .cell:hover {
+  outline: 2px solid var(--mat-sys-on-surface);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--mat-sys-on-surface-variant);
+
+  .cell {
+    width: 14px;
+  }
+}
+
+.data {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--mat-sys-inverse-surface);
+  color: var(--mat-sys-inverse-on-surface);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}

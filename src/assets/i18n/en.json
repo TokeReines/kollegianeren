@@ -124,5 +124,22 @@
   "RESIDENTS_ANONYMISED": "Anonymised: residents / purchases",
   "RESIDENTS_DUE": "moved-out residents have been gone for more than",
   "RESIDENTS_MONTHS": "months",
-  "PRIVACY": "Privacy"
+  "PRIVACY": "Privacy",
+  "MENU_STATS": "Statistics",
+  "STATS_TITLE": "Statistics",
+  "STATS_DAYS": "days",
+  "STATS_SHOW_TABLE": "Show as table",
+  "STATS_SHOW_CHARTS": "Show as charts",
+  "STATS_REVENUE": "Revenue",
+  "STATS_PURCHASES": "Purchases",
+  "STATS_UNITS": "Units sold",
+  "STATS_BUYERS": "Residents who bought",
+  "STATS_TOP_PRODUCTS": "Best sellers",
+  "STATS_PER_DAY": "Revenue per day",
+  "STATS_WHEN": "When people buy",
+  "STATS_FEWER": "Fewer",
+  "STATS_MORE": "More",
+  "STATS_PRODUCT": "Product",
+  "STATS_DAY": "Day",
+  "STATS_EMPTY": "No purchases in this period."
 }

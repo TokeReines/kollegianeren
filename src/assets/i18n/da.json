@@ -124,5 +124,22 @@
   "RESIDENTS_ANONYMISED": "Anonymiseret: beboere / køb",
   "RESIDENTS_DUE": "fraflyttede beboere har været væk i mere end",
   "RESIDENTS_MONTHS": "måneder",
-  "PRIVACY": "Privatliv"
+  "PRIVACY": "Privatliv",
+  "MENU_STATS": "Statistik",
+  "STATS_TITLE": "Statistik",
+  "STATS_DAYS": "dage",
+  "STATS_SHOW_TABLE": "Vis som tabel",
+  "STATS_SHOW_CHARTS": "Vis som grafer",
+  "STATS_REVENUE": "Omsætning",
+  "STATS_PURCHASES": "Køb",
+  "STATS_UNITS": "Stk. solgt",
+  "STATS_BUYERS": "Beboere der har købt",
+  "STATS_TOP_PRODUCTS": "Mest solgte varer",
+  "STATS_PER_DAY": "Omsætning pr. dag",
+  "STATS_WHEN": "Hvornår bliver der købt",
+  "STATS_FEWER": "Færre",
+  "STATS_MORE": "Flere",
+  "STATS_PRODUCT": "Vare",
+  "STATS_DAY": "Dag",
+  "STATS_EMPTY": "Ingen køb i perioden."
 }

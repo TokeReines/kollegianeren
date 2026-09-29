@@ -19,6 +19,10 @@
           <span matListItemTitle>{{ "MENU_ACCOUNTING" | translate }}</span>
         </a>
       }
+      <a mat-list-item [routerLink]="['/stats']" routerLinkActive #rla8="routerLinkActive" [activated]="rla8.isActive">
+        <mat-icon matListItemIcon>insights</mat-icon>
+        <span matListItemTitle>{{ "MENU_STATS" | translate }}</span>
+      </a>
       <a mat-list-item [routerLink]="['/aktuelt']" routerLinkActive #rla4="routerLinkActive" [activated]="rla4.isActive">
         <mat-icon matListItemIcon>campaign</mat-icon>
         <span matListItemTitle>{{ "MENU_AKTUELT" | translate }}</span>
