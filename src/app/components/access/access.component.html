@@ -1,0 +1,85 @@
+<div class="page">
+  <h1>{{ "ACCESS_TITLE" | translate }}</h1>
+
+  @if ((role | async) === 'tablet') {
+    <p class="muted">{{ "ACCESS_TABLET_ONLY" | translate }}</p>
+  } @else {
+    <mat-card>
+      <mat-card-title>{{ "ACCESS_KITCHEN" | translate }}: {{ kitchenName | async }}</mat-card-title>
+      <div class="row">
+        <mat-form-field appearance="outline" class="grow">
+          <mat-label>{{ "ACCESS_NEW_NAME" | translate }}</mat-label>
+          <input matInput [(ngModel)]="newName" maxlength="40">
+        </mat-form-field>
+        <button mat-stroked-button [disabled]="!newName.trim()" (click)="rename()">{{ "ACCESS_RENAME" | translate }}</button>
+      </div>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-title>{{ "ACCESS_LOGINS" | translate }}</mat-card-title>
+      <p class="muted">{{ "ACCESS_LOGINS_HINT" | translate }}</p>
+      <table class="list">
+        @if (isLegacyOwner | async) {
+          <tr><td>{{ "ACCESS_MAIN_LOGIN" | translate }}</td><td>{{ "ROLE_OWNER" | translate }}</td><td></td></tr>
+        }
+        @for (m of members | async; track m.id) {
+          <tr>
+            <td>{{ m.email }}</td>
+            <td>{{ ("ROLE_" + m.role.toUpperCase()) | translate }}</td>
+            <td>
+              @if ((role | async) === 'owner') {
+                <button mat-icon-button (click)="remove(m)" [attr.aria-label]="'ACCESS_REMOVE' | translate"><mat-icon>person_remove</mat-icon></button>
+              }
+            </td>
+          </tr>
+        }
+      </table>
+
+      <div class="row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ "ACCESS_ROLE" | translate }}</mat-label>
+          <mat-select [(ngModel)]="inviteRole">
+            <mat-option value="tablet">{{ "ROLE_TABLET" | translate }}</mat-option>
+            <mat-option value="treasurer">{{ "ROLE_TREASURER" | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="invite(false)"><mat-icon>person_add</mat-icon> {{ "ACCESS_INVITE" | translate }}</button>
+      </div>
+      <p class="muted small">{{ "ACCESS_ROLES_EXPLAINED" | translate }}</p>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-title>{{ "ACCESS_NEW_KITCHEN" | translate }}</mat-card-title>
+      <p class="muted">{{ "ACCESS_NEW_KITCHEN_HINT" | translate }}</p>
+      <button mat-stroked-button (click)="invite(true)"><mat-icon>add_home</mat-icon> {{ "ACCESS_INVITE_KITCHEN" | translate }}</button>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-title>{{ "ACCESS_OPEN_INVITES" | translate }}</mat-card-title>
+      <table class="list">
+        @for (i of invites | async; track i.id) {
+          <tr>
+            <td><code>{{ i.id }}</code></td>
+            <td>{{ ("ROLE_" + i.role.toUpperCase()) | translate }}</td>
+            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt?.toDate() | date:'d. MMM' }}</td>
+            <td class="actions">
+              <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
+              <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        }
+        @for (i of referrals | async; track i.id) {
+          <tr>
+            <td><code>{{ i.id }}</code></td>
+            <td>{{ "ACCESS_NEW_KITCHEN" | translate }}</td>
+            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt?.toDate() | date:'d. MMM' }}</td>
+            <td class="actions">
+              <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
+              <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        }
+      </table>
+    </mat-card>
+  }
+</div>

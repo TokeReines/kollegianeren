@@ -1,0 +1,45 @@
+.page {
+  max-width: 760px;
+  padding: 24px;
+}
+
+mat-card {
+  margin-bottom: 16px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+  }
+
+  .actions {
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+.muted {
+  color: rgba(0, 0, 0, .6);
+  line-height: 1.5;
+}
+
+.small {
+  font-size: 13px;
+}

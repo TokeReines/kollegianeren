@@ -1,8 +1,39 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isKitchen(uid) {
-      return request.auth != null && request.auth.uid == uid;
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Who belongs to a kitchen. The login whose uid is the kitchen id is its owner (every
+    // kitchen from before 2026 works this way). Everyone else joined with an invite and has a
+    // kitchens/{kid}/members/{uid} document with their role: owner, treasurer or tablet.
+    function memberDoc(kid) {
+      return /databases/$(database)/documents/kitchens/$(kid)/members/$(request.auth.uid);
+    }
+    function isMember(kid) {
+      return signedIn() && (request.auth.uid == kid || exists(memberDoc(kid)));
+    }
+    function roleIn(kid) {
+      return request.auth.uid == kid ? 'owner' : get(memberDoc(kid)).data.role;
+    }
+    // Owners and treasurers manage products, residents, accounting and access.
+    function canManage(kid) {
+      return isMember(kid) && roleIn(kid) in ['owner', 'treasurer'];
+    }
+    function isOwner(kid) {
+      return isMember(kid) && roleIn(kid) == 'owner';
+    }
+    function membershipPath(uid) {
+      return /databases/$(database)/documents/memberships/$(uid);
+    }
+    // The kitchen the signed-in user belongs to, if any.
+    function myKitchen() {
+      return exists(membershipPath(request.auth.uid))
+        ? get(membershipPath(request.auth.uid)).data.kitchenId : request.auth.uid;
+    }
+    function invitePath(code) {
+      return /databases/$(database)/documents/invites/$(code);
     }
 
     // Shape of a purchase as both the 2019 app and the current app write it. Checked against
@@ -19,7 +50,7 @@ service cloud.firestore {
 
     // Admins (the maker) have an admins/{uid} document, created only in the Firebase console.
     function isAdmin() {
-      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
     function validMessage(d) {
@@ -30,13 +61,13 @@ service cloud.firestore {
     }
 
     match /admins/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;
     }
 
     // "Aktuelt": readable by every signed-in kitchen, written by admins.
     match /announcements/{id} {
-      allow read: if request.auth != null;
+      allow read: if signedIn();
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly(['title', 'body', 'createdAt'])
         && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 200
@@ -50,40 +81,111 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
-    // One document per kitchen, id == the kitchen's auth uid.
-    match /kitchens/{uid} {
-      // The register page lists taken kitchens before sign-in. Only id and name live here.
+    // Invites. A code either lets someone join a kitchen as treasurer or tablet, or (kitchenId
+    // null) lets them create a new kitchen as its owner: the referral that replaced open sign-up.
+    // Codes are long and random, so anyone holding one may read it (the register page checks it
+    // before creating the account).
+    match /invites/{code} {
+      allow get: if true;
+      allow list: if signedIn()
+        && (resource.data.createdBy == request.auth.uid || (resource.data.kitchenId != null && canManage(resource.data.kitchenId)));
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['kitchenId', 'role', 'createdBy', 'createdAt', 'expiresAt', 'usedBy', 'usedAt'])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.usedBy == null && request.resource.data.usedAt == null
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt < request.time + duration.value(31, 'd')
+        && ((request.resource.data.kitchenId != null && request.resource.data.role in ['treasurer', 'tablet']
+              && canManage(request.resource.data.kitchenId))
+          || (request.resource.data.kitchenId == null && request.resource.data.role == 'owner'
+              && (isAdmin() || (exists(/databases/$(database)/documents/kitchens/$(myKitchen())) && canManage(myKitchen())))));
+      // Redeeming: only marks it used, once, before it expires. The membership written in the
+      // same batch is what grants access (see /memberships).
+      allow update: if signedIn()
+        && resource.data.usedBy == null && resource.data.expiresAt > request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedBy', 'usedAt'])
+        && request.resource.data.usedBy == request.auth.uid && request.resource.data.usedAt == request.time;
+      allow delete: if signedIn()
+        && (resource.data.createdBy == request.auth.uid || (resource.data.kitchenId != null && canManage(resource.data.kitchenId)));
+    }
+
+    // Which kitchen a (non-legacy) login belongs to. Created only while redeeming an invite in the
+    // same batch, so an old, used code cannot be replayed after being removed from a kitchen.
+    match /memberships/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || canManage(resource.data.kitchenId));
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['kitchenId', 'role', 'invite', 'joinedAt'])
+        && request.resource.data.joinedAt == request.time
+        && getAfter(invitePath(request.resource.data.invite)).data.usedBy == uid
+        && getAfter(invitePath(request.resource.data.invite)).data.usedAt == request.time
+        && getAfter(invitePath(request.resource.data.invite)).data.role == request.resource.data.role
+        && (getAfter(invitePath(request.resource.data.invite)).data.kitchenId == request.resource.data.kitchenId
+          || (getAfter(invitePath(request.resource.data.invite)).data.kitchenId == null
+            && !exists(/databases/$(database)/documents/kitchens/$(request.resource.data.kitchenId))
+            && existsAfter(/databases/$(database)/documents/kitchens/$(request.resource.data.kitchenId))));
+      allow update: if false;
+      allow delete: if signedIn() && (request.auth.uid == uid || isOwner(resource.data.kitchenId));
+    }
+
+    match /kitchens/{kid} {
+      // The kitchen list (id and name only) is public; the maker's inbox uses the names.
       allow read: if true;
-      allow create, update: if isKitchen(uid)
+      // New kitchens come from a referral invite: created in the same batch as the owner's membership.
+      allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['id', 'name'])
-        && request.resource.data.id == uid && request.resource.data.name is string;
+        && request.resource.data.id == kid && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 40
+        && getAfter(membershipPath(request.auth.uid)).data.kitchenId == kid
+        && getAfter(membershipPath(request.auth.uid)).data.role == 'owner';
+      // Renaming.
+      allow update: if canManage(kid)
+        && request.resource.data.keys().hasOnly(['id', 'name'])
+        && request.resource.data.id == kid && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 40;
       allow delete: if false;
 
+      match /members/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || canManage(kid));
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['role', 'email', 'joinedAt'])
+          && request.resource.data.joinedAt == request.time
+          && getAfter(membershipPath(uid)).data.kitchenId == kid
+          && getAfter(membershipPath(uid)).data.role == request.resource.data.role;
+        allow update: if false;
+        allow delete: if signedIn() && (request.auth.uid == uid || isOwner(kid));
+      }
+
+      // Tablets buy and may take back a purchase within a minute; managers may do anything.
       match /purchases/{purchaseId} {
-        allow read, delete: if isKitchen(uid);
-        allow create: if isKitchen(uid) && validPurchase(request.resource.data)
+        allow read: if isMember(kid);
+        allow create: if isMember(kid) && validPurchase(request.resource.data)
           && request.resource.data.timestamp == request.time;
-        allow update: if isKitchen(uid) && validPurchase(request.resource.data)
+        allow update: if canManage(kid) && validPurchase(request.resource.data)
           && request.resource.data.timestamp == resource.data.timestamp;
+        allow delete: if canManage(kid)
+          || (isMember(kid) && request.time < resource.data.timestamp + duration.value(60, 's'));
       }
 
       // "Message your maker": the kitchen and the maker each write their own side and may only
       // flip their own "seen" flag. Admins cannot read anything else in the kitchen.
       match /messages/{messageId} {
-        allow read: if isKitchen(uid) || isAdmin();
+        allow read: if isMember(kid) || isAdmin();
         allow create: if validMessage(request.resource.data)
-          && ((isKitchen(uid) && request.resource.data.from == 'kitchen')
+          && ((isMember(kid) && request.resource.data.from == 'kitchen')
             || (isAdmin() && request.resource.data.from == 'maker'));
-        allow update: if (isKitchen(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByKitchen']))
+        allow update: if (isMember(kid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByKitchen']))
           || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByMaker']));
         allow delete: if false;
       }
 
-      // products and users (residents) belong to that kitchen alone. Purchases and messages are
-      // matched above; rules are OR'ed, so they are excluded here or this would bypass them.
+      // products and users (residents): every member reads, managers write. Purchases, messages and
+      // members are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read, write: if isKitchen(uid) && !(collection in ['purchases', 'messages']);
+        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members']);
+        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members']);
       }
     }
   }

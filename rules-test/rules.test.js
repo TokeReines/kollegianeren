@@ -8,7 +8,7 @@ const {
 } = require('@firebase/rules-unit-testing');
 const {
   doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup,
+  query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup, writeBatch,
 } = require('firebase/firestore');
 
 let env;
@@ -49,8 +49,8 @@ const anon = () => env.unauthenticatedContext().firestore();
 test('anyone can list taken kitchens (register page)', async () => {
   await assertSucceeds(getDocs(collection(anon(), 'kitchens')));
 });
-test('a new kitchen can create its own kitchen doc', async () => {
-  await assertSucceeds(setDoc(doc(asKitchen('newKitchen'), 'kitchens', 'newKitchen'), { id: 'newKitchen', name: 'm6' }));
+test('open self-registration is closed: a new login cannot create a kitchen on its own', async () => {
+  await assertFails(setDoc(doc(asKitchen('newKitchen'), 'kitchens', 'newKitchen'), { id: 'newKitchen', name: 'm6' }));
 });
 test('a kitchen cannot create or overwrite another kitchen doc', async () => {
   await assertFails(setDoc(doc(asKitchen(A), 'kitchens', 'someoneElse'), { id: 'someoneElse', name: 'x' }));
@@ -132,8 +132,9 @@ test('purchases: updates cannot move the timestamp', async () => {
   await assertSucceeds(updateDoc(doc(db, 'kitchens', A, 'purchases', 'x1'), { amount: 3 }));
 });
 test('kitchen doc: only {id, name} with id == uid', async () => {
-  await assertFails(setDoc(doc(asKitchen('k2'), 'kitchens', 'k2'), { id: 'k2', name: 'x', admin: true }));
-  await assertFails(setDoc(doc(asKitchen('k2'), 'kitchens', 'k2'), { id: 'other', name: 'x' }));
+  await assertFails(setDoc(doc(asKitchen(A), 'kitchens', A), { id: A, name: 'x', admin: true }));
+  await assertFails(setDoc(doc(asKitchen(A), 'kitchens', A), { id: 'other', name: 'x' }));
+  await assertSucceeds(setDoc(doc(asKitchen(A), 'kitchens', A), { id: A, name: 'Ny2 (renamed)' }));
 });
 
 // Replays the shapes of real purchases from the local backup, if there is one (not in CI).
@@ -190,4 +191,97 @@ test('messages: maker reads the inbox, replies, marks seen, and nothing else', a
   await assertSucceeds(updateDoc(doc(maker(), 'kitchens', A, 'messages', 'm1'), { seenByMaker: true }));
   await assertFails(getDocs(collection(maker(), 'kitchens', A, 'purchases')));
   await assertFails(getDocs(collection(maker(), 'kitchens', A, 'users')));
+});
+
+// Members, roles and invites (#82, #83, #88).
+const days = n => Timestamp.fromMillis(Date.now() + n * 864e5);
+const invite = (kitchenId, role, createdBy, extra = {}) => ({
+  kitchenId, role, createdBy, createdAt: serverTimestamp(), expiresAt: days(7), usedBy: null, usedAt: null, ...extra,
+});
+async function seedInvite(code, data) {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'invites', code), data));
+}
+function redeem(uid, code, kitchenId, role, newKitchenName) {
+  const db = asKitchen(uid);
+  const b = writeBatch(db);
+  b.update(doc(db, 'invites', code), { usedBy: uid, usedAt: serverTimestamp() });
+  if (newKitchenName) b.set(doc(db, 'kitchens', kitchenId), { id: kitchenId, name: newKitchenName });
+  b.set(doc(db, 'memberships', uid), { kitchenId, role, invite: code, joinedAt: serverTimestamp() });
+  b.set(doc(db, 'kitchens', kitchenId, 'members', uid), { role, email: uid + '@test', joinedAt: serverTimestamp() });
+  return b.commit();
+}
+const unused = () => ({ kitchenId: A, role: 'tablet', createdBy: A, createdAt: Timestamp.now(), expiresAt: days(7), usedBy: null, usedAt: null });
+
+test('invites: owner and treasurer invite tablets; tablets and outsiders cannot', async () => {
+  await assertSucceeds(setDoc(doc(asKitchen(A), 'invites', 'c1'), invite(A, 'tablet', A)));
+  await assertSucceeds(setDoc(doc(asKitchen(A), 'invites', 'c2'), invite(A, 'treasurer', A)));
+  await assertFails(setDoc(doc(asKitchen(A), 'invites', 'c3'), invite(A, 'owner', A)));
+  await assertFails(setDoc(doc(asKitchen(A), 'invites', 'c4'), invite(B, 'tablet', A)));
+  await assertFails(setDoc(doc(asKitchen(A), 'invites', 'c5'), invite(A, 'tablet', A, { expiresAt: days(60) })));
+  await seedInvite('t1', unused()); await assertSucceeds(redeem('tab', 't1', A, 'tablet'));
+  await assertFails(setDoc(doc(asKitchen('tab'), 'invites', 'c6'), invite(A, 'tablet', 'tab')));
+  await assertFails(setDoc(doc(asKitchen('stranger'), 'invites', 'c7'), invite(null, 'owner', 'stranger')));
+});
+test('invites: joining a kitchen as a tablet', async () => {
+  await seedInvite('t1', unused());
+  await assertSucceeds(getDoc(doc(anon(), 'invites', 't1')));
+  await assertFails(getDocs(collection(anon(), 'invites')));
+  await assertFails(redeem('tab', 't1', B, 'tablet')); // wrong kitchen
+  await assertFails(redeem('tab', 't1', A, 'owner')); // wrong role
+  await assertSucceeds(redeem('tab', 't1', A, 'tablet'));
+  await assertFails(redeem('other', 't1', A, 'tablet')); // already used
+});
+test('tablet role: buys, reads, undoes within a minute, nothing else', async () => {
+  await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
+  const db = asKitchen('tab');
+  await assertSucceeds(getDocs(collection(db, 'kitchens', A, 'products')));
+  await assertSucceeds(getDocs(query(collection(db, 'kitchens', A, 'purchases'), orderBy('timestamp', 'desc'), limit(30))));
+  const ref = await assertSucceeds(addDoc(collection(db, 'kitchens', A, 'purchases'), purchase()));
+  await assertSucceeds(deleteDoc(ref)); // undo
+  await assertFails(deleteDoc(doc(db, 'kitchens', A, 'purchases', 'x1'))); // old purchase
+  await assertFails(addDoc(collection(db, 'kitchens', A, 'products'), { name: 'x' }));
+  await assertFails(updateDoc(doc(db, 'kitchens', A, 'users', 'u1'), { name: 'x' }));
+  await assertFails(setDoc(doc(db, 'kitchens', A), { id: A, name: 'hacked' }));
+  await assertFails(getDocs(collection(db, 'kitchens', B, 'purchases')));
+});
+test('treasurer role: manages products, cannot remove members', async () => {
+  await seedInvite('t2', { ...unused(), role: 'treasurer' }); await redeem('tre', 't2', A, 'treasurer');
+  const db = asKitchen('tre');
+  await assertSucceeds(addDoc(collection(db, 'kitchens', A, 'products'), { name: 'x' }));
+  await assertSucceeds(deleteDoc(doc(db, 'kitchens', A, 'purchases', 'x1')));
+  await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
+  await assertSucceeds(getDocs(collection(db, 'kitchens', A, 'members')));
+  await assertFails(deleteDoc(doc(db, 'kitchens', A, 'members', 'tab')));
+});
+test('removing a member cannot be undone by replaying the old invite', async () => {
+  await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
+  const owner = asKitchen(A);
+  await assertSucceeds(deleteDoc(doc(owner, 'kitchens', A, 'members', 'tab')));
+  await assertSucceeds(deleteDoc(doc(owner, 'memberships', 'tab')));
+  await assertFails(getDocs(collection(asKitchen('tab'), 'kitchens', A, 'products')));
+  const db = asKitchen('tab');
+  await assertFails(setDoc(doc(db, 'memberships', 'tab'), { kitchenId: A, role: 'tablet', invite: 't1', joinedAt: serverTimestamp() }));
+});
+test('no membership, kitchen or member without an invite', async () => {
+  const db = asKitchen('eve');
+  await assertFails(setDoc(doc(db, 'memberships', 'eve'), { kitchenId: A, role: 'owner', invite: 'nope', joinedAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(db, 'kitchens', A, 'members', 'eve'), { role: 'owner', email: 'e', joinedAt: serverTimestamp() }));
+  await seedInvite('ex', { ...unused(), expiresAt: Timestamp.fromMillis(Date.now() - 1000) });
+  await assertFails(redeem('eve', 'ex', A, 'tablet'));
+});
+test('referral: an owner (or the maker) invites a brand new kitchen', async () => {
+  await assertSucceeds(setDoc(doc(asKitchen(A), 'invites', 'r1'), invite(null, 'owner', A)));
+  await assertSucceeds(setDoc(doc(maker(), 'invites', 'r2'), invite(null, 'owner', 'maker')));
+  await assertSucceeds(redeem('neo', 'r1', 'kitchenNew', 'owner', 'Mellemste 7'));
+  const db = asKitchen('neo');
+  await assertSucceeds(addDoc(collection(db, 'kitchens', 'kitchenNew', 'products'), { name: 'Beer' }));
+  await assertSucceeds(setDoc(doc(db, 'invites', 'r3'), invite('kitchenNew', 'tablet', 'neo')));
+  // A referral cannot take over an existing kitchen.
+  await assertFails(redeem('mallory', 'r2', B, 'owner', 'mine now'));
+});
+test('invites: managers list their kitchen invites and can revoke them', async () => {
+  await seedInvite('t1', unused());
+  await assertSucceeds(getDocs(query(collection(asKitchen(A), 'invites'), where('kitchenId', '==', A))));
+  await assertFails(getDocs(query(collection(asKitchen(B), 'invites'), where('kitchenId', '==', A))));
+  await assertSucceeds(deleteDoc(doc(asKitchen(A), 'invites', 't1')));
 });

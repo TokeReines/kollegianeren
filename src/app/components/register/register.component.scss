@@ -1,0 +1,20 @@
+.register-form {
+  max-width: 420px;
+  margin: 48px auto;
+  padding: 0 16px;
+}
+
+.hint,
+.grant {
+  line-height: 1.5;
+}
+
+.grant {
+  background: #ede7f6;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.error {
+  color: #c62828;
+}
