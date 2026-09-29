@@ -1,21 +1,24 @@
 #!/usr/bin/env node
 // Quota-aware Firestore backup for the free Spark plan (50k reads/day, hard cap).
 //
-//   node backup.js --project prod [--out DIR] [--max-reads 20000] [--ceiling 35000] [--chunk 500]
+//   node backup.js --project prod [--out DIR] [--max-reads 8000] [--backfill-reads 5000]
+//                  [--ceiling 35000] [--keep-days 365] [--chunk 500]
 //                  [--before-reset MINUTES]  (only run if the quota day ends within MINUTES)
 //
-// Every run:
+// The backups are for invoicing, which looks back a quarter or so, so only the last --keep-days
+// of purchases are kept. Every run:
 //   1. Snapshots the small collections (kitchen docs, users, products) into snapshots/<date>/.
 //   2. Pulls new purchases per kitchen since the newest one already backed up.
-//   3. Spends the remaining read budget backfilling older purchases, newest first,
-//      round-robin across kitchens, resuming from a cursor stored in state.json.
+//   3. Backfills older purchases within the window, newest first, round-robin across kitchens,
+//      resuming from a cursor stored in state.json, with at most --backfill-reads of the budget.
+//   4. Drops backed-up purchases that have fallen out of the window (lib/prune.js).
+//   5. Anonymises, in the backup files, residents the kitchen has anonymised since (lib/scrub.js).
 // It stops before this run's reads pass --max-reads, or before the project's reads for the
-// quota day pass --ceiling, so the kitchens always keep headroom.
-//
-// 4. Anonymises, in the backup files, residents the kitchen has anonymised since (lib/scrub.js).
+// quota day pass --ceiling, so the kitchens always keep headroom. Once backfilled, a night
+// costs about 1.5k reads (the snapshot and the day's purchases).
 //
 // Limitations: purchases edited in place (same timestamp) or hard-deleted after being backed
-// up are not re-read. Once backfill is done, a cheap count() per kitchen flags mismatches.
+// up are not re-read. Once backfill is done, a weekly count() per kitchen flags mismatches.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -25,11 +28,15 @@ const { init, parseArgs } = require('./lib/firebase');
 const { encode } = require('./lib/codec');
 const { usedToday, pacificMidnight } = require('./lib/quota');
 const { scrubAnonymised } = require('./lib/scrub');
+const { prunePurchases } = require('./lib/prune');
 
 const args = parseArgs();
 const { projectId, db, accessToken } = init(args.project);
 const OUT = path.resolve(args.out || path.join(os.homedir(), 'kollegianeren-backups', projectId));
-const MAX_READS = +(args['max-reads'] || 20000);
+const MAX_READS = +(args['max-reads'] || 8000);
+const BACKFILL_READS = +(args['backfill-reads'] || 5000);
+const KEEP_DAYS = +(args['keep-days'] || 365);
+const cutoff = Timestamp.fromMillis(Date.now() - KEEP_DAYS * 864e5);
 const CEILING = +(args.ceiling || 35000);
 const CHUNK = +(args.chunk || 500);
 const KEEP_SNAPSHOTS = +(args['keep-snapshots'] || 30);
@@ -131,7 +138,8 @@ async function incremental(ref, st) {
 }
 
 async function backfillChunk(ref, st) {
-  let q = ref.collection('purchases').orderBy('timestamp', 'desc').orderBy(FieldPath.documentId(), 'desc');
+  let q = ref.collection('purchases').where('timestamp', '>=', cutoff)
+    .orderBy('timestamp', 'desc').orderBy(FieldPath.documentId(), 'desc');
   if (st.oldest) q = q.startAfter(ts(st.oldest), st.oldest.id);
   const docs = await get(q.limit(CHUNK));
   savePurchases(ref.id, docs, 'old');
@@ -143,12 +151,13 @@ async function backfillChunk(ref, st) {
   if (docs.length < CHUNK) st.backfillDone = true;
 }
 
+// Compares the purchases inside the window (right after pruning, that is all of st.stored).
 async function reconcile(ref, st) {
-  const agg = await ref.collection('purchases').count().get();
-  reads += 1;
+  const agg = await ref.collection('purchases').where('timestamp', '>=', cutoff).count().get();
   const live = agg.data().count;
+  reads += Math.max(1, Math.ceil(live / 1000)); // count() costs a read per 1000 index entries
   st.lastCount = { at: new Date().toISOString(), live, stored: st.stored };
-  if (live !== st.stored) log(`WARN ${ref.id}: live ${live} purchases, backed up ${st.stored} (deletes or docs without timestamp)`);
+  if (live !== st.stored) log(`WARN ${ref.id}: live ${live} purchases in the last ${KEEP_DAYS} days, backed up ${st.stored} (deletes since backup)`);
 }
 
 (async () => {
@@ -174,15 +183,22 @@ async function reconcile(ref, st) {
     saveState(state);
   }
 
+  const backfillStart = reads;
+  const canBackfill = async () => reads - backfillStart + CHUNK <= BACKFILL_READS && await canSpend(CHUNK);
   let pending = kitchenRefs.filter(r => !state.kitchens[r.id].backfillDone);
-  while (pending.length && await canSpend(CHUNK)) {
+  while (pending.length && await canBackfill()) {
     for (const ref of pending) {
-      if (!(await canSpend(CHUNK))) break;
+      if (!(await canBackfill())) break;
       await backfillChunk(ref, state.kitchens[ref.id]);
       saveState(state);
     }
     pending = pending.filter(r => !state.kitchens[r.id].backfillDone);
   }
+
+  const pruned = prunePurchases(OUT, cutoff.toMillis());
+  for (const [kid, n] of Object.entries(pruned.kept)) if (state.kitchens[kid]) state.kitchens[kid].stored = n;
+  if (pruned.removed) log(`dropped ${pruned.removed} purchases older than ${KEEP_DAYS} days`);
+  saveState(state);
 
   // Only when someone new was anonymised: this rereads every backed-up purchase file.
   const fresh = Object.fromEntries(Object.entries(anonymised).map(([kid, ids]) => {

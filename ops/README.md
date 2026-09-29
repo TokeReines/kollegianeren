@@ -11,25 +11,29 @@ Credentials: set `GOOGLE_APPLICATION_CREDENTIALS` to a service account key (cron
 
 ## Backup
 
-Prod is on the free Spark plan: 50k document reads per day, and when they run out the kitchens get errors until the quota resets at midnight US Pacific (09:00 Danish time). A full dump is ~450k reads, so `backup.js` works in slices:
+Prod is on the free Spark plan: 50k document reads per day, and when they run out the kitchens get errors until the quota resets at midnight US Pacific (09:00 Danish time). The backups are for invoicing, which looks back a quarter or so, so they keep **the last 12 months of purchases** and cost as little as possible:
 
 ```bash
-node backup.js --project prod --max-reads 20000 --ceiling 30000
+node backup.js --project prod --max-reads 8000 --backfill-reads 5000 --keep-days 365
 ```
 
-- `--max-reads`: most reads this run may spend.
-- `--ceiling`: stop when the project's reads for the quota day (from Cloud Monitoring, plus our own) would pass this.
+- `--max-reads`: most reads this run may spend (default 8000).
+- `--backfill-reads`: of those, most spent on catching up on older purchases (default 5000). Only needed until the year is filled in; after that a night costs about 1.5k reads.
+- `--keep-days`: the window (default 365). Older purchases are never read, and dropped from the backup once they fall out of it.
+- `--ceiling`: stop when the project's reads for the quota day (from Cloud Monitoring, plus our own) would pass this. Only works with a personal login (see below).
 - Output (default `~/kollegianeren-backups/<project>`):
   - `snapshots/<date>/`: kitchen docs, `users`, `products` per kitchen (last 30 kept).
-  - `purchases/<kitchen>/*.ndjson.gz`: append-only purchase chunks, newest first backfill plus incremental.
+  - `purchases/<kitchen>/*.ndjson.gz`: purchase chunks, newest first backfill plus incremental.
   - `state.json`: cursors and counts per kitchen.
 
-Each run snapshots the small collections (~1k reads), pulls new purchases, then backfills older ones round-robin until a limit is hit. Once a kitchen is fully backfilled, a weekly `count()` flags drift from hard deletes.
+Each run snapshots the small collections (~1k reads), pulls new purchases, backfills older ones within the window round-robin until a limit is hit, then prunes what fell out of the window. Once a kitchen is fully backfilled, a weekly `count()` of the window flags drift from hard deletes.
+
+Do not run big backups by hand on top of cron: the quota is shared with the kitchens.
 
 **Cron.** Run just before the quota day ends, when the day's usage is known and the leftover reads would be lost anyway. The reset is 08:00 or 09:00 Danish time depending on DST, so cron fires at both and `--before-reset` skips the wrong one:
 
 ```cron
-40 7,8 * * * cd ~/kollegianeren/ops && node backup.js --project prod --before-reset 30 --max-reads 40000 --ceiling 46000 >> ~/kollegianeren-backups/backup.log 2>&1
+40 7,8 * * * cd ~/kollegianeren/ops && node backup.js --project prod --before-reset 30 --max-reads 8000 --backfill-reads 5000 --ceiling 46000 >> ~/kollegianeren-backups/backup.log 2>&1
 ```
 
 ## Restore
@@ -67,7 +71,7 @@ The cron service account needs only `roles/datastore.viewer` and `roles/monitori
 - `node rules-evaluations.js [sinceISO]` shows ALLOW / DENY / ERROR counts, to confirm a rules change does not block the kitchens.
 - Prod rules before the lockdown (2026-09-29): ruleset `575c2f72-ae7b-49a8-8a96-a1d157473644`.
 
-With a service account, Cloud Monitoring refuses reads on a Spark project ("requires billing"), so on tokeserver the ceiling check is skipped and `--max-reads 25000` is the only limit. The run happens in the last 30 minutes before the reset, when kitchens are quiet.
+With a service account, Cloud Monitoring refuses reads on a Spark project ("requires billing"), so on tokeserver the ceiling check is skipped and `--max-reads 8000` is the only limit. The run happens in the last 30 minutes before the reset, when kitchens are quiet.
 
 ## Hosting rollback
 
