@@ -23,7 +23,11 @@ export class ThemeService {
   }
 
   cycle() {
-    this.mode = ORDER[(ORDER.indexOf(this.mode) + 1) % ORDER.length];
+    this.set(ORDER[(ORDER.indexOf(this.mode) + 1) % ORDER.length]);
+  }
+
+  set(mode: ThemeMode) {
+    this.mode = mode;
     try {
       localStorage.setItem(KEY, this.mode);
     } catch {

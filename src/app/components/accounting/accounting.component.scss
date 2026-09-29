@@ -10,3 +10,53 @@
   gap: 12px;
   align-items: center;
 }
+
+.accounting-scroll {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+.accounting-table {
+  th, td {
+    white-space: nowrap;
+    padding: 0 12px;
+  }
+
+  // Product names are long: up to two lines, right-aligned over the numbers, full name on hover.
+  th:not(.mat-column-name):not(.mat-column-room):not(.mat-column-total) {
+    white-space: normal;
+    min-width: 64px;
+    max-width: 104px;
+    line-height: 1.2;
+
+    ::ng-deep .mat-sort-header-content {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-align: right;
+    }
+  }
+
+  th:not(.mat-column-name) ::ng-deep .mat-sort-header-container {
+    justify-content: flex-end;
+  }
+
+  td:not(.mat-column-name) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mat-mdc-table-sticky {
+    background: var(--mat-sys-surface);
+  }
+
+  .mat-column-room {
+    border-right: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .mat-column-total {
+    font-weight: 500;
+    border-left: 1px solid var(--mat-sys-outline-variant);
+  }
+}

@@ -10,10 +10,24 @@ html {
     typography: Roboto,
     density: 0,
   ));
-  // The purple app bar and the amber history button from the original design.
+  // Material 3 app chrome: the top app bar and the navigation rail sit on surface-container, the
+  // page itself on surface. Brand colour goes on the things you act on (FAB, selected items).
   @include mat.toolbar-overrides((
-    container-background-color: var(--mat-sys-primary),
-    container-text-color: var(--mat-sys-on-primary),
+    container-background-color: var(--mat-sys-surface-container),
+    container-text-color: var(--mat-sys-on-surface),
+  ));
+  @include mat.sidenav-overrides((
+    container-background-color: var(--mat-sys-surface-container),
+    content-background-color: var(--mat-sys-surface-container),
+    container-shape: 0,
+  ));
+  // Outlined cards (MAT_CARD_CONFIG), so they have an edge in both light and dark.
+  @include mat.card-overrides((
+    outlined-container-color: var(--mat-sys-surface),
+    outlined-outline-color: var(--mat-sys-outline-variant),
+  ));
+  @include mat.table-overrides((
+    background-color: transparent,
   ));
   @include mat.icon-button-overrides((
     icon-color: inherit,
@@ -123,10 +137,69 @@ a {
 }
 
 
+// The page: surface, with a rounded corner against the rail on tablets.
 .sidenav-content {
-  padding: 20px;
-  height: calc(100% - 64px) !important;
+  box-sizing: border-box;
+  padding: 24px;
+  height: 100%;
   overflow: auto;
+  background: var(--mat-sys-surface);
+}
+
+.with-rail .sidenav-content {
+  border-top-left-radius: 24px;
+}
+
+@media (max-width: 760px) {
+  .sidenav-content {
+    padding: 16px;
+  }
+}
+
+// Page titles: M3 headline-small, the same on every page.
+h1 {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 16px;
+}
+
+// Wide tables scroll sideways inside the page instead of squeezing their columns.
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+// Columns that only hold an icon button, a checkbox or a picture stay narrow and centred.
+.mat-mdc-table {
+  .mat-column-image {
+    flex: 0 0 72px;
+  }
+
+  .mat-column-name {
+    flex: 2 0 160px;
+  }
+
+  .mat-column-room {
+    flex: 0 0 96px;
+  }
+
+  .mat-column-active,
+  .mat-column-edit,
+  .mat-column-link,
+  .mat-column-moveOut,
+  .mat-column-delete {
+    flex: 0 0 76px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .mat-mdc-header-cell {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  // Sticky columns need an opaque background.
+  .mat-mdc-table-sticky {
+    background: var(--mat-sys-surface);
+  }
 }
 
 mat-sidenav-content {
@@ -135,6 +208,12 @@ mat-sidenav-content {
 
 mat-sidenav-container {
   height: calc(100% - 64px) !important;
+}
+
+@media (max-width: 599px) {
+  mat-sidenav-container {
+    height: calc(100% - 56px) !important;
+  }
 }
 
 .dialog-checkbox-active {
@@ -156,10 +235,10 @@ mat-sidenav-container {
   padding: 16px;
 }
 
-// App-bar buttons (menu, more, language) take the app bar's on-primary colour in both themes.
+// App-bar icons use on-surface-variant, as in the M3 top app bar.
 .mat-toolbar .mat-mdc-icon-button,
 .mat-toolbar .lang-button {
-  color: inherit;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 // Tables: 48px pictures keep rows compact (the buy page keeps its larger tiles).
@@ -173,6 +252,19 @@ mat-sidenav-container {
     max-height: 48px !important;
     max-width: 48px !important;
   }
+}
+
+// Product photos mostly have white backgrounds: give them a white tile, so they look placed
+// rather than cut out in dark mode.
+.image-wrapper.product-tile {
+  flex-shrink: 0;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 4px;
+  border-radius: 8px;
+  background: #fff;
 }
 
 // Products without a picture.
@@ -218,4 +310,59 @@ mat-sidenav-container {
 .buypage-grid-card .initials {
   width: 56px !important;
   height: 56px !important;
+}
+
+// Account menu in the top app bar.
+.account-menu {
+  min-width: 260px !important;
+
+  .account-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: default;
+
+    img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  .account-kitchen {
+    font: var(--mat-sys-title-small);
+    color: var(--mat-sys-on-surface);
+  }
+
+  .account-email {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .menu-label {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+    padding: 12px 16px 4px;
+  }
+
+  .mat-mdc-menu-item .mat-mdc-menu-item-text {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .mat-mdc-menu-item .check {
+    margin-left: auto;
+    padding-left: 16px;
+    font-size: 20px;
+    color: var(--mat-sys-primary);
+  }
+}
+
+// Residents and products tables keep readable columns on phones and scroll sideways instead;
+// the picture and name columns are sticky.
+.wide-table {
+  min-width: 760px;
 }

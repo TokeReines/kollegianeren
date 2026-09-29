@@ -76,6 +76,10 @@ export class AccountingComponent implements OnInit {
       columns.push('total');
       this.displayedColumns = columns;
       this.dataSource = new MatTableDataSource(rows);
+      this.dataSource.sortingDataAccessor = (row, key) => {
+        const v = row[key];
+        return key === 'room' && /^\d+$/.test(String(v)) ? Number(v) : typeof v === 'string' ? v.toLocaleLowerCase('da') : (v ?? 0);
+      };
       this.dataSource.sort = this.sort;
     });
   }

@@ -42,6 +42,10 @@ export class UsersComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.users.sortingDataAccessor = (u, key) => {
+      const v = u[key];
+      return key === 'room' && /^\d+$/.test(String(v)) ? Number(v) : typeof v === 'string' ? v.toLocaleLowerCase('da') : v;
+    };
     this.users.sort = this.sort;
     this.sub = this.userService.list().subscribe(all => {
       this.users.data = all.filter(u => !u.movedOutAt);
