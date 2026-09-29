@@ -36,6 +36,7 @@ import { PriceInputDirective } from './directives/priceInput.directive';
 import { TranslateService } from './services/translate.service';
 import { TranslatePipe } from './translate.pipe';
 import { ClUrlPipe } from './cl-url.pipe';
+import { InitialsPipe, TonePipe } from './initials.pipe';
 import { AktueltComponent } from './components/aktuelt/aktuelt.component';
 import { MakerChatComponent } from './components/maker-chat/maker-chat.component';
 import { MakerInboxComponent } from './components/maker-inbox/maker-inbox.component';
@@ -75,6 +76,8 @@ export function setupTranslateFactory(
         PriceInputDirective,
         TranslatePipe,
         ClUrlPipe,
+        InitialsPipe,
+        TonePipe,
         AktueltComponent,
         MakerChatComponent,
         MakerInboxComponent,

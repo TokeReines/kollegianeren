@@ -14,7 +14,7 @@
       }
       @if (!user.image && !user.clId) {
         <div class="image-wrapper">
-          <img src="/assets/img/avatar.png" class="avatar"/>
+          <div class="initials" [attr.data-tone]="user.name | tone" aria-hidden="true">{{ user.name | initials }}</div>
         </div>
       }
     </mat-cell>

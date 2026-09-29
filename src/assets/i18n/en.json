@@ -172,10 +172,12 @@
   "ACCESS_REMOVE_HINT": "The login can no longer see the kitchen. You can invite again later.",
   "HISTORY_DELETE_TITLE": "Delete purchase?",
   "MAKER_ABOUT": "Who is behind it",
-  "MAKER_PHOTO_THEN": "Back then: already good at keeping track of poultry",
-  "MAKER_PHOTO_DORM": "Toke 802, when Kollegianeren was born",
-  "MAKER_PHOTO_TODAY": "Today: still the ghost in the machine",
+  "MAKER_PHOTO_THEN": "The first time Toke thought of making Kollegianeren",
+  "MAKER_PHOTO_DORM": "Toke 802/822, when he finally started the project",
+  "MAKER_PHOTO_TODAY": "Today, tired and worn out, but still dedicated to helping dumb young people",
   "THEME_AUTO": "Theme: follows the device",
   "THEME_LIGHT": "Theme: light",
-  "THEME_DARK": "Theme: dark"
+  "THEME_DARK": "Theme: dark",
+  "AKTUELT_SHOW_REVEAL": "Show the welcome again",
+  "REVEAL_DONT_SHOW": "Do not show again"
 }

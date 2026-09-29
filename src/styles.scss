@@ -190,3 +190,32 @@ mat-sidenav-container {
     height: 32px;
   }
 }
+
+// Residents without a photo: their initials on a colour picked from their name.
+.initials {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font: var(--mat-sys-title-medium);
+  font-weight: 600;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+
+  &[data-tone="1"] {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+
+  &[data-tone="2"] {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+}
+
+.buypage-grid-card .initials {
+  width: 56px !important;
+  height: 56px !important;
+}

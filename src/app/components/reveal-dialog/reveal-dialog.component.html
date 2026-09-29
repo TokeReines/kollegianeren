@@ -15,4 +15,7 @@
     <button mat-stroked-button (click)="go('/aktuelt', 'chat')">{{ "MAKER_WRITE" | translate }}</button>
     <button mat-button (click)="close()">{{ "REVEAL_CLOSE" | translate }}</button>
   </div>
+  @if (data?.uid) {
+    <mat-checkbox class="hide" [(ngModel)]="hideForGood">{{ "REVEAL_DONT_SHOW" | translate }}</mat-checkbox>
+  }
 </div>
