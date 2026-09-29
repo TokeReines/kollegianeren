@@ -170,5 +170,12 @@
   "PRODUCTS_STOCK_STOP_OK": "Stop",
   "PRODUCTS_DELETE_CONFIRM": "The product is deleted. Old purchases keep its name. Prefer \"Active\" to hide it.",
   "ACCESS_REMOVE_HINT": "The login can no longer see the kitchen. You can invite again later.",
-  "HISTORY_DELETE_TITLE": "Delete purchase?"
+  "HISTORY_DELETE_TITLE": "Delete purchase?",
+  "MAKER_ABOUT": "Who is behind it",
+  "MAKER_PHOTO_THEN": "Back then: already good at keeping track of poultry",
+  "MAKER_PHOTO_DORM": "Toke 802, when Kollegianeren was born",
+  "MAKER_PHOTO_TODAY": "Today: still the ghost in the machine",
+  "THEME_AUTO": "Theme: follows the device",
+  "THEME_LIGHT": "Theme: light",
+  "THEME_DARK": "Theme: dark"
 }

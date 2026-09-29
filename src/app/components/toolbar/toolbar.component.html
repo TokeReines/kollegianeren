@@ -10,6 +10,9 @@
     <mat-menu #menu="matMenu" layout-align="end center">
       <button mat-menu-item (click)="logout()">{{ "LOG_OUT" | translate }}</button>
     </mat-menu>
+    <button mat-icon-button (click)="theme.cycle()" [attr.aria-label]="('THEME_' + theme.mode.toUpperCase()) | translate" [title]="('THEME_' + theme.mode.toUpperCase()) | translate">
+      <mat-icon>{{ theme.icon }}</mat-icon>
+    </button>
     <button mat-icon-button [matMenuTriggerFor]="menu">
       <mat-icon>more_vert</mat-icon>
     </button>

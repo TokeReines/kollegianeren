@@ -2,6 +2,7 @@ import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/co
 import {AuthService} from './services/auth.service';
 import { MatSidenav } from '@angular/material/sidenav';
 import {SidenavService} from './services/sidenav.service';
+import {ThemeService} from './services/theme.service';
 
 @Component({
     selector: 'app-root',
@@ -13,7 +14,7 @@ import {SidenavService} from './services/sidenav.service';
 export class AppComponent implements OnInit {
   @ViewChild('sidenav') public sidenav: MatSidenav;
 
-  constructor(public auth: AuthService, private sidenavService: SidenavService) {
+  constructor(public auth: AuthService, private sidenavService: SidenavService, theme: ThemeService) {
   }
 
   ngOnInit(): void {

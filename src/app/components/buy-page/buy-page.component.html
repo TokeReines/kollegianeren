@@ -18,6 +18,9 @@
                 <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
               </div>
             }
+            @if (!product.clId && !product.image) {
+              <div class="image-wrapper placeholder" matBadge="{{product.amount}}"><mat-icon>local_drink</mat-icon></div>
+            }
             <mat-card-title>{{product.name}}</mat-card-title>
             <mat-card-subtitle>{{ product.price | number:'1.0-2' }} kr.</mat-card-subtitle>
           </mat-card-title-group>

@@ -15,6 +15,11 @@ import {Message, MakerService} from '../../services/maker.service';
 export class MakerChatComponent implements AfterViewInit, OnDestroy {
   // Shown inside Aktuelt rather than as its own page.
   @Input() embedded = false;
+  photos = [
+    {src: 'assets/img/maker/then.jpg', caption: 'MAKER_PHOTO_THEN'},
+    {src: 'assets/img/maker/dorm-802.jpg', caption: 'MAKER_PHOTO_DORM'},
+    {src: 'assets/img/maker/today.jpg', caption: 'MAKER_PHOTO_TODAY'},
+  ];
   @ViewChild('composer') composer: ElementRef<HTMLTextAreaElement>;
   messages: Message[] = [];
   text = '';

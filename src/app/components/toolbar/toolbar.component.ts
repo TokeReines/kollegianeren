@@ -3,6 +3,7 @@ import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { SidenavService } from '../../services/sidenav.service';
 import { TranslateService } from '../../services/translate.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
     selector: 'app-toolbar',
@@ -18,7 +19,8 @@ export class ToolbarComponent implements OnInit {
     private auth: AuthService,
     private sidenav: SidenavService,
     private router: Router,
-    private translate: TranslateService) {
+    private translate: TranslateService,
+    public theme: ThemeService) {
   }
 
   ngOnInit() { }

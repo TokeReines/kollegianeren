@@ -170,5 +170,12 @@
   "PRODUCTS_STOCK_STOP_OK": "Stop",
   "PRODUCTS_DELETE_CONFIRM": "Varen slettes. Gamle køb beholder navnet. Brug hellere \"Aktiv\" for at skjule den.",
   "ACCESS_REMOVE_HINT": "Loginet kan ikke længere se køkkenet. I kan invitere igen senere.",
-  "HISTORY_DELETE_TITLE": "Slet køb?"
+  "HISTORY_DELETE_TITLE": "Slet køb?",
+  "MAKER_ABOUT": "Hvem står bag",
+  "MAKER_PHOTO_THEN": "Dengang: allerede god til at holde styr på fjerkræ",
+  "MAKER_PHOTO_DORM": "Toke 802, da Kollegianeren blev til",
+  "MAKER_PHOTO_TODAY": "I dag: stadig spøgelset i maskinen",
+  "THEME_AUTO": "Tema: følger enheden",
+  "THEME_LIGHT": "Tema: lyst",
+  "THEME_DARK": "Tema: mørkt"
 }
