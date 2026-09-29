@@ -149,5 +149,15 @@
   "PRODUCTS_STOCK_RECEIVE": "Goods received, units:",
   "PRODUCTS_STOCK_STOP": "Stop tracking stock for",
   "PRODUCTS_LOW_STOCK": "Running low:",
-  "STATS_PROFIT": "Estimated profit (at current cost prices)"
+  "STATS_PROFIT": "Estimated profit (at current cost prices)",
+  "RESIDENTS_LINK": "Own link",
+  "RESIDENTS_LINK_COPIED": "Private link copied. Send it only to",
+  "RESIDENTS_LINK_RENEW": "New link",
+  "ME_THIS_MONTH": "this month",
+  "ME_MONTHS": "Recent months",
+  "ME_RECENT": "Latest purchases",
+  "ME_NONE": "No purchases yet.",
+  "ME_PRIVATE": "This is your private link to your beer tab. Do not share it. The treasurer can make a new one if it got out.",
+  "ME_NOT_FOUND_TITLE": "This link does not work",
+  "ME_NOT_FOUND": "The link is wrong or has been replaced. Ask your treasurer for a new one."
 }

@@ -14,7 +14,7 @@ export class AuthGuard  {
   canActivate() {
     return this.authService.user.pipe(
       take(1),
-      map(user => !!user),
+      map(user => !!user && !user.isAnonymous),
       tap(loggedIn => {
         if (!loggedIn) {
           console.log('access denied');

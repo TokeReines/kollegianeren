@@ -15,11 +15,13 @@ import {MakerInboxComponent} from './components/maker-inbox/maker-inbox.componen
 import {AccessComponent} from './components/access/access.component';
 import {PrivacyComponent} from './components/privacy/privacy.component';
 import {StatsComponent} from './components/stats/stats.component';
+import {ResidentViewComponent} from './components/resident-view/resident-view.component';
 
 const routes: Routes = [
     {path: 'login', component: LoginComponent},
     {path: 'register', component: RegisterComponent},
     {path: 'privacy', component: PrivacyComponent},
+    {path: 'me/:token', component: ResidentViewComponent},
     {
       path: '', canActivate: [AuthGuard], component: HomeComponent,
       children: [

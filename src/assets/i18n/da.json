@@ -149,5 +149,15 @@
   "PRODUCTS_STOCK_RECEIVE": "Varemodtagelse, antal stk.:",
   "PRODUCTS_STOCK_STOP": "Stop med at følge lageret for",
   "PRODUCTS_LOW_STOCK": "Snart udsolgt:",
-  "STATS_PROFIT": "Anslået overskud (efter nuværende indkøbspriser)"
+  "STATS_PROFIT": "Anslået overskud (efter nuværende indkøbspriser)",
+  "RESIDENTS_LINK": "Eget link",
+  "RESIDENTS_LINK_COPIED": "Privat link kopieret. Send det kun til",
+  "RESIDENTS_LINK_RENEW": "Nyt link",
+  "ME_THIS_MONTH": "denne måned",
+  "ME_MONTHS": "Seneste måneder",
+  "ME_RECENT": "Seneste køb",
+  "ME_NONE": "Ingen køb endnu.",
+  "ME_PRIVATE": "Dette er dit private link til dit ølregnskab. Del det ikke. Kassereren kan lave et nyt, hvis det er kommet ud.",
+  "ME_NOT_FOUND_TITLE": "Linket virker ikke",
+  "ME_NOT_FOUND": "Linket er forkert eller er blevet skiftet ud. Bed jeres kasserer om et nyt."
 }
