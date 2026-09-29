@@ -109,7 +109,6 @@ gh pr create --base master --head develop --title "Release 2026-09-30" --body "L
 git fetch && git tag live-2026-09-30 origin/master && git push origin live-2026-09-30
 ```
 
-- Close #80 and #81 with a note that they shipped.
 - Watch `ops/usage.js` for a week. The 19 and 20 September spikes came from the old accounting page (#58).
 - Keep `~/kollegianeren-rollback` until the release has run a week without trouble.
 
