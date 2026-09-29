@@ -12,6 +12,8 @@ export interface Product {
   stock?: number | null;
   // Warn when stock is at or below this (default LOW_STOCK_DEFAULT).
   lowStock?: number;
+  // Units sold, counted up with every sale; orders the buy page (most bought first).
+  sold?: number;
 }
 
 export type ProductFields = Omit<Product, 'id'>;

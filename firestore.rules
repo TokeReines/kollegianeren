@@ -211,16 +211,28 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Products: managers edit; every member may move the stock count (a sale or its undo).
+      // Products: managers edit; every member may move the stock count and the sold counter
+      // (a sale or its undo), by at most 400 at a time. Stock only moves if it is tracked.
       match /products/{productId} {
+        function changed() {
+          return request.resource.data.diff(resource.data).affectedKeys();
+        }
+        function stockMoves() {
+          return !('stock' in changed())
+            || (resource.data.get('stock', null) is number && request.resource.data.stock is number
+              && request.resource.data.stock - resource.data.stock >= -400
+              && request.resource.data.stock - resource.data.stock <= 400);
+        }
+        function soldMoves() {
+          return !('sold' in changed())
+            || (request.resource.data.sold is int
+              && request.resource.data.sold - resource.data.get('sold', 0) >= -400
+              && request.resource.data.sold - resource.data.get('sold', 0) <= 400);
+        }
         allow read: if isMember(kid);
         allow create, delete: if canManage(kid);
         allow update: if canManage(kid)
-          || (isMember(kid)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
-            && resource.data.stock is number && request.resource.data.stock is number
-            && request.resource.data.stock - resource.data.stock >= -400
-            && request.resource.data.stock - resource.data.stock <= 400);
+          || (isMember(kid) && changed().hasOnly(['stock', 'sold']) && stockMoves() && soldMoves());
       }
 
       // A resident's own entry, for the self-view link.

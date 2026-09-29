@@ -201,5 +201,15 @@
   "ACCOUNTING_TOTAL_KR": "I alt, kr.",
   "ACCOUNTING_SUM": "I alt",
   "ACCOUNTING_EMPTY": "Ingen køb i perioden.",
-  "ACCOUNTING_FILE": "regnskab"
+  "ACCOUNTING_FILE": "regnskab",
+  "BUY_CHOSEN": "valgt",
+  "BUY_ONE_LESS": "En mindre",
+  "BUY_ONE_MORE": "En mere",
+  "BUY_EACH_GETS": "Til hver",
+  "BUY_PER_PERSON": "pr. person",
+  "BUY_PICK_RESIDENTS": "Vælg beboere",
+  "BUY_CLEAR": "Ryd",
+  "BUY_START": "Tryk på varer og beboere. Alle valgte beboere får det hele.",
+  "BUY_EACH": " hver",
+  "BUY_TOTAL": "I alt"
 }

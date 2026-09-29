@@ -1,4 +1,4 @@
-import {Component, computed, inject, signal} from '@angular/core';
+import {Component, DestroyRef, computed, inject, signal, untracked} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DecimalPipe} from '@angular/common';
 import {map} from 'rxjs';
@@ -8,10 +8,10 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {Product, byName, tracksStock} from '../../interfaces/product';
+import {Product} from '../../interfaces/product';
 import {User, byRoom} from '../../interfaces/user';
 import {ProductService} from '../../services/product.service';
-import {PurchaseService} from '../../services/purchase.service';
+import {PurchaseService, Sale} from '../../services/purchase.service';
 import {UserService} from '../../services/user.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
@@ -19,12 +19,14 @@ import {TranslatePipe} from '../../translate.pipe';
 import {ProductPictureComponent} from '../shared/product-picture.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
+import {basketTotals, describeSale, productOrder} from './basket';
 
-// How long a purchase can be taken back from the buy screen.
-const UNDO_MS = 30000;
+// How long a purchase can be taken back from the buy screen (the rules allow a minute).
+const UNDO_S = 30;
 
-// The tablet's screen: tap a product (again for more), tap one or more residents, buy.
-// Right-click (long press) a product to take one off.
+// The tablet's screen. Tap products to fill a basket (tap again for more), tap one or more
+// residents, buy: every chosen resident gets the whole basket. Right-click or long-press a
+// product to take one off. The last purchase can be taken back from the bar at the bottom.
 @Component({
   selector: 'app-buy-page',
   imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatCardModule, MatIconModule, MatTooltipModule, TranslatePipe,
@@ -33,91 +35,120 @@ const UNDO_MS = 30000;
   styleUrl: './buy-page.component.scss',
 })
 export class BuyPageComponent {
-  private readonly productService = inject(ProductService);
   private readonly purchaseService = inject(PurchaseService);
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
   private readonly bottomSheet = inject(MatBottomSheet);
 
-  protected readonly products = toSignal(this.productService.list().pipe(map(list => list.filter(p => p.active).sort(byName))), {initialValue: []});
+  private readonly allProducts = toSignal(inject(ProductService).list().pipe(map(list => list.filter(p => p.active))), {initialValue: []});
+  // Most bought first. The order is fixed when the page opens (and when products are added or
+  // removed), so tiles do not jump around while people are tapping.
+  private readonly productIds = computed(() => this.allProducts().map(p => p.id).sort().join());
+  private readonly order = computed(() => {
+    this.productIds();
+    return untracked(() => productOrder(this.allProducts()));
+  });
+  protected readonly products = computed(() => {
+    const byId = new Map(this.allProducts().map(p => [p.id, p]));
+    return this.order().map(id => byId.get(id)).filter((p): p is Product => !!p);
+  });
   protected readonly residents = toSignal(inject(UserService).list().pipe(map(list => list.filter(u => u.active).sort(byRoom))), {initialValue: []});
 
-  private readonly productId = signal<string | null>(null);
-  protected readonly amount = signal(0);
+  // productId -> amount, in the order they were first tapped.
+  private readonly basket = signal<[string, number][]>([]);
   // In the order they were tapped, which is the order they are named in afterwards.
-  private readonly residentIds = signal<string[]>([]);
-  protected readonly product = computed(() => this.products().find(p => p.id === this.productId()) ?? null);
-  protected readonly buyers = computed(() => this.residentIds()
+  private readonly buyerIds = signal<string[]>([]);
+  protected readonly lines = computed(() => this.basket()
+    .map(([id, amount]) => ({product: this.allProducts().find(p => p.id === id), amount}))
+    .filter((l): l is {product: Product, amount: number} => !!l.product));
+  protected readonly buyers = computed(() => this.buyerIds()
     .map(id => this.residents().find(u => u.id === id)).filter((u): u is User => !!u));
+  protected readonly totals = computed(() => basketTotals(this.lines(), this.buyers().length));
 
-  protected isSelected(product: Product) {
-    return product.id === this.productId();
+  // The last purchase, with a countdown for its undo.
+  protected readonly lastSale = signal<{text: string, sale: Sale, secondsLeft: number} | null>(null);
+  private timer: ReturnType<typeof setInterval> | undefined;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearInterval(this.timer));
+  }
+
+  protected amountOf(product: Product): number {
+    return this.basket().find(([id]) => id === product.id)?.[1] ?? 0;
   }
 
   protected isBuyer(user: User) {
-    return this.residentIds().includes(user.id);
+    return this.buyerIds().includes(user.id);
   }
 
-  protected addOne(product: Product) {
-    if (!this.isSelected(product)) {
-      this.productId.set(product.id);
-      this.amount.set(0);
-    }
-    this.amount.update(n => n + 1);
+  protected add(product: Product, n = 1) {
+    this.basket.update(lines => {
+      const i = lines.findIndex(([id]) => id === product.id);
+      if (i < 0) {
+        return n > 0 ? [...lines, [product.id, n]] : lines;
+      }
+      const amount = lines[i][1] + n;
+      return amount > 0 ? lines.map((l, j) => j === i ? [l[0], amount] as [string, number] : l) : lines.filter((_, j) => j !== i);
+    });
   }
 
   protected takeOne(product: Product, event: Event) {
     event.preventDefault();
-    if (!this.isSelected(product)) {
-      return;
-    }
-    this.amount.update(n => n - 1);
-    if (this.amount() <= 0) {
-      this.productId.set(null);
-    }
+    this.add(product, -1);
   }
 
   protected toggleBuyer(user: User, event: Event) {
     event.preventDefault();
-    this.residentIds.update(ids => ids.includes(user.id) ? ids.filter(id => id !== user.id) : [...ids, user.id]);
+    this.buyerIds.update(ids => ids.includes(user.id) ? ids.filter(id => id !== user.id) : [...ids, user.id]);
   }
 
-  protected cancel() {
-    this.productId.set(null);
-    this.amount.set(0);
-    this.residentIds.set([]);
+  protected clear() {
+    this.basket.set([]);
+    this.buyerIds.set([]);
   }
 
-  protected purchase() {
-    const product = this.product();
-    const buyers = this.buyers();
-    const amount = this.amount();
-    if (!product || !buyers.length || amount < 1) {
+  protected buy() {
+    const lines = this.lines(), buyers = this.buyers();
+    if (!lines.length || !buyers.length) {
       return;
     }
-    const t = (key: string) => this.i18n.t(key);
-    const writes = buyers.map(user => this.purchaseService.add({
-      productId: product.id, productName: product.name, amount, price: product.price * amount,
-      userId: user.id, userName: user.name, userRoom: user.room,
-    }));
-    const sold = amount * buyers.length;
-    if (tracksStock(product)) {
-      this.productService.adjustStock(product.id, -sold).catch(() => undefined);
+    const sale = this.purchaseService.sell(lines, buyers);
+    sale.saved.catch(this.notify.error);
+    const t = (k: string) => this.i18n.t(k);
+    this.showLastSale(describeSale(buyers.map(u => u.name), lines.map(l => [l.amount, l.product.name]),
+      {and: t('BEERSYSTEM_AND'), bought: t('BEERSYSTEM_BOUGHT'), each: t('BUY_EACH')}), sale);
+    this.clear();
+  }
+
+  // Deletes queue like any other write, so this works offline too.
+  protected undo() {
+    const last = this.lastSale();
+    if (!last) {
+      return;
     }
-    const message = buyers.map(u => u.name).join(t('BEERSYSTEM_AND')) + t('BEERSYSTEM_BOUGHT') + amount + ' ' + product.name;
-    // Wrong tap? The purchase can be taken back for a short while, straight from the buy screen.
-    // Deletes queue like any other write, so this works offline too.
-    this.notify.action(message, t('BEERSYSTEM_UNDO'), UNDO_MS).subscribe(() => {
-      if (tracksStock(product)) {
-        this.productService.adjustStock(product.id, sold).catch(() => undefined);
-      }
-      Promise.all(writes.map(w => this.purchaseService.delete(w.ref)))
-        .then(() => this.notify.info(t('BEERSYSTEM_UNDONE')), this.notify.error);
-    });
-    this.cancel();
+    this.hideLastSale();
+    this.purchaseService.unsell(last.sale).then(() => this.notify.info(this.i18n.t('BEERSYSTEM_UNDONE')), this.notify.error);
   }
 
   protected openHistory() {
     this.bottomSheet.open(HistoryBottomSheetComponent);
+  }
+
+  private showLastSale(text: string, sale: Sale) {
+    clearInterval(this.timer);
+    this.lastSale.set({text, sale, secondsLeft: UNDO_S});
+    this.timer = setInterval(() => {
+      const last = this.lastSale();
+      if (!last || last.secondsLeft <= 1) {
+        this.hideLastSale();
+      } else {
+        this.lastSale.set({...last, secondsLeft: last.secondsLeft - 1});
+      }
+    }, 1000);
+  }
+
+  private hideLastSale() {
+    clearInterval(this.timer);
+    this.lastSale.set(null);
   }
 }

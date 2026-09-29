@@ -9,6 +9,7 @@ import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
+import {basketTotals, describeSale, joinNames, productOrder} from './components/buy-page/basket';
 import {kr} from './format';
 import {millis} from './time';
 
@@ -193,5 +194,26 @@ describe('formatting', () => {
     expect(sortValue('701')).toBe(701);
     expect(sortValue(true)).toBe(1);
     expect(millis(null)).toBe(0);
+  });
+});
+
+describe('basket', () => {
+  const words = {and: ' og ', bought: ' købte ', each: ' hver'};
+
+  it('gives every buyer the whole basket', () => {
+    const lines = [{product: {price: 6}, amount: 2}, {product: {price: 7}, amount: 3}];
+    expect(basketTotals(lines, 2)).toEqual({perPerson: 33, unitsPerPerson: 5, total: 66, units: 10});
+    expect(basketTotals(lines, 0)).toMatchObject({perPerson: 33, total: 33});
+  });
+
+  it('says who bought what, and "hver" for more than one', () => {
+    expect(describeSale(['Anna'], [[2, 'Cola']], words)).toBe('Anna købte 2 Cola');
+    expect(describeSale(['Anna', 'Bo'], [[2, 'Cola'], [3, 'Tuborg']], words)).toBe('Anna og Bo købte 2 Cola og 3 Tuborg hver');
+    expect(joinNames(['A', 'B', 'C'], ' og ')).toBe('A, B og C');
+  });
+
+  it('puts the most bought products first, then by name', () => {
+    expect(productOrder([{id: 'c', name: 'Cola', sold: 5}, {id: 'a', name: 'Apollinaris'}, {id: 't', name: 'Tuborg', sold: 40}, {id: 'b', name: 'Blanc'}]))
+      .toEqual(['t', 'c', 'a', 'b']);
   });
 });
