@@ -202,17 +202,14 @@
   "ACCOUNTING_EMPTY": "Ingen køb i perioden.",
   "ACCOUNTING_FILE": "regnskab",
   "BUY_CHOSEN": "valgt",
-  "BUY_ONE_LESS": "En mindre",
-  "BUY_ONE_MORE": "En mere",
-  "BUY_EACH_GETS": "Til hver",
   "BUY_PER_PERSON": "pr. person",
-  "BUY_PICK_RESIDENTS": "Vælg beboere",
-  "BUY_CLEAR": "Ryd",
-  "BUY_START": "Tryk på varer og beboere. Alle valgte beboere får det hele.",
+  "BUY_START": "Tryk på en vare og en eller flere beboere.",
   "BUY_EACH": " hver",
   "BUY_TOTAL": "I alt",
   "HISTORY_UNDO_TITLE": "Fortryd købet?",
-  "HISTORY_UNDO_BASKET": "Fortryd hele købet",
-  "HISTORY_UNDO_ONE": "Kun denne",
-  "HISTORY_KEEP": "Behold"
+  "HISTORY_KEEP": "Behold",
+  "BUY_EACH_ONE": "til hver",
+  "BUY_PICK": "Vælg en eller flere beboere",
+  "BUY_ONE_LESS": "En mindre",
+  "BUY_ONE_MORE": "En mere"
 }

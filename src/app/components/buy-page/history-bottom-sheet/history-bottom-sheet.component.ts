@@ -20,7 +20,7 @@ import {Confirm} from '../../confirm-dialog/confirm-dialog.component';
 const TABLET_UNDO_MS = 55e3;
 
 // "Seneste køb": the latest purchases. Here a wrong purchase is taken back: by the tablet within
-// a minute, by the treasurer or owner at any time. A row from a basket can take the whole basket.
+// a minute, by the treasurer or owner at any time.
 @Component({
   selector: 'app-history',
   imports: [DatePipe, DecimalPipe, MatButtonModule, MatIconModule, MatSortModule, MatTableModule, TranslatePipe],
@@ -63,27 +63,14 @@ export class HistoryBottomSheetComponent {
     return this.canManage() || this.now() - millis(p.timestamp) < TABLET_UNDO_MS;
   }
 
-  // The other rows of the same basket that may still be taken back.
-  private basketOf(p: Purchase): Purchase[] {
-    return p.saleId ? this.purchases().filter(q => q.saleId === p.saleId && this.canUndo(q)) : [p];
-  }
-
   protected async remove(p: Purchase) {
     const t = (k: string) => this.i18n.t(k);
-    const line = (q: Purchase) => `${q.amount} × ${q.productName}, ${q.userName}`;
-    const basket = this.basketOf(p);
-    let chosen: Purchase[] = [];
-    if (basket.length > 1) {
-      const answer = await this.confirm.choose({
-        title: t('HISTORY_UNDO_TITLE'), message: basket.map(line).join('\n'),
-        confirm: `${t('HISTORY_UNDO_BASKET')} (${basket.length})`, alternative: t('HISTORY_UNDO_ONE'), cancel: t('HISTORY_KEEP'), danger: true,
-      });
-      chosen = answer === 'confirm' ? basket : answer === 'alternative' ? [p] : [];
-    } else if (await this.confirm.ask({title: t('HISTORY_UNDO_TITLE'), message: line(p), confirm: t('BEERSYSTEM_UNDO'), cancel: t('HISTORY_KEEP'), danger: true})) {
-      chosen = [p];
-    }
-    if (chosen.length) {
-      this.purchaseService.remove(chosen, this.products())
+    const ok = await this.confirm.ask({
+      title: t('HISTORY_UNDO_TITLE'), message: `${p.amount} × ${p.productName}, ${p.userName}`,
+      confirm: this.canManage() ? t('DELETE') : t('BEERSYSTEM_UNDO'), cancel: t('HISTORY_KEEP'), danger: true,
+    });
+    if (ok) {
+      this.purchaseService.remove(p, this.products().find(x => x.id === p.productId))
         .then(() => this.notify.info(t('BEERSYSTEM_UNDONE')), this.notify.error);
     }
   }

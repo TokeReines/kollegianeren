@@ -19,8 +19,5 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button mat-dialog-close>{{ data.cancel || ("CANCEL" | translate) }}</button>
-  @if (data.alternative) {
-    <button mat-stroked-button (click)="alternative()">{{ data.alternative }}</button>
-  }
   <button mat-flat-button [class.danger]="data.danger" [disabled]="!valid()" (click)="ok()">{{ data.confirm }}</button>
 </mat-dialog-actions>

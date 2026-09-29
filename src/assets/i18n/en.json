@@ -202,17 +202,14 @@
   "ACCOUNTING_EMPTY": "No purchases in this period.",
   "ACCOUNTING_FILE": "accounts",
   "BUY_CHOSEN": "chosen",
-  "BUY_ONE_LESS": "One less",
-  "BUY_ONE_MORE": "One more",
-  "BUY_EACH_GETS": "Each gets it all",
   "BUY_PER_PERSON": "per person",
-  "BUY_PICK_RESIDENTS": "Choose residents",
-  "BUY_CLEAR": "Clear",
-  "BUY_START": "Tap products and residents. Every chosen resident gets the lot.",
+  "BUY_START": "Tap a product and one or more residents.",
   "BUY_EACH": " each",
   "BUY_TOTAL": "Total",
   "HISTORY_UNDO_TITLE": "Undo the purchase?",
-  "HISTORY_UNDO_BASKET": "Undo the whole purchase",
-  "HISTORY_UNDO_ONE": "Only this one",
-  "HISTORY_KEEP": "Keep"
+  "HISTORY_KEEP": "Keep",
+  "BUY_EACH_ONE": "each",
+  "BUY_PICK": "Choose one or more residents",
+  "BUY_ONE_LESS": "One less",
+  "BUY_ONE_MORE": "One more"
 }

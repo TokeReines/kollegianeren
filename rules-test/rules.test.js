@@ -287,16 +287,6 @@ test('invites: managers list their kitchen invites and can revoke them', async (
 });
 
 // Stock (#90).
-test('purchases: a basket shares a saleId; other extra fields are refused', async () => {
-  await seedInvite('t3', unused()); await redeem('tab3', 't3', A, 'tablet');
-  const db = asKitchen('tab3');
-  const base = { amount: 1, price: 7, productId: 'p1', productName: 'Tuborg', userId: 'u1', userName: 'Anna', userRoom: '701', timestamp: serverTimestamp() };
-  await assertSucceeds(setDoc(doc(db, 'kitchens', A, 'purchases', 'sale-a'), { ...base, saleId: 'abc123' }));
-  await assertFails(setDoc(doc(db, 'kitchens', A, 'purchases', 'sale-b'), { ...base, saleId: 'x'.repeat(41) }));
-  await assertFails(setDoc(doc(db, 'kitchens', A, 'purchases', 'sale-c'), { ...base, saleId: 5 }));
-  await assertFails(setDoc(doc(db, 'kitchens', A, 'purchases', 'sale-d'), { ...base, note: 'hi' }));
-});
-
 test('sold: tablets move the sold counter, also on untracked products', async () => {
   await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'kitchens', A, 'products', 'p1'), { stock: null, sold: 10 }));
   await seedInvite('t2', unused()); await redeem('tab2', 't2', A, 'tablet');

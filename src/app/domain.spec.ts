@@ -9,7 +9,7 @@ import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
-import {basketTotals, describeSale, joinNames, productOrder} from './components/buy-page/basket';
+import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
 import {kr} from './format';
 import {millis} from './time';
 
@@ -197,14 +197,8 @@ describe('formatting', () => {
   });
 });
 
-describe('basket', () => {
+describe('buy page', () => {
   const words = {and: ' og ', bought: ' købte ', each: ' hver'};
-
-  it('gives every buyer the whole basket', () => {
-    const lines = [{product: {price: 6}, amount: 2}, {product: {price: 7}, amount: 3}];
-    expect(basketTotals(lines, 2)).toEqual({perPerson: 33, unitsPerPerson: 5, total: 66, units: 10});
-    expect(basketTotals(lines, 0)).toMatchObject({perPerson: 33, total: 33});
-  });
 
   it('says who bought what, and "hver" for more than one', () => {
     expect(describeSale(['Anna'], [[2, 'Cola']], words)).toBe('Anna købte 2 Cola');
