@@ -63,10 +63,15 @@ The cron service account needs only `roles/datastore.viewer` and `roles/monitori
 ## Rules
 
 - `node deploy-rules.js prod ../firestore.rules [--dry]` publishes rules through the Firebase Rules API. The CLI's `firebase deploy --only firestore:rules` needs the Service Usage API, which is disabled on prod. `--dry` prints the live rules and compiles the new ones server-side.
+- `node deploy-rules.js prod projects/firebase-ehp/rulesets/<id> [--dry]` rolls back to an earlier ruleset.
 - `node rules-evaluations.js [sinceISO]` shows ALLOW / DENY / ERROR counts, to confirm a rules change does not block the kitchens.
 - Prod rules before the lockdown (2026-09-29): ruleset `575c2f72-ae7b-49a8-8a96-a1d157473644`.
 
 With a service account, Cloud Monitoring refuses reads on a Spark project ("requires billing"), so on tokeserver the ceiling check is skipped and `--max-reads 25000` is the only limit. The run happens in the last 30 minutes before the reset, when kitchens are quiet.
+
+## Hosting rollback
+
+`node make-rollback.js --project prod --version <id> --out ~/kollegianeren-rollback` downloads a live hosting version and adds a safety service worker, for going back to a build without one (the 2019 build). Deploy with `firebase deploy --only hosting --project prod` from the output folder. Why and when: `docs/prod-release.md`.
 
 ## Local demo data
 
@@ -78,4 +83,4 @@ On top of the anonymised prod copy (`restore.js --anonymise` into the emulator):
 
 Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 
-- : a test kitchen on dev (products with pictures, 23 residents, two weeks of purchases) and two 14-day invite links, owner and tablet. The tester registers with their own email and password. Refuses prod.
+- `node seed-test-kitchen.js --project dev --catalogue <file>`: a test kitchen on dev (products with pictures, 23 residents, two weeks of purchases) and two 14-day invite links, owner and tablet. The tester registers with their own email and password. Refuses prod.
