@@ -11,8 +11,11 @@
     "usage": "node usage.js"
   },
   "dependencies": {
-    "@dicebear/collection": "^9.4.2",
+    "@dicebear/collection": "^9.4.3",
     "@dicebear/core": "^9.4.3",
     "firebase-admin": "^13.0.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
