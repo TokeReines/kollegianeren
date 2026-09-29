@@ -37,14 +37,13 @@
     </mat-card-content>
     <mat-card-actions>
       <button
-        mat-raised-button
-        color="primary"
+        mat-flat-button
         (click)="login()"
         [disabled]="form.invalid"
       >
         {{ "LOGIN" | translate }}
       </button>
-      <button mat-raised-button color="secondary" [routerLink]="['/register']">
+      <button mat-button [routerLink]="['/register']">
         {{ "REGISTER" | translate }}
       </button>
     </mat-card-actions>
@@ -52,5 +51,5 @@
   <a (click)="openResetPasswordDialog()" class="reset-password-link">
     {{ "LOGIN_FORGOT_PASSWORD" | translate }}
   </a>
+  <a routerLink="/privacy" class="privacy-link">{{ "PRIVACY" | translate }}</a>
 </div>
-<p class="privacy-link"><a routerLink="/privacy">{{ "PRIVACY" | translate }}</a></p>

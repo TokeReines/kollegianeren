@@ -1,4 +1,4 @@
-<mat-table #table [dataSource]="purchases" matSort class="animate">
+<mat-table #table [dataSource]="purchases" matSort matSortActive="timestamp" matSortDirection="desc" class="animate">
 
   <ng-container matColumnDef="timestamp" >
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "BEERSYSTEM_TIME" | translate }}</mat-header-cell>
@@ -17,7 +17,7 @@
 
   <ng-container matColumnDef="price">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "BEERSYSTEM_PRICE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let purchase"> {{ purchase.price }} </mat-cell>
+    <mat-cell *matCellDef="let purchase"> {{ purchase.price | number:'1.0-2' }} kr. </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="user">
@@ -26,9 +26,9 @@
   </ng-container>
 
   <ng-container matColumnDef="delete">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let purchase">
-      <button mat-icon-button (click)="purchaseService.delete(purchase)">
+      <button mat-icon-button (click)="remove(purchase)" [attr.aria-label]="'DELETE' | translate">
         <mat-icon>delete</mat-icon>
       </button>
     </mat-cell>

@@ -1,6 +1,6 @@
 <mat-table #table [dataSource]="users" matSort class="animate">
   <ng-container matColumnDef="image">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user" class="image-wrapper">
       @if (!!user.clId) {
         <div class="image-wrapper">
@@ -39,7 +39,7 @@
   </ng-container>
 
   <ng-container matColumnDef="edit">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "EDIT" | translate }}</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef>{{ "EDIT" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user">
       <button mat-icon-button (click)="openEditDialog(user)">
         <mat-icon>edit</mat-icon>
@@ -64,7 +64,7 @@
   </ng-container>
 
   <ng-container matColumnDef="delete">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "DELETE" | translate }}</mat-header-cell>
+    <mat-header-cell *matHeaderCellDef>{{ "DELETE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user">
       <button mat-icon-button (click)="remove(user)">
         <mat-icon>delete</mat-icon>
@@ -103,4 +103,4 @@
   </table>
 }
 
-<button mat-fab class="bottom-right" (click)="openAddDialog()">+</button>
+<button mat-fab class="bottom-right" (click)="openAddDialog()" [attr.aria-label]="'RESIDENTS_NEW_RESIDENT' | translate"><mat-icon>person_add</mat-icon></button>

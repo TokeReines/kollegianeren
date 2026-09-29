@@ -56,3 +56,11 @@
 .empty {
   color: var(--mat-sys-on-surface-variant);
 }
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font: var(--mat-sys-title-large);
+}

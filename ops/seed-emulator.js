@@ -25,9 +25,11 @@ Kollegianeren er bygget om indvendigt, men ser næsten ud som før. Det her er n
 • Hurtigere: appen er under halvt så stor og starter hurtigere på tablets.
 • Glemt kode: I kan selv nulstille koden fra login-siden.
 • Dansk og engelsk: tryk på EN eller DA i hjørnet.
-• Aktuelt og Skriv til Toke: nyheder her, og en direkte linje til mig.
-
-På vej: fortryd-knap på køb, bedre regnskab og måske en lille statistik over, hvad der bliver drukket mest.
+• Fortryd: tryk "Fortryd" lige efter et køb, hvis I ramte forkert.
+• Virker uden net: tabletten husker købene og sender dem, når forbindelsen er tilbage.
+• Statistik, lager og avance: se hvad der bliver drukket, og hvornår varerne slipper op.
+• Flere logins: et tablet-login, der kun kan købe, og et til kassereren. Nye køkkener kommer ind med en invitation.
+• Aktuelt: nyheder her, og en direkte linje til mig lige ved siden af.
 
 Skål!
 Toke`,
@@ -45,7 +47,8 @@ Toke`,
   await db.doc(`admins/${MAKER.uid}`).set({ email: MAKER.email });
   const existing = await db.collection('announcements').where('title', '==', LAUNCH.title).get();
   if (existing.empty) await db.collection('announcements').add({ ...LAUNCH, createdAt: FieldValue.serverTimestamp() });
+  else await existing.docs[0].ref.update({ body: LAUNCH.body });
   accounts.maker = MAKER.email;
   fs.writeFileSync(ACCOUNTS, JSON.stringify(accounts, null, 2), { mode: 0o600 });
-  console.log(`maker login ${MAKER.email} (same password as the kitchens), launch announcement ${existing.empty ? 'added' : 'already there'}`);
+  console.log(`maker login ${MAKER.email} (same password as the kitchens), launch announcement ${existing.empty ? 'added' : 'updated'}`);
 })().catch(e => { console.error(e.message); process.exit(1); });

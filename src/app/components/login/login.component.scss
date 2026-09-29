@@ -3,18 +3,15 @@
     color: var(--mat-sys-primary);
     cursor: pointer;
     align-self: center;
-    margin: 7% 0;
+    margin: 24px 0 8px;
 }
 
 .mat-mdc-card-header {
   justify-content: center;
 }
 
-.reset-email {
-  background: red;
-}
 
 .privacy-link {
-  text-align: center;
-  margin-top: 16px;
+  align-self: center;
+  font-size: 13px;
 }

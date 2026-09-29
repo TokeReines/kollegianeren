@@ -20,6 +20,8 @@ export class AccountingComponent implements OnInit {
 
   @ViewChild(MatSort, { static: true }) sort: MatSort;
   private rangeSubscription: Subscription;
+  // The generated columns are product names; these three get translated headers.
+  fixedColumns: Record<string, string> = {name: 'NAME', room: 'ROOM', total: 'BEERSYSTEM_TOTAL'};
   @ViewChild('accountingTable') accountingTable: any;
 
   constructor(private purchaseService: PurchaseService, private excelService: ExcelService) {
@@ -59,7 +61,7 @@ export class AccountingComponent implements OnInit {
       const product_columns = [];
       Object.keys(formatted_rows).forEach(userId => {
         const value = formatted_rows[userId];
-        const row = {name: value['name'], room: value['room'], total: parseFloat(value['total']).toFixed(2)};
+        const row = {name: value['name'], room: value['room'], total: Math.round(value['total'] * 100) / 100};
         Object.keys(value['products']).forEach(key => {
           const product = value['products'][key];
           row[product.name] = product['amount'];

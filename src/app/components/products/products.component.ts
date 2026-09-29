@@ -11,6 +11,7 @@ import {map} from 'rxjs/operators';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {isLowStock, margin, tracksStock} from '../../interfaces/product';
 import {TranslateService} from '../../services/translate.service';
+import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 
 
 @Component({
@@ -21,42 +22,40 @@ import {TranslateService} from '../../services/translate.service';
     standalone: false
 })
 export class ProductsComponent implements OnInit {
-  products: MatTableDataSource<Product>;
+  products = new MatTableDataSource<Product>([]);
   @ViewChild(MatSort, { static: true }) sort: MatSort;
   displayedColumns = ['image', 'name', 'retailPrice', 'price', 'margin', 'stock', 'active', 'edit', 'delete'];
   lowStock: Product[] = [];
+  lowStockText = '';
   margin = margin;
   tracksStock = tracksStock;
   isLowStock = isLowStock;
 
   constructor(public productService: ProductService, public dialog: MatDialog, private snackBar: MatSnackBar,
-              private translate: TranslateService) {
+              private translate: TranslateService, private confirm: Confirm) {
   }
 
   ngOnInit() {
+    this.products.sort = this.sort;
     this.productService.list().subscribe(data => {
-      this.products =  new MatTableDataSource<Product>(data);
-      this.products.sort = this.sort;
+      this.products.data = data;
       this.lowStock = data.filter(p => p.active && isLowStock(p));
+      this.lowStockText = this.lowStock
+        .map(p => `${p.name} (${p.stock > 0 ? p.stock : this.t('PRODUCTS_SOLD_OUT')})`).join(', ');
     });
   }
 
   openEditDialog(product) {
-    console.log(product);
+    // The dialog edits a copy, so cancelling leaves the row untouched.
     const dialogRef = this.dialog.open(EditProductDialogComponent, {
       width: '400px',
       height: '600px',
-      data: product
+      data: {...product}
     });
 
     dialogRef.afterClosed().subscribe(editedProduct => {
-      if (!editedProduct) {
-        this.productService.list().subscribe(data => {
-          this.products = new MatTableDataSource<Product>(data);
-          this.products.sort = this.sort;
-        });
-      } else {
-        this.productService.update(editedProduct);
+      if (editedProduct) {
+        this.productService.update(editedProduct).catch(this.fail);
       }
     });
   }
@@ -82,23 +81,39 @@ export class ProductsComponent implements OnInit {
 
   private fail = (e: Error) => this.snackBar.open(e.message, 'OK', {duration: 6000});
 
-  trackStock(product: Product) {
-    const n = Number(prompt(this.t('PRODUCTS_STOCK_START'), '0'));
-    if (isFinite(n) && n >= 0) {
-      this.productService.setStock(product.id, Math.round(n)).catch(this.fail);
+  async trackStock(product: Product) {
+    const n = await this.confirm.ask({
+      title: `${this.t('PRODUCTS_STOCK_TRACK')}: ${product.name}`, confirm: this.t('PRODUCTS_STOCK_TRACK'),
+      number: {label: this.t('PRODUCTS_STOCK_START'), value: 0, min: 0},
+    });
+    if (n !== undefined) {
+      this.productService.setStock(product.id, n).catch(this.fail);
     }
   }
 
-  receive(product: Product) {
-    const n = Number(prompt(`${this.t('PRODUCTS_STOCK_RECEIVE')} ${product.name}`, '24'));
-    if (isFinite(n) && n !== 0) {
-      this.productService.adjustStock(product.id, Math.round(n)).catch(this.fail);
+  async receive(product: Product) {
+    const n = await this.confirm.ask({
+      title: `${this.t('PRODUCTS_RECEIVE_TITLE')}: ${product.name}`, message: this.t('PRODUCTS_RECEIVE_HINT'),
+      confirm: this.t('SAVE'), number: {label: this.t('PRODUCTS_STOCK_RECEIVE'), value: 24},
+    });
+    if (n) {
+      this.productService.adjustStock(product.id, n).catch(this.fail);
     }
   }
 
-  stopTracking(product: Product) {
-    if (confirm(`${this.t('PRODUCTS_STOCK_STOP')} ${product.name}?`)) {
+  async stopTracking(product: Product) {
+    const ok = await this.confirm.ask({title: `${this.t('PRODUCTS_STOCK_STOP')} ${product.name}?`, confirm: this.t('PRODUCTS_STOCK_STOP_OK')});
+    if (ok) {
       this.productService.setStock(product.id, null).catch(this.fail);
+    }
+  }
+
+  async remove(product: Product) {
+    const ok = await this.confirm.ask({
+      title: `${this.t('DELETE')} ${product.name}?`, message: this.t('PRODUCTS_DELETE_CONFIRM'), confirm: this.t('DELETE'), danger: true,
+    });
+    if (ok) {
+      this.productService.delete(product).catch(this.fail);
     }
   }
 }

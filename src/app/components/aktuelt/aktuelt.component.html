@@ -1,36 +1,44 @@
 <div class="page">
-  <h1>{{ "AKTUELT_TITLE" | translate }}</h1>
+  <div class="layout">
+    <section class="news">
+      <h1>{{ "AKTUELT_TITLE" | translate }}</h1>
 
-  <div class="actions">
-    <a mat-stroked-button routerLink="/maker"><mat-icon>chat</mat-icon> {{ "MAKER_WRITE" | translate }}</a>
-    <a mat-button routerLink="/privacy"><mat-icon>privacy_tip</mat-icon> {{ "PRIVACY" | translate }}</a>
-    @if (coffeeUrl) {
-      <a mat-stroked-button [href]="coffeeUrl" target="_blank" rel="noopener"><mat-icon>local_cafe</mat-icon> {{ "AKTUELT_COFFEE" | translate }}</a>
-    }
+      <div class="actions">
+        <a mat-button routerLink="/privacy"><mat-icon>privacy_tip</mat-icon> {{ "PRIVACY" | translate }}</a>
+        @if (coffeeUrl) {
+          <a mat-stroked-button [href]="coffeeUrl" target="_blank" rel="noopener"><mat-icon>local_cafe</mat-icon> {{ "AKTUELT_COFFEE" | translate }}</a>
+        }
+      </div>
+
+      @if (isAdmin | async) {
+        <mat-card class="post-form">
+          <mat-card-title>{{ "AKTUELT_NEW_POST" | translate }}</mat-card-title>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ "AKTUELT_POST_TITLE" | translate }}</mat-label>
+            <input matInput [(ngModel)]="title" maxlength="200">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ "AKTUELT_POST_BODY" | translate }}</mat-label>
+            <textarea matInput [(ngModel)]="body" rows="6" maxlength="5000"></textarea>
+          </mat-form-field>
+          <button mat-flat-button [disabled]="!title.trim() || !body.trim()" (click)="post()">{{ "AKTUELT_PUBLISH" | translate }}</button>
+        </mat-card>
+      }
+
+      @for (a of announcements | async; track a.id) {
+        <mat-card class="announcement">
+          <mat-card-title>{{ a.title }}</mat-card-title>
+          <mat-card-subtitle>{{ a.createdAt?.toDate() | date:'d. MMMM y' }}</mat-card-subtitle>
+          <p class="body">{{ a.body }}</p>
+        </mat-card>
+      } @empty {
+        <p class="empty">{{ "AKTUELT_EMPTY" | translate }}</p>
+      }
+    </section>
+
+    <!-- Skriv til Toke lives next to the news: one place for everything between the kitchens and the maker. -->
+    <section class="chat" id="chat">
+      <app-maker-chat [embedded]="true"></app-maker-chat>
+    </section>
   </div>
-
-  @if (isAdmin | async) {
-    <mat-card class="post-form">
-      <mat-card-title>{{ "AKTUELT_NEW_POST" | translate }}</mat-card-title>
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>{{ "AKTUELT_POST_TITLE" | translate }}</mat-label>
-        <input matInput [(ngModel)]="title" maxlength="200">
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>{{ "AKTUELT_POST_BODY" | translate }}</mat-label>
-        <textarea matInput [(ngModel)]="body" rows="6" maxlength="5000"></textarea>
-      </mat-form-field>
-      <button mat-flat-button [disabled]="!title.trim() || !body.trim()" (click)="post()">{{ "AKTUELT_PUBLISH" | translate }}</button>
-    </mat-card>
-  }
-
-  @for (a of announcements | async; track a.id) {
-    <mat-card class="announcement">
-      <mat-card-title>{{ a.title }}</mat-card-title>
-      <mat-card-subtitle>{{ a.createdAt?.toDate() | date:'d. MMMM y' }}</mat-card-subtitle>
-      <p class="body">{{ a.body }}</p>
-    </mat-card>
-  } @empty {
-    <p class="empty">{{ "AKTUELT_EMPTY" | translate }}</p>
-  }
 </div>
