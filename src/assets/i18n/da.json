@@ -211,5 +211,6 @@
   "BUY_EACH_ONE": "til hver",
   "BUY_PICK": "Vælg en eller flere beboere",
   "BUY_ONE_LESS": "En mindre",
-  "BUY_ONE_MORE": "En mere"
+  "BUY_ONE_MORE": "En mere",
+  "HISTORY_UNDO_CONFIRM": "Fortryd køb"
 }

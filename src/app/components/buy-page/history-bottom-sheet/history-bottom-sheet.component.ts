@@ -1,4 +1,4 @@
-import {Component, DestroyRef, effect, inject, signal, viewChild} from '@angular/core';
+import {Component, DestroyRef, ElementRef, effect, inject, signal, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe, DecimalPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
@@ -18,6 +18,11 @@ import {Confirm} from '../../confirm-dialog/confirm-dialog.component';
 
 // A tablet may take a purchase back this long after it was made (firestore.rules allows 60 s).
 const TABLET_UNDO_MS = 55e3;
+// Material 3 removal: the row is marked red for a moment (so it is clear which one goes), slides
+// out while fading (emphasized accelerate), then the rows below glide up (emphasized decelerate).
+const MARK_MS = 300;
+const EXIT = {duration: 200, easing: 'cubic-bezier(0.3, 0, 0.8, 0.15)'};
+const CLOSE_GAP = {duration: 300, easing: 'cubic-bezier(0.05, 0.7, 0.1, 1)'};
 
 // "Seneste køb": the latest purchases. Here a wrong purchase is taken back: by the tablet within
 // a minute, by the treasurer or owner at any time.
@@ -42,6 +47,11 @@ export class HistoryBottomSheetComponent {
   protected readonly canManage = this.auth.canManage;
   // Ticks, so the tablet's undo buttons disappear when their minute is up.
   private readonly now = signal(Date.now());
+  // Rows being taken back, while they are marked.
+  protected readonly removing = signal<ReadonlySet<string>>(new Set());
+  // Rows stay the same elements across updates, so the ones below a removed row can be moved.
+  protected readonly trackById = (_: number, p: Purchase) => p.id;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     // Column ids differ from the field names, and time sorts by value, not by its text.
@@ -67,11 +77,51 @@ export class HistoryBottomSheetComponent {
     const t = (k: string) => this.i18n.t(k);
     const ok = await this.confirm.ask({
       title: t('HISTORY_UNDO_TITLE'), message: `${p.amount} × ${p.productName}, ${p.userName}`,
-      confirm: t('BEERSYSTEM_UNDO'), cancel: t('HISTORY_KEEP'), danger: true,
+      confirm: t('HISTORY_UNDO_CONFIRM'), cancel: t('HISTORY_KEEP'),
     });
-    if (ok) {
-      this.purchaseService.remove(p, this.products().find(x => x.id === p.productId))
-        .then(() => this.notify.info(t('BEERSYSTEM_UNDONE')), this.notify.error);
+    if (!ok) {
+      return;
+    }
+    const animate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.removing.update(ids => new Set([...ids, p.id]));
+    const row = this.row(p.id);
+    if (animate && row) {
+      await new Promise(done => setTimeout(done, MARK_MS));
+      await row.animate([{transform: 'none', opacity: 1}, {transform: 'translateX(48px)', opacity: 0}], {...EXIT, fill: 'forwards'}).finished;
+    }
+    const before = this.rowTops();
+    // The row leaves the list as soon as the delete is made locally; the promise waits for the server.
+    this.purchaseService.remove(p, this.products().find(x => x.id === p.productId)).then(
+      () => this.notify.info(t('BEERSYSTEM_UNDONE')),
+      e => {
+        this.removing.update(ids => new Set([...ids].filter(id => id !== p.id)));
+        this.row(p.id)?.getAnimations().forEach(a => a.cancel());
+        this.notify.error(e);
+      });
+    if (animate) {
+      await this.closeGap(p.id, before);
+    }
+  }
+
+  private row(id: string): HTMLElement | null {
+    return this.host.nativeElement.querySelector(`tr[data-id="${id}"]`);
+  }
+
+  private rowTops(): Map<string, number> {
+    const rows = this.host.nativeElement.querySelectorAll<HTMLElement>('tr[data-id]');
+    return new Map([...rows].map(r => [r.dataset['id'] ?? '', r.getBoundingClientRect().top]));
+  }
+
+  // Once the removed row is gone, the rows that moved up start where they were and glide there.
+  private async closeGap(removedId: string, before: Map<string, number>) {
+    for (let i = 0; i < 60 && this.row(removedId); i++) {
+      await new Promise(requestAnimationFrame);
+    }
+    for (const [id, top] of this.rowTops()) {
+      const dy = (before.get(id) ?? top) - top;
+      if (dy) {
+        this.row(id)?.animate([{transform: `translateY(${dy}px)`}, {transform: 'none'}], CLOSE_GAP);
+      }
     }
   }
 }

@@ -211,5 +211,6 @@
   "BUY_EACH_ONE": "each",
   "BUY_PICK": "Choose one or more residents",
   "BUY_ONE_LESS": "One less",
-  "BUY_ONE_MORE": "One more"
+  "BUY_ONE_MORE": "One more",
+  "HISTORY_UNDO_CONFIRM": "Undo purchase"
 }
