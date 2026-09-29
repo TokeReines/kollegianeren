@@ -1,3 +1,12 @@
+@if (lowStock.length) {
+  <div class="low-stock" role="status">
+    <mat-icon>inventory_2</mat-icon>
+    {{ "PRODUCTS_LOW_STOCK" | translate }}
+    @for (p of lowStock; track p.id; let last = $last) {
+      <b>{{ p.name }} ({{ p.stock }})</b>{{ last ? '' : ', ' }}
+    }
+  </div>
+}
 <mat-table #table [dataSource]="products" matSort class="animate">
 
   <ng-container matColumnDef="image">
@@ -36,6 +45,28 @@
   <ng-container matColumnDef="price">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_SALES_PRICE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let product"> {{ product.price }} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="margin">
+    <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_MARGIN" | translate }}</mat-header-cell>
+    <mat-cell *matCellDef="let product">
+      @if (margin(product) !== null) {
+        <span [class.negative]="margin(product) < 0">{{ margin(product) | number:'1.0-2' }} kr.</span>
+      }
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="stock">
+    <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_STOCK" | translate }}</mat-header-cell>
+    <mat-cell *matCellDef="let product">
+      @if (tracksStock(product)) {
+        <span class="stock" [class.low]="isLowStock(product)">{{ product.stock }}</span>
+        <button mat-icon-button (click)="receive(product)" [attr.aria-label]="'PRODUCTS_STOCK_RECEIVE' | translate"><mat-icon>add_box</mat-icon></button>
+        <button mat-icon-button (click)="stopTracking(product)" [attr.aria-label]="'PRODUCTS_STOCK_STOP' | translate"><mat-icon>block</mat-icon></button>
+      } @else {
+        <button mat-button (click)="trackStock(product)">{{ "PRODUCTS_STOCK_TRACK" | translate }}</button>
+      }
+    </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="active">

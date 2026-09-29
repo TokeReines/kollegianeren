@@ -180,12 +180,24 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // products and users (residents): every member reads, managers write. Purchases, messages and
+      // Products: managers edit; every member may move the stock count (a sale or its undo).
+      match /products/{productId} {
+        allow read: if isMember(kid);
+        allow create, delete: if canManage(kid);
+        allow update: if canManage(kid)
+          || (isMember(kid)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
+            && resource.data.stock is number && request.resource.data.stock is number
+            && request.resource.data.stock - resource.data.stock >= -400
+            && request.resource.data.stock - resource.data.stock <= 400);
+      }
+
+      // users (residents): every member reads, managers write. Purchases, messages and
       // members are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members']);
-        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members']);
+        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products']);
+        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products']);
       }
     }
   }

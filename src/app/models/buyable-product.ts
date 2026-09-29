@@ -10,6 +10,8 @@ export class BuyableProduct implements Product {
   price: number;
   retailPrice: number;
   clId: string;
+  stock?: number | null;
+  lowStock?: number;
 
   constructor(product: Product) {
     this.selected = false;
@@ -21,5 +23,7 @@ export class BuyableProduct implements Product {
     this.price = product.price;
     this.retailPrice = product.retailPrice;
     this.clId = product.clId;
+    this.stock = product.stock;
+    this.lowStock = product.lowStock;
   }
 }

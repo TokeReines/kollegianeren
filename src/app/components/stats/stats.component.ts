@@ -24,7 +24,7 @@ export class StatsComponent implements OnInit {
   days = 30;
   loading = false;
   showTable = false;
-  totals = {kr: 0, purchases: 0, units: 0, buyers: 0};
+  totals = {kr: 0, purchases: 0, units: 0, buyers: 0, profit: null as number | null};
   products: ProductRow[] = [];
   maxProductKr = 1;
   daily: DayRow[] = [];
@@ -33,6 +33,8 @@ export class StatsComponent implements OnInit {
   heat: number[][] = [];
   heatSteps: number[] = [];
   tip: {text: string, x: number, y: number} | null = null;
+  // Cost price per product id, for the estimated profit.
+  private cost = new Map<string, number>();
 
   constructor(private auth: AuthService, public translate: TranslateService) {
   }
@@ -61,7 +63,11 @@ export class StatsComponent implements OnInit {
       const from = new Date();
       from.setHours(0, 0, 0, 0);
       from.setDate(from.getDate() - (this.days - 1));
-      const snap = await getDocs(query(collection(db, 'kitchens', kid, 'purchases'), where('timestamp', '>=', from)));
+      const [snap, products] = await Promise.all([
+        getDocs(query(collection(db, 'kitchens', kid, 'purchases'), where('timestamp', '>=', from))),
+        getDocs(collection(db, 'kitchens', kid, 'products')),
+      ]);
+      this.cost = new Map(products.docs.filter(d => d.get('retailPrice') != null).map(d => [d.id, Number(d.get('retailPrice'))]));
       this.compute(snap.docs.map(d => d.data() as Purchase), from);
     } finally {
       this.loading = false;
@@ -78,7 +84,7 @@ export class StatsComponent implements OnInit {
       d.setDate(from.getDate() + i);
       byDay.set(d.toDateString(), {date: d, kr: 0, purchases: 0});
     }
-    let kr = 0, units = 0;
+    let kr = 0, units = 0, profit = 0, costed = 0;
     for (const p of purchases) {
       const t: Date = p.timestamp?.toDate?.();
       if (!t) {
@@ -89,6 +95,10 @@ export class StatsComponent implements OnInit {
       kr += price;
       units += amount;
       buyers.add(p.userId);
+      if (this.cost.has(p.productId)) {
+        profit += price - this.cost.get(p.productId) * amount;
+        costed++;
+      }
       const row = byProduct.get(p.productName) || {name: p.productName, kr: 0, units: 0};
       row.kr += price;
       row.units += amount;
@@ -100,7 +110,7 @@ export class StatsComponent implements OnInit {
       }
       heat[(t.getDay() + 6) % 7][t.getHours()]++;
     }
-    this.totals = {kr, purchases: purchases.length, units, buyers: buyers.size};
+    this.totals = {kr, purchases: purchases.length, units, buyers: buyers.size, profit: costed ? profit : null};
     this.products = [...byProduct.values()].sort((a, b) => b.kr - a.kr).slice(0, 10);
     this.maxProductKr = Math.max(1, ...this.products.map(p => p.kr));
     this.daily = [...byDay.values()];

@@ -18,6 +18,9 @@
     <div class="tile"><div class="value">{{ totals.kr | number:'1.0-0' }} kr.</div><div class="label">{{ "STATS_REVENUE" | translate }}</div></div>
     <div class="tile"><div class="value">{{ totals.purchases }}</div><div class="label">{{ "STATS_PURCHASES" | translate }}</div></div>
     <div class="tile"><div class="value">{{ totals.units }}</div><div class="label">{{ "STATS_UNITS" | translate }}</div></div>
+    @if (totals.profit !== null) {
+      <div class="tile"><div class="value">{{ totals.profit | number:'1.0-0' }} kr.</div><div class="label">{{ "STATS_PROFIT" | translate }}</div></div>
+    }
     <div class="tile"><div class="value">{{ totals.buyers }}</div><div class="label">{{ "STATS_BUYERS" | translate }}</div></div>
   </div>
 
