@@ -1,15 +1,74 @@
-.filters {
+.page {
+  max-width: 1400px;
+}
+
+.periods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.range {
+  width: 260px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tile {
+  padding: 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+
+  .value {
+    font: var(--mat-sys-headline-small);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &:first-child {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+    border-color: transparent;
+
+    .label {
+      color: inherit;
+    }
+  }
+}
+
+.toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.search {
+  width: min(320px, 100%);
+}
+
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+  padding: 32px 0;
+  text-align: center;
 }
 
 .accounting-scroll {
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 12px;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 380px);
+  min-height: 240px;
 }
 
 .accounting-table {
@@ -40,10 +99,18 @@
     }
   }
 
+  &.kr th.product {
+    min-width: 80px;
+  }
+
   // The sort arrow takes room on the right; the same on the left keeps the label centred.
   th:not(.mat-column-name) ::ng-deep .mat-sort-header-container {
     justify-content: center;
     padding-left: 18px;
+  }
+
+  tr.mat-mdc-row:hover td {
+    background: color-mix(in srgb, var(--mat-sys-on-surface) 5%, var(--mat-sys-surface));
   }
 
   .mat-mdc-table-sticky {
@@ -55,7 +122,14 @@
   }
 
   .mat-column-total {
-    font-weight: 500;
+    font-weight: 600;
     border-left: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  // Totals row.
+  td.mat-mdc-footer-cell {
+    font-weight: 600;
+    background: var(--mat-sys-surface-container);
+    border-top: 1px solid var(--mat-sys-outline-variant);
   }
 }
