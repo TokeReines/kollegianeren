@@ -1,27 +1,51 @@
 # Kollegianeren
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.1.2, using node v8.12.0 and npm v6.4.1.
+The beer tab for the kitchens at Egmont Kollegiet: each kitchen logs in on a shared tablet, residents tap a product and their name, and the treasurer exports a monthly statement. Built in 2018, in daily use since.
 
-## Development server
+Angular 22 + Angular Material, Firebase Auth and Firestore (free Spark plan), product and resident photos on Cloudinary.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+## Projects
 
-## Code scaffolding
+| | Firebase project | URL | Build |
+|---|---|---|---|
+| **Prod** | `firebase-ehp` (alias `prod`) | https://ehp.web.app | `npm run build:prod` |
+| Dev | `kollegianeren` (alias `dev`) | https://kollegianeren.web.app | `npm run build:dev` |
+| Local | emulators, project `demo-kollegianeren` | http://localhost:4200 | `npm start` |
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Plain `ng build` / `ng serve` target the local emulators, so nothing talks to prod by accident.
 
-## Build
+## Develop locally
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+Node 22 (`nvm use`), Java 21 for the Firestore emulator, `firebase-tools` installed globally.
 
-## Running unit tests
+```bash
+npm install
+npm run emulators   # auth + firestore, seeded from ~/kollegianeren-emulator-data
+npm start           # second terminal, http://localhost:4200
+```
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+The seed data is an anonymised copy of prod made with `ops/restore.js` (see `ops/README.md`). Emulator-only logins for every kitchen are in `~/kollegianeren-emulator-data/accounts.json`.
 
-## Running end-to-end tests
+## Data model
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+```
+kitchens/{uid}                 one doc per kitchen, id == the kitchen's auth uid: {id, name}
+kitchens/{uid}/products/{id}   name, price, retailPrice, active, clId (Cloudinary id)
+kitchens/{uid}/users/{id}      residents: name, room, active, clId
+kitchens/{uid}/purchases/{id}  productId/Name, userId/Name/Room, amount, price, timestamp
+```
 
-## Further help
+Security rules (`firestore.rules`) let a kitchen reach only its own subtree; tests in `rules-test/`.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+## Deploy
+
+```bash
+npm run deploy:dev                                              # dev hosting
+npm run build:prod && firebase deploy --only hosting --project prod   # prod: announce first
+```
+
+Prod is used every day. Deploy there only after the change has run on dev, and tell the kitchens first.
+
+## Quotas
+
+Spark allows 50k document reads per day and blocks the app for the rest of the day once they run out. `node ops/usage.js --project prod` shows daily usage.

@@ -29,6 +29,7 @@ speed-measure-plugin.json
 !.vscode/extensions.json
 
 # misc
+/.angular/cache
 /.sass-cache
 /connect.lock
 /coverage
@@ -45,3 +46,8 @@ Thumbs.db
 "node_modules"
 "node_modules"
 node_modules/
+
+# emulators
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

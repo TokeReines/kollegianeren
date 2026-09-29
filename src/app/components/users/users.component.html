@@ -2,17 +2,21 @@
   <ng-container matColumnDef="image">
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user" class="image-wrapper">
-      <div *ngIf="!!user.clId" class="image-wrapper">
-        <cl-image public-id="{{user.clId}}" crop="fill" gravity="face"
-                  quality="50" width="75" height="75" format="png" radius="max">
-        </cl-image>
-      </div>
-      <div *ngIf="!!user.image" class="image-wrapper">
-        <img [src]="user.image" class="avatar">
-      </div>
-      <div *ngIf="!user.image && !user.clId" class="image-wrapper">
-        <img src="/assets/img/avatar.png" class="avatar"/>
-      </div>
+      @if (!!user.clId) {
+        <div class="image-wrapper">
+          <img [src]="user.clId | clUrl:'c_fill,g_face,q_50,w_75,h_75,r_max':'png'" alt="">
+        </div>
+      }
+      @if (!!user.image) {
+        <div class="image-wrapper">
+          <img [src]="user.image" class="avatar">
+        </div>
+      }
+      @if (!user.image && !user.clId) {
+        <div class="image-wrapper">
+          <img src="/assets/img/avatar.png" class="avatar"/>
+        </div>
+      }
     </mat-cell>
   </ng-container>
 

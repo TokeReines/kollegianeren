@@ -3,8 +3,8 @@
   "compilerOptions": {
     "outDir": "../out-tsc/spec",
     "types": [
-      "jasmine",
-      "node"
+      "node",
+      "vitest/globals"
     ]
   },
   "files": [
@@ -12,7 +12,9 @@
     "polyfills.ts"
   ],
   "include": [
-    "**/*.spec.ts",
-    "**/*.d.ts"
-  ]
+    "***.d.ts"
+  ],
+  "angularCompilerOptions": {
+    "strictTemplates": false
+  }
 }

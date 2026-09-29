@@ -1,7 +1,8 @@
 import {Directive, ElementRef, HostListener} from '@angular/core';
 
 @Directive({
-  selector: '[priceInput]'
+    selector: '[priceInput]',
+    standalone: false
 })
 export class PriceInputDirective {
   // Allow decimal numbers and negative values

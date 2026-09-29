@@ -1,19 +1,21 @@
-import {Component, ElementRef, Inject, OnInit, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material';
+import {Component, ElementRef, Inject, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import {Product} from '../../../interfaces/product';
 import {environment} from '../../../../environments/environment';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 
 @Component({
-  selector: 'app-edit-product-dialog',
-  templateUrl: './edit-product-dialog.component.html',
+    selector: 'app-edit-product-dialog',
+    templateUrl: './edit-product-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class EditProductDialogComponent implements OnInit {
   imageUrl: string;
   oldImageUrl: string;
   uploading: boolean;
-  @ViewChild('clFileInput') clFileInput: ElementRef;
+  @ViewChild('clFileInput', { static: true }) clFileInput: ElementRef;
 
   constructor(public dialogRef: MatDialogRef<EditProductDialogComponent>,
               @Inject(MAT_DIALOG_DATA) public product: Product, private httpClient: HttpClient) {

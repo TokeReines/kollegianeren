@@ -1,5 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
-@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+@import '@angular/material/prebuilt-themes/deeppurple-amber.css';
 
 html, body {
   height: 100%;
@@ -114,4 +114,18 @@ mat-sidenav-container {
 .dialog-checkbox-active {
   display: block;
   margin-top: auto;
+}
+
+// Replaces @angular/flex-layout's fxLayout directive: layout="row|column|row wrap".
+[layout] {
+  display: flex;
+  box-sizing: border-box;
+}
+[layout="row"] { flex-direction: row; }
+[layout="column"] { flex-direction: column; }
+[layout="row wrap"] { flex-flow: row wrap; }
+
+// Material 15 (MDC) cards have no padding of their own; the layouts here assume the old 16px.
+.mat-mdc-card {
+  padding: 16px;
 }

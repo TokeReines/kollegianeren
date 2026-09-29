@@ -1,6 +1,4 @@
 import {Injectable} from '@angular/core';
-import * as FileSaver from 'file-saver';
-import * as XLSX from 'xlsx';
 
 const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
@@ -11,23 +9,14 @@ const EXCEL_EXTENSION = '.xlsx';
 })
 export class ExcelService {
 
-  constructor() {
-  }
+  // xlsx is large and only needed for the accounting export, so it loads on first use.
+  public async exportAsExcelFile(json: any[], excelFileName: string): Promise<void> {
+    const [XLSX, {saveAs}] = await Promise.all([import('xlsx'), import('file-saver')]);
 
-  public exportAsExcelFile(json: any[], excelFileName: string): void {
+    const worksheet = XLSX.utils.json_to_sheet(json);
+    const workbook = {Sheets: {'data': worksheet}, SheetNames: ['data']};
+    const excelBuffer = XLSX.write(workbook, {bookType: 'xlsx', type: 'array'});
 
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(json);
-
-    const workbook: XLSX.WorkBook = {Sheets: {'data': worksheet}, SheetNames: ['data']};
-
-    const excelBuffer: any = XLSX.write(workbook, {bookType: 'xlsx', type: 'array'});
-
-    this.saveAsExcelFile(excelBuffer, excelFileName);
-  }
-
-  private saveAsExcelFile(buffer: any, fileName: string): void {
-    const data: Blob = new Blob([buffer], {type: EXCEL_TYPE});
-
-    FileSaver.saveAs(data, fileName + EXCEL_EXTENSION);
+    saveAs(new Blob([excelBuffer], {type: EXCEL_TYPE}), excelFileName + EXCEL_EXTENSION);
   }
 }

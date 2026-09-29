@@ -1,24 +1,25 @@
 <app-language-button></app-language-button>
-<div class="register-form" fxLayout="column" xLayoutAlign="space-around center">
-  <mat-card>
+<div class="register-form" layout="column">
+  <mat-card appearance="outlined">
     <mat-card-header class="mat-card-header">
       <mat-card-title>{{ "REGISTER_KITCHEN" | translate }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <form name="registerForm" fxLayout="column" [formGroup]="form">
+      <form name="registerForm" layout="column" [formGroup]="form">
         <mat-form-field>
           <mat-select
             placeholder="{{ 'KITCHEN' | translate }}"
             required
             [(ngModel)]="registration.kitchen"
             formControlName="kitchen"
-          >
-            <mat-option
-              *ngFor="let kitchen of kitchens"
-              [value]="kitchen.value"
             >
-              {{ kitchen.viewValue }}
-            </mat-option>
+            @for (kitchen of kitchens; track kitchen) {
+              <mat-option
+                [value]="kitchen.value"
+                >
+                {{ kitchen.viewValue }}
+              </mat-option>
+            }
           </mat-select>
         </mat-form-field>
 
@@ -31,7 +32,7 @@
             [(ngModel)]="registration.email"
             name="email"
             (keyup.enter)="onSubmit(registration)"
-          />
+            />
         </mat-form-field>
 
         <mat-form-field>
@@ -43,7 +44,7 @@
             [(ngModel)]="registration.password"
             formControlName="password"
             (keyup.enter)="onSubmit(registration)"
-          />
+            />
           <mat-icon matSuffix (click)="hidePassword = !hidePassword">{{
             hidePassword ? "visibility_off" : "visibility"
           }}</mat-icon>
@@ -54,7 +55,7 @@
             color="primary"
             (click)="onSubmit(registration)"
             [disabled]="form.invalid"
-          >
+            >
             {{ "REGISTER" | translate }}
           </button>
           <button mat-raised-button color="secondary" [routerLink]="['/login']">

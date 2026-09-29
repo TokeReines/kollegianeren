@@ -1,5 +1,5 @@
-import {Component, OnInit} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {AuthService} from '../../services/auth.service';
 import {Router} from '@angular/router';
 import {Registration} from '../../models/registration';
@@ -12,12 +12,14 @@ export interface KitchenSelect {
 }
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html'
+    selector: 'app-register',
+    templateUrl: './register.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class RegisterComponent implements OnInit {
   registration: Registration = new Registration();
-  form: FormGroup;
+  form: UntypedFormGroup;
   hidePassword = true;
   kitchens: KitchenSelect[] = [
     {value: 'gl8', viewValue: 'Gamle 8.'},
@@ -52,15 +54,17 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.form = new FormGroup({
-      email: new FormControl('', [Validators.required, Validators.email]),
-      kitchen: new FormControl('', [Validators.required]),
-      password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    this.form = new UntypedFormGroup({
+      email: new UntypedFormControl('', [Validators.required, Validators.email]),
+      kitchen: new UntypedFormControl('', [Validators.required]),
+      password: new UntypedFormControl('', [Validators.required, Validators.minLength(6)]),
     });
-    this.kitchenService.list().valueChanges().subscribe(kitchens => {
-      for (const kitchen of kitchens) {
-        this.kitchens.splice(this.kitchens.findIndex(k => k.value === kitchen.name), 1);
-      }
+    this.kitchenService.list().subscribe(kitchens => {
+      // Registered names vary in case and prefix (Gl4, gl4, Ml8, m8). A miss must not remove anything:
+      // splice(-1, 1) used to drop the last option instead.
+      const key = (name: string) => String(name).toLowerCase().replace(/^ml/, 'm');
+      const taken = new Set(kitchens.map(k => key(k.name)));
+      this.kitchens = this.kitchens.filter(k => !taken.has(key(k.value)));
     });
   }
 

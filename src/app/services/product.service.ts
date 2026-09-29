@@ -1,47 +1,35 @@
-import {Injectable, OnInit} from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
+import {Injectable} from '@angular/core';
+import {addDoc, collection, deleteDoc, doc, updateDoc} from 'firebase/firestore';
+import {switchMap} from 'rxjs/operators';
 import {Product} from '../interfaces/product';
 import {AuthService} from './auth.service';
-import {map} from 'rxjs/operators';
+import {db, watch} from '../firebase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
-  _products: AngularFirestoreCollection<Product>;
 
-  constructor(private afs: AngularFirestore, private auth: AuthService) {
-    this.auth.user.pipe().subscribe(
-      (user) => {
-        if (!user) {
-          console.log(user);
-          return;
-        }
-        this._products = this.afs.collection<Product>('kitchens').doc(user.uid).collection('products');
-      }
-    );
+  constructor(private auth: AuthService) {
+  }
+
+  private products(uid = this.auth.currentKitchenId) {
+    return collection(db, 'kitchens', uid, 'products');
   }
 
   list() {
-    return this._products.snapshotChanges()
-      .pipe(
-        map(actions => actions.map(a => {
-          const data = a.payload.doc.data() as Product;
-          const id = a.payload.doc.id;
-          return {id, ...data} as Product;
-        }))
-      );
+    return this.auth.kitchenId.pipe(switchMap(uid => watch<Product>(this.products(uid))));
   }
 
   update(product: Product) {
-    this._products.doc(product.id).update(product);
+    return updateDoc(doc(this.products(), product.id), {...product});
   }
 
   delete(product: Product) {
-    this._products.doc(product.id).delete();
+    return deleteDoc(doc(this.products(), product.id));
   }
 
   add(product) {
-    this._products.add(product);
+    return addDoc(this.products(), product);
   }
 }

@@ -1,68 +1,52 @@
 import {Injectable} from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
-import {AuthService} from './auth.service';
-import {map} from 'rxjs/operators';
+import {
+  QueryConstraint, addDoc, collection, deleteDoc, doc, limit as limitTo, orderBy, query, serverTimestamp, updateDoc, where,
+} from 'firebase/firestore';
+import {Observable} from 'rxjs';
+import {switchMap} from 'rxjs/operators';
 import {Purchase} from '../interfaces/purchase';
-import * as firebase from 'firebase';
+import {AuthService} from './auth.service';
+import {db, watch} from '../firebase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PurchaseService {
-  _purchases: AngularFirestoreCollection<Purchase>;
-  _root: any;
 
-  constructor(private afs: AngularFirestore, private auth: AuthService) {
-    this.auth.user.subscribe(
-      (user) => {
-        if (!user) {
-          return;
-        }
-        this._root = this.afs.collection<Purchase>('kitchens').doc(user.uid);
-        this._purchases = this._root.collection('purchases');
-      }
-    );
+  constructor(private auth: AuthService) {
+  }
+
+  private purchases(uid = this.auth.currentKitchenId) {
+    return collection(db, 'kitchens', uid, 'purchases');
+  }
+
+  private watchQuery(...constraints: QueryConstraint[]): Observable<Purchase[]> {
+    return this.auth.kitchenId.pipe(switchMap(uid => watch<Purchase>(query(this.purchases(uid), ...constraints))));
   }
 
   list() {
-    return this._purchases.snapshotChanges().pipe(
-      map(actions => actions.map(a => {
-        const data = a.payload.doc.data() as Purchase;
-        const id = a.payload.doc.id;
-        return {id, ...data} as Purchase;
-      }))
-    );
+    return this.watchQuery();
   }
 
   list_from_to(from: Date, to: Date) {
     from.setHours(0, 0, 0, 0);
     to.setHours(23, 59, 59, 999);
-    return this._root.collection('purchases', ref => ref.where('timestamp', '>=', from)
-      .where('timestamp', '<', to)) as AngularFirestoreCollection<Purchase>;
+    return this.watchQuery(where('timestamp', '>=', from), where('timestamp', '<', to));
   }
 
   list_newest(limit = 30) {
-    const collection = this._root.collection('purchases', ref => ref.orderBy('timestamp', 'desc')
-      .limit(limit)) as AngularFirestoreCollection<Purchase>;
-    return collection.snapshotChanges().pipe(
-      map(actions => actions.map(a => {
-        const data = a.payload.doc.data() as Purchase;
-        const id = a.payload.doc.id;
-        return {id, ...data} as Purchase;
-      }))
-    );
+    return this.watchQuery(orderBy('timestamp', 'desc'), limitTo(limit));
   }
 
   update(purchase: Purchase) {
-    this._purchases.doc(purchase.id).update(purchase);
+    return updateDoc(doc(this.purchases(), purchase.id), {...purchase});
   }
 
   delete(purchase: Purchase) {
-    this._purchases.doc(purchase.id).delete();
+    return deleteDoc(doc(this.purchases(), purchase.id));
   }
 
   add(purchase: Purchase) {
-    purchase.timestamp = firebase.firestore.FieldValue.serverTimestamp();
-    this._purchases.add(purchase);
+    return addDoc(this.purchases(), {...purchase, timestamp: serverTimestamp()});
   }
 }

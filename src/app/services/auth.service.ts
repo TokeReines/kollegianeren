@@ -1,61 +1,46 @@
 import {Injectable} from '@angular/core';
-import {Observable, of} from 'rxjs';
-import {AngularFireAuth} from '@angular/fire/auth';
-import * as firebase from 'firebase';
-import {switchMap} from 'rxjs/operators';
+import {Observable} from 'rxjs';
+import {filter, map, shareReplay} from 'rxjs/operators';
+import {
+  User, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut,
+} from 'firebase/auth';
+import {auth} from '../firebase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  user: Observable<firebase.User>;
+  // Emits the signed-in user, or null, once Firebase has restored the session.
+  user: Observable<User | null> = new Observable<User | null>(subscriber => onAuthStateChanged(auth, subscriber))
+    .pipe(shareReplay({bufferSize: 1, refCount: false}));
+  // The signed-in kitchen's uid. Waits for sign-in, because auth state arrives asynchronously.
+  kitchenId: Observable<string> = this.user.pipe(filter(user => !!user), map(user => user.uid), shareReplay(1));
 
-
-  constructor(private afAuth: AngularFireAuth) {
-    this.user = this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user) {
-          return of(user);
-        } else {
-          return of(null);
-        }
-      })
-    );
+  // The signed-in kitchen's uid right now, for writes triggered by the user.
+  get currentKitchenId(): string {
+    if (!auth.currentUser) {
+      throw new Error('Not signed in');
+    }
+    return auth.currentUser.uid;
   }
 
   emailSignup(email, password) {
-    return new Promise<any>((resolve, reject) => {
-      firebase.auth().createUserWithEmailAndPassword(email, password)
-        .then(res => {
-          resolve(res);
-        }, err => reject(err));
-    });
+    return createUserWithEmailAndPassword(auth, email, password);
   }
 
   emailLogin(email, password) {
-    return new Promise<any>((resolve, reject) => {
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(res => {
-          resolve(res);
-        }, err => reject(err));
-    });
+    return signInWithEmailAndPassword(auth, email, password);
   }
 
   sendResetEmail(email) {
-    console.log(email);
-    return new Promise<any>((resolve, reject) => {
-      firebase.auth().sendPasswordResetEmail(email)
-        .then(res => {
-          resolve(res);
-        }, err => reject(err));
-    });
+    return sendPasswordResetEmail(auth, email);
   }
 
   isLoggedIn() {
-    return this.afAuth.authState;
+    return this.user;
   }
 
   logout() {
-    return this.afAuth.auth.signOut();
+    return signOut(auth);
   }
 }

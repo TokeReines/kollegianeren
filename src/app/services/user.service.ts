@@ -1,48 +1,36 @@
-import { Injectable } from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
-import {Product} from '../interfaces/product';
-import {AuthService} from './auth.service';
+import {Injectable} from '@angular/core';
+import {addDoc, collection, deleteDoc, doc, updateDoc} from 'firebase/firestore';
+import {switchMap} from 'rxjs/operators';
 import {User} from '../interfaces/user';
-import {map} from 'rxjs/operators';
+import {AuthService} from './auth.service';
+import {db, watch} from '../firebase';
 
+// Residents of the signed-in kitchen (the `users` collection).
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  _users: AngularFirestoreCollection<User>;
 
-  constructor(private afs: AngularFirestore, private auth: AuthService) {
-    this.auth.user.subscribe(
-      (user) => {
-        if (!user) {
-          return;
-        }
-        this._users = this.afs.collection<Product>('kitchens').doc(user.uid).collection('users');
-      }
-    );
+  constructor(private auth: AuthService) {
+  }
+
+  private users(uid = this.auth.currentKitchenId) {
+    return collection(db, 'kitchens', uid, 'users');
   }
 
   list() {
-    return this._users.snapshotChanges()
-      .pipe(
-        map(actions => actions.map(a => {
-          const data = a.payload.doc.data() as User;
-          const id = a.payload.doc.id;
-          return {id, ...data} as User;
-        }))
-      );
+    return this.auth.kitchenId.pipe(switchMap(uid => watch<User>(this.users(uid))));
   }
 
   update(user: User) {
-    this._users.doc(user.id).update(user);
+    return updateDoc(doc(this.users(), user.id), {...user});
   }
 
   delete(user: User) {
-    this._users.doc(user.id).delete();
+    return deleteDoc(doc(this.users(), user.id));
   }
 
   add(user: User) {
-    this._users.add(user);
+    return addDoc(this.users(), user);
   }
-
 }

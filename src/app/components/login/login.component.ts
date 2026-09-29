@@ -1,22 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-password-dialog.component';
-import { TranslateService } from 'src/app/services/translate.service';
+import { TranslateService } from '../../services/translate.service';
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss'],
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+    styleUrls: ['./login.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class LoginComponent implements OnInit {
   email = '';
   password = '';
   hidePassword = true;
   emailSent = false;
-  form: FormGroup;
+  form: UntypedFormGroup;
   currentLanguage = this.translate.getLanguage();
 
 
@@ -27,9 +29,9 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.form = new FormGroup({
-      email: new FormControl('', [Validators.required, Validators.email]),
-      password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    this.form = new UntypedFormGroup({
+      email: new UntypedFormControl('', [Validators.required, Validators.email]),
+      password: new UntypedFormControl('', [Validators.required, Validators.minLength(6)]),
     });
   }
 

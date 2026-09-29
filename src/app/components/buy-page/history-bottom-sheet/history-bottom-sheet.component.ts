@@ -1,14 +1,16 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Purchase} from '../../../interfaces/purchase';
-import {MatBottomSheetRef} from '@angular/material';
+import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import {PurchaseService} from '../../../services/purchase.service';
 import {map} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 
 @Component({
-  selector: 'app-history',
-  templateUrl: './history-bottom-sheet.component.html',
-  styleUrls: ['./history-bottom-sheet.component.scss']
+    selector: 'app-history',
+    templateUrl: './history-bottom-sheet.component.html',
+    styleUrls: ['./history-bottom-sheet.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class HistoryBottomSheetComponent implements OnInit {
   purchases: Observable<Purchase[]>;

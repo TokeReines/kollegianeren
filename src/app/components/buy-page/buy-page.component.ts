@@ -1,17 +1,20 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ProductService} from '../../services/product.service';
 import {BuyableProduct} from '../../models/buyable-product';
 import {BuyableUser} from '../../models/buyable-user';
 import {UserService} from '../../services/user.service';
 import {Purchase} from '../../interfaces/purchase';
 import {PurchaseService} from '../../services/purchase.service';
-import {MatBottomSheet, MatSnackBar} from '@angular/material';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 
 @Component({
-  selector: 'app-buy-page',
-  templateUrl: './buy-page.component.html',
-  styleUrls: ['./buy-page.component.scss']
+    selector: 'app-buy-page',
+    templateUrl: './buy-page.component.html',
+    styleUrls: ['./buy-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class BuyPageComponent implements OnInit {
   products: Array<BuyableProduct>;

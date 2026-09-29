@@ -1,20 +1,24 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {map} from 'rxjs/operators';
 import {UserService} from '../../services/user.service';
 import {Observable} from 'rxjs';
 import {User} from '../../interfaces/user';
-import {MatDialog, MatSort, MatTableDataSource} from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 import {EditUserDialogComponent} from './edit-user-dialog/edit-user-dialog.component';
 import {AddUserDialogComponent} from './add-user-dialog/add-user-dialog.component';
 import {Product} from '../../interfaces/product';
 
 @Component({
-  selector: 'app-users',
-  templateUrl: './users.component.html'
+    selector: 'app-users',
+    templateUrl: './users.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class UsersComponent implements OnInit {
   users: MatTableDataSource<User>;
-  @ViewChild(MatSort) sort: MatSort;
+  @ViewChild(MatSort, { static: true }) sort: MatSort;
   displayedColumns = ['image', 'name', 'room', 'active', 'edit', 'delete'];
 
   constructor(private userService: UserService, public dialog: MatDialog) {

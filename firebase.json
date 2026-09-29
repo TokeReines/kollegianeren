@@ -7,7 +7,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "dist",
+    "public": "dist/browser",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -26,6 +26,9 @@
   "emulators": {
     "firestore": {
       "port": 8181
+    },
+    "auth": {
+      "port": 9099
     },
     "ui": {
       "enabled": false
