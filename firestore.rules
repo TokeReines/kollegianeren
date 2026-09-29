@@ -5,17 +5,40 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // Shape of a purchase as both the 2019 app and the current app write it. Checked against
+    // the backed-up purchases: price is null in a few old ones, userRoom is sometimes a number.
+    function validPurchase(d) {
+      return d.keys().hasOnly(['amount', 'price', 'productId', 'productName', 'userId', 'userName', 'userRoom', 'timestamp'])
+        && d.keys().hasAll(['amount', 'productId', 'userId', 'timestamp'])
+        && d.amount is int && d.amount >= 1 && d.amount <= 200
+        && (d.get('price', null) == null || (d.price is number && d.price >= 0 && d.price <= 20000))
+        && d.productId is string && d.userId is string
+        && d.get('productName', '') is string && d.get('userName', '') is string
+        && (d.get('userRoom', null) == null || d.userRoom is string || d.userRoom is number);
+    }
+
     // One document per kitchen, id == the kitchen's auth uid.
     match /kitchens/{uid} {
       // The register page lists taken kitchens before sign-in. Only id and name live here.
       allow read: if true;
-      allow create, update: if isKitchen(uid);
+      allow create, update: if isKitchen(uid)
+        && request.resource.data.keys().hasOnly(['id', 'name'])
+        && request.resource.data.id == uid && request.resource.data.name is string;
       allow delete: if false;
 
-      // products, users (residents) and purchases belong to that kitchen alone.
+      match /purchases/{purchaseId} {
+        allow read, delete: if isKitchen(uid);
+        allow create: if isKitchen(uid) && validPurchase(request.resource.data)
+          && request.resource.data.timestamp == request.time;
+        allow update: if isKitchen(uid) && validPurchase(request.resource.data)
+          && request.resource.data.timestamp == resource.data.timestamp;
+      }
+
+      // products and users (residents) belong to that kitchen alone. Purchases are matched
+      // above; rules are OR'ed, so they are excluded here or this would bypass validation.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read, write: if isKitchen(uid);
+        allow read, write: if isKitchen(uid) && collection != 'purchases';
       }
     }
   }
