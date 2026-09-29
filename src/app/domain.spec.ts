@@ -1,5 +1,5 @@
 import {Timestamp} from 'firebase/firestore';
-import {accounts} from './components/accounting/accounting';
+import {accounts, periodRange, toCsv, toTable} from './components/accounting/accounting';
 import {computeStats, heatLevel, periodStart} from './components/stats/stats';
 import {initials, tone} from './components/shared/resident-avatar.component';
 import {kitchenKey} from './interfaces/kitchen';
@@ -84,6 +84,41 @@ describe('accounting', () => {
   it('keeps a product named like a column apart from the columns', () => {
     const a = accounts([{userId: 'a', userName: 'A', userRoom: null, productName: 'total', amount: 2, price: 10}]);
     expect(a.rows[0]).toMatchObject({total: 10, room: '', units: {total: 2}});
+  });
+});
+
+describe('accounting periods and export', () => {
+  const now = new Date(2026, 8, 29, 15);
+  it('names periods by their first and last day', () => {
+    expect(periodRange('thisMonth', now)).toEqual({from: new Date(2026, 8, 1), to: new Date(2026, 8, 29)});
+    expect(periodRange('lastMonth', now)).toEqual({from: new Date(2026, 7, 1), to: new Date(2026, 7, 31)});
+    expect(periodRange('last30', now)).toEqual({from: new Date(2026, 7, 31), to: new Date(2026, 8, 29)});
+    expect(periodRange('thisYear', now)).toEqual({from: new Date(2026, 0, 1), to: new Date(2026, 8, 29)});
+    expect(periodRange('lastMonth', new Date(2026, 0, 10))).toEqual({from: new Date(2025, 11, 1), to: new Date(2025, 11, 31)});
+  });
+
+  const a = accounts([
+    {userId: 'a', userName: 'Anna; "A"', userRoom: '701', productName: 'Tuborg', amount: 2, price: 14},
+    {userId: 'b', userName: 'Bo', userRoom: '702', productName: 'Cola', amount: 1, price: 6.5},
+  ]);
+  const labels = {name: 'Navn', room: 'Værelse', total: 'I alt, kr.', sum: 'I alt'};
+
+  it('sums every column for the totals row', () => {
+    expect(a.sums).toMatchObject({total: 20.5, allUnits: 3, purchases: 2, units: {Tuborg: 2, Cola: 1}, kr: {Tuborg: 14, Cola: 6.5}});
+  });
+
+  it('tables counts or kroner, with the total in kroner last', () => {
+    expect(toTable(a, 'units', labels).rows[0]).toEqual(['Anna; "A"', '701', null, 2, 14]);
+    expect(toTable(a, 'kr', labels).rows[1]).toEqual(['Bo', '702', 6.5, null, 6.5]);
+    expect(toTable(a, 'units', labels).footer).toEqual(['I alt', '', 1, 2, 20.5]);
+  });
+
+  it('writes CSV for Danish Excel: BOM, semicolons, decimal commas, quoting', () => {
+    const csv = toCsv(toTable(a, 'kr', labels));
+    expect(csv.startsWith('﻿Navn;Værelse;Cola;Tuborg;I alt, kr.\r\n')).toBe(true);
+    expect(csv).toContain('"Anna; ""A""";701;;14;14\r\n');
+    expect(csv).toContain('Bo;702;6,5;;6,5\r\n');
+    expect(csv.endsWith('I alt;;6,5;14;20,5\r\n')).toBe(true);
   });
 });
 

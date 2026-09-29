@@ -1,42 +1,88 @@
-<div class="filters">
-  <mat-form-field>
-    <mat-label>{{ "ACCOUNTING_FROM_DATE" | translate }}</mat-label>
-    <input matInput [matDatepicker]="fromPicker" [(ngModel)]="from" [matDatepickerFilter]="fromFilter">
-    <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
-    <mat-datepicker #fromPicker />
-  </mat-form-field>
-  <mat-form-field>
-    <mat-label>{{ "ACCOUNTING_TO_DATE" | translate }}</mat-label>
-    <input matInput [matDatepicker]="toPicker" [(ngModel)]="to" [matDatepickerFilter]="toFilter">
-    <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
-    <mat-datepicker #toPicker />
-  </mat-form-field>
-  <button mat-flat-button (click)="export()" [disabled]="!table.data.length">{{ "ACCOUNTING_EXPORT" | translate }}</button>
-</div>
+<div class="page">
+  <h1>{{ "MENU_ACCOUNTING" | translate }}</h1>
 
-<!-- One column per product: the resident and the total stay put while the products scroll. -->
-<div class="table-scroll accounting-scroll">
-  <table mat-table [dataSource]="table" matSort matSortActive="room" matSortDirection="asc" class="accounting-table">
-    <ng-container matColumnDef="name" sticky>
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "NAME" | translate }}</th>
-      <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-    </ng-container>
-    <ng-container matColumnDef="room" sticky>
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ROOM" | translate }}</th>
-      <td mat-cell *matCellDef="let row">{{ row.room }}</td>
-    </ng-container>
-    @for (column of productColumns(); track column.id) {
-      <ng-container [matColumnDef]="column.id">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="product" [matTooltip]="column.name">{{ column.name }}</th>
-        <td mat-cell *matCellDef="let row">{{ row.units[column.name] }}</td>
-      </ng-container>
-    }
-    <ng-container matColumnDef="total" stickyEnd>
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "BEERSYSTEM_TOTAL" | translate }}</th>
-      <td mat-cell *matCellDef="let row">{{ row.total | number:'1.2-2' }}</td>
-    </ng-container>
+  <div class="periods">
+    <mat-chip-listbox [value]="period()" (change)="$event.value && choose($event.value)" [attr.aria-label]="'ACCOUNTING_PERIOD' | translate" hideSingleSelectionIndicator>
+      @for (p of periods; track p.id) {
+        <mat-chip-option [value]="p.id">{{ p.label | translate }}</mat-chip-option>
+      }
+    </mat-chip-listbox>
+    <mat-form-field class="range" [class.custom]="period() === 'custom'">
+      <mat-label>{{ "ACCOUNTING_PERIOD" | translate }}</mat-label>
+      <mat-date-range-input [rangePicker]="picker">
+        <input matStartDate [value]="from()" (dateChange)="startPicked($event.value)">
+        <input matEndDate [value]="to()" (dateChange)="endPicked($event.value)">
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-date-range-picker #picker />
+    </mat-form-field>
+  </div>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
-  </table>
+  @let a = accounts();
+  <div class="tiles">
+    <div class="tile"><div class="value">{{ a.sums.total | number:'1.2-2' }} kr.</div><div class="label">{{ "ACCOUNTING_TO_COLLECT" | translate }}</div></div>
+    <div class="tile"><div class="value">{{ a.rows.length }}</div><div class="label">{{ "ACCOUNTING_RESIDENTS" | translate }}</div></div>
+    <div class="tile"><div class="value">{{ a.sums.purchases }}</div><div class="label">{{ "STATS_PURCHASES" | translate }}</div></div>
+    <div class="tile"><div class="value">{{ a.sums.allUnits }}</div><div class="label">{{ "STATS_UNITS" | translate }}</div></div>
+  </div>
+
+  <div class="toolbar">
+    <mat-form-field class="search">
+      <mat-icon matIconPrefix>search</mat-icon>
+      <mat-label>{{ "ACCOUNTING_SEARCH" | translate }}</mat-label>
+      <input matInput [(ngModel)]="search" autocomplete="off">
+    </mat-form-field>
+    <mat-button-toggle-group [value]="show()" (change)="show.set($event.value)" hideSingleSelectionIndicator [attr.aria-label]="'ACCOUNTING_SHOW' | translate">
+      <mat-button-toggle value="units">{{ "ACCOUNTING_SHOW_UNITS" | translate }}</mat-button-toggle>
+      <mat-button-toggle value="kr">{{ "ACCOUNTING_SHOW_KR" | translate }}</mat-button-toggle>
+    </mat-button-toggle-group>
+    <span class="fill-space"></span>
+    <button mat-flat-button [matMenuTriggerFor]="exportMenu" [disabled]="!a.rows.length">
+      <mat-icon>download</mat-icon> {{ "ACCOUNTING_EXPORT" | translate }}
+    </button>
+    <mat-menu #exportMenu="matMenu" xPosition="before">
+      <button mat-menu-item (click)="exportXlsx()"><mat-icon>grid_on</mat-icon><span>Excel (.xlsx)</span></button>
+      <button mat-menu-item (click)="exportCsv()"><mat-icon>description</mat-icon><span>CSV (.csv)</span></button>
+    </mat-menu>
+  </div>
+
+  @if (!a.rows.length) {
+    <p class="empty">{{ "ACCOUNTING_EMPTY" | translate }}</p>
+  } @else {
+    <!-- One column per product: the resident and the total stay put while the products scroll. -->
+    <div class="table-scroll accounting-scroll">
+      <table mat-table [dataSource]="table" matSort matSortActive="room" matSortDirection="asc" class="accounting-table" [class.kr]="show() === 'kr'">
+        <ng-container matColumnDef="name" sticky>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "NAME" | translate }}</th>
+          <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+          <td mat-footer-cell *matFooterCellDef>{{ "ACCOUNTING_SUM" | translate }}</td>
+        </ng-container>
+        <ng-container matColumnDef="room" sticky>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ROOM" | translate }}</th>
+          <td mat-cell *matCellDef="let row">{{ row.room }}</td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+        @for (column of productColumns(); track column.id) {
+          <ng-container [matColumnDef]="column.id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="product" [matTooltip]="column.name">{{ column.name }}</th>
+            <td mat-cell *matCellDef="let row">
+              @if (show() === 'units') { {{ row.units[column.name] }} } @else { {{ row.kr[column.name] | number:'1.2-2' }} }
+            </td>
+            <td mat-footer-cell *matFooterCellDef>
+              @if (show() === 'units') { {{ a.sums.units[column.name] }} } @else { {{ a.sums.kr[column.name] | number:'1.2-2' }} }
+            </td>
+          </ng-container>
+        }
+        <ng-container matColumnDef="total" stickyEnd>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACCOUNTING_TOTAL_KR" | translate }}</th>
+          <td mat-cell *matCellDef="let row">{{ row.total | number:'1.2-2' }}</td>
+          <td mat-footer-cell *matFooterCellDef>{{ a.sums.total | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+        <tr mat-footer-row *matFooterRowDef="displayedColumns(); sticky: true"></tr>
+      </table>
+    </div>
+  }
 </div>

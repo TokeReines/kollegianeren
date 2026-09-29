@@ -1,3 +1,17 @@
+@use '@angular/material' as mat;
+
+// The amount on a selected product: large enough to read from a step away.
+:host {
+  @include mat.badge-overrides((
+    large-size-container-size: 28px,
+    large-size-container-padding: 0 7px,
+    large-size-text-size: 16px,
+    large-size-line-height: 28px,
+    large-size-container-offset: -10px 0,
+    text-weight: 700,
+  ));
+}
+
 // Products and residents fill the width that is there: six columns on a 1280px tablet, so a
 // kitchen with 30 products and 23 residents fits with little scrolling.
 .buypage {
