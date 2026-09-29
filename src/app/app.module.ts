@@ -1,3 +1,5 @@
+import { MAT_CARD_CONFIG } from '@angular/material/card';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { BrowserModule } from '@angular/platform-browser';
 import { LOCALE_ID, NgModule, inject, provideAppInitializer } from '@angular/core';
 import { ServiceWorkerModule } from '@angular/service-worker';
@@ -98,6 +100,8 @@ export function setupTranslateFactory(
         FormsModule,
         ReactiveFormsModule], providers: [
         { provide: MAT_DATE_LOCALE, useValue: 'da-DK' },
+        { provide: MAT_CARD_CONFIG, useValue: { appearance: 'outlined' } },
+        { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline', subscriptSizing: 'dynamic' } },
         { provide: LOCALE_ID, useValue: 'da' }, AuthService, AuthGuard, SidenavService, TranslateService, provideAppInitializer(() => {
         const initializerFn = (setupTranslateFactory)(inject(TranslateService));
         return initializerFn();

@@ -1,5 +1,4 @@
 .page {
-  padding: 24px;
   max-width: 1200px;
 }
 
@@ -21,14 +20,11 @@
   position: sticky;
   top: 0;
   padding: 16px 20px;
-  border-radius: 16px;
-  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
   scroll-margin-top: 16px;
 }
 
-h1 {
-  margin-top: 0;
-}
 
 .actions {
   display: flex;

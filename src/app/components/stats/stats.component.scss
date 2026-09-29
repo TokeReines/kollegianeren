@@ -13,7 +13,6 @@
 .page {
   position: relative;
   max-width: 900px;
-  padding: 24px;
 }
 
 h2 {
@@ -50,8 +49,8 @@ h2 {
 
 .tile {
   padding: 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 12px;
-  background: var(--mat-sys-surface-container);
 
   .value {
     font: var(--mat-sys-headline-medium);

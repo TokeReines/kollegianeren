@@ -1,5 +1,6 @@
-<mat-table #table [dataSource]="users" matSort class="animate">
-  <ng-container matColumnDef="image">
+<div class="table-scroll">
+<mat-table #table [dataSource]="users" matSort matSortActive="room" matSortDirection="asc" class="animate wide-table">
+  <ng-container matColumnDef="image" sticky>
     <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user" class="image-wrapper">
       @if (!!user.clId) {
@@ -20,7 +21,7 @@
     </mat-cell>
   </ng-container>
 
-  <ng-container matColumnDef="name">
+  <ng-container matColumnDef="name" sticky>
     <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "NAME" | translate }}</mat-header-cell>
     <mat-cell *matCellDef="let user"> {{ user.name }} </mat-cell>
   </ng-container>
@@ -75,6 +76,7 @@
   <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
   <mat-row *matRowDef="let product; columns: displayedColumns;" class="animate"></mat-row>
 </mat-table>
+</div>
 
 @if (dueForAnonymising.length) {
   <div class="retention" role="status">

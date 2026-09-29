@@ -113,29 +113,47 @@ async function kitchenByName(name) {
   await db.doc(`invites/DEMO-REFERRAL`).set({ kitchenId: null, role: 'owner', createdBy: kid, createdAt: ago(4), expiresAt: Timestamp.fromMillis(Date.now() + 10 * 864e5), usedBy: 'demo-m7-owner', usedAt: ago(4) });
   await db.doc(`memberships/demo-m7-owner`).set({ kitchenId: newKid, role: 'owner', invite: 'DEMO-REFERRAL', joinedAt: ago(4) });
   await db.doc(`kitchens/${newKid}/members/demo-m7-owner`).set({ role: 'owner', email: ownerEmail, joinedAt: ago(4) });
-  // Pictures borrowed from Ny2's matching products.
-  const ny2Pictures = new Map(products.map(p => [p.get('name'), p.get('clId') || '']));
-  const m7products = [['Tuborg Grøn', 7, 5.2, 36, 'Grøn tuborg'], ['Carlsberg', 7, 5.4, 4, 'Classic Tuborg'], ['Cola', 6, 4.1, 20, 'Coke'], ['Sodavand', 5, 3.5, null, 'Faxe kondi']];
-  for (const [i, [name, price, retailPrice, stock, lookalike]] of m7products.entries()) {
-    await db.doc(`kitchens/${newKid}/products/p${i}`).set({ name, price, retailPrice, active: true, image: '', clId: ny2Pictures.get(lookalike) || '', ...(stock === null ? {} : { stock }) });
+  // A typical kitchen: 30 products and 23 residents. Names and pictures borrowed from Ny2.
+  const ny2ByName = new Map((await db.collection(`kitchens/${kid}/products`).get()).docs.map(p => [p.get('name'), p]));
+  const m7products = [
+    ['Grøn tuborg', 7, 36], ['Classic Tuborg', 7, 4], ['Wiibroe pils', 6, 48], ['Odense Classic', 9, 24], ['Thy Pilsner', 8, null],
+    ['Øko IPA Alive', 17, 12], ['Jacobsen IPA', 14, 2], ['Brooklyn Lager', 12, null], ['Limfjordsporter', 17, 6], ['Tuborg Julebryg', 10, null],
+    ['Blanc 1664', 18, 8], ['Hancock black lager', 9, null], ['0.0% Alkofri Tuborg classic', 9, 12], ['Nordic Carlsberg, Alkoholfri', 8, null], ['Smirnoff Ice', 14, 10],
+    ['Pussyjuice', 15, null], ['Coke', 6, 20], ['Cola Zero', 6, 30], ['Pepsi max', 6, null], ['Faxe kondi', 6, 18],
+    ['Faxe FREE', 6, null], ['Fanta Orange', 6, null], ['Squash', 6, 3], ['Royal', 5, null], ['Egekilde', 9, 24],
+    ['Apollinaris', 5, null], ['Club Mate', 13, 6], ['Cocio Dåse 25cl', 12.5, null], ['Capri-Sun Safari', 4, 40], ['Pant', 1, null],
+  ];
+  for (const [i, [name, price, stock]] of m7products.entries()) {
+    const twin = ny2ByName.get(name);
+    await db.doc(`kitchens/${newKid}/products/p${i}`).set({ name, price, retailPrice: +(price * .7).toFixed(2), active: true, image: '', clId: twin?.get('clId') || '', ...(stock === null ? {} : { stock }) });
   }
-  const m7residents = ['Anna', 'Bo', 'Cecilie', 'Dan', 'Emma', 'Frederik'];
+  const m7residents = ['Anna Holm', 'Bo Madsen', 'Cecilie Dahl', 'Dan Larsen', 'Emma Friis', 'Frederik Juul', 'Gustav Berg', 'Hanna Lind', 'Ida Mørk',
+    'Jonas Krog', 'Karla Vang', 'Lukas Hald', 'Maja Storm', 'Noah Bech', 'Olivia Kjær', 'Peter Skov', 'Rikke Lund', 'Sofus Bak', 'Tilde Ravn',
+    'Ulrik Toft', 'Vera Munk', 'William Høj', 'Zara Aagaard'];
   for (const [i, name] of m7residents.entries()) {
     await db.doc(`kitchens/${newKid}/users/u${i}`).set({ name, room: String(701 + i), kitchen: newKid, image: '', clId: '', active: true });
   }
+  // Two weeks of purchases, mostly beer and cola in the evenings.
+  const popular = [0, 0, 0, 1, 1, 2, 2, 3, 16, 16, 17, 19, 5, 6, 14, 24, 28, 29];
   const b2 = db.batch();
-  for (let i = 0; i < 40; i++) {
-    const pi = i % m7products.length, ui = i % m7residents.length;
-    b2.set(db.doc(`kitchens/${newKid}/purchases/demo-${i}`), {
-      amount: 1, price: m7products[pi][1], productId: `p${pi}`, productName: m7products[pi][0], userId: `u${ui}`,
-      userName: m7residents[ui], userRoom: String(701 + ui), timestamp: ago(i % 4, pick([18, 20, 21, 22])),
-    });
+  let m7count = 0;
+  for (let day = 0; day < 14; day++) {
+    const weekend = [5, 6, 0].includes(new Date(Date.now() - day * 864e5).getDay());
+    for (let i = 0; i < (weekend ? 30 : 14); i++) {
+      const pi = Math.random() < .75 ? pick(popular) : Math.floor(Math.random() * m7products.length);
+      const ui = Math.floor(Math.random() * m7residents.length), amount = Math.random() < .8 ? 1 : 2;
+      b2.set(db.doc(`kitchens/${newKid}/purchases/demo-${day}-${i}`), {
+        amount, price: m7products[pi][1] * amount, productId: `p${pi}`, productName: m7products[pi][0], userId: `u${ui}`,
+        userName: m7residents[ui], userRoom: String(701 + ui), timestamp: ago(day, pick([17, 18, 19, 20, 21, 21, 22, 22, 23, 15])),
+      });
+      m7count++;
+    }
   }
   await b2.commit();
 
   accounts.demo = { ny2Treasurer: demo.treasurer, ny2Tablet: demo.tablet, mellemste7Owner: ownerEmail, openInvite: 'OpenTablet42', openReferral: 'NewKitchen7x' };
   fs.writeFileSync(ACCOUNTS, JSON.stringify(accounts, null, 2), { mode: 0o600 });
   console.log(`Ny2: 2 logins (treasurer, tablet), ${stocked.length} products with stock, 2 moved out, ${fresh} purchases in the last 7 days`);
-  console.log(`inbox: ${threads.length} threads, 2 news posts, kitchen "Mellemste 7" with ${m7products.length} products, ${m7residents.length} residents, 40 purchases`);
+  console.log(`inbox: ${threads.length} threads, 2 news posts, kitchen "Mellemste 7" with ${m7products.length} products, ${m7residents.length} residents, ${m7count} purchases`);
   console.log('open invites: OpenTablet42 (tablet in Ny2), NewKitchen7x (new kitchen)');
 })().catch(e => { console.error(e.message); process.exit(1); });

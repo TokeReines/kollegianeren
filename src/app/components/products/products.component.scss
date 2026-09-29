@@ -18,3 +18,16 @@
 .negative {
   color: var(--mat-sys-error);
 }
+
+// Prices are short; the stock column holds a number and two buttons.
+.products-table {
+  .mat-column-retailPrice,
+  .mat-column-price,
+  .mat-column-margin {
+    flex: 0 0 104px;
+  }
+
+  .mat-column-stock {
+    flex: 0 0 168px;
+  }
+}

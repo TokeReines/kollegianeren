@@ -1,5 +1,5 @@
-<mat-sidenav-container class="nav-container" [class.with-rail]="!(narrow | async)">
-  <mat-sidenav #sidenav [mode]="(narrow | async) ? 'over' : 'side'" [opened]="!(narrow | async)" role="navigation">
+<mat-sidenav-container class="nav-container" [class.with-rail]="!(narrow | async) && !(railHidden | async)">
+  <mat-sidenav #sidenav [mode]="(narrow | async) ? 'over' : 'side'" [opened]="!(narrow | async) && !(railHidden | async)" role="navigation">
     @if (narrow | async) {
       <!-- Phones: a slide-over list. -->
       <mat-nav-list>

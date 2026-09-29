@@ -179,5 +179,16 @@
   "THEME_LIGHT": "Theme: light",
   "THEME_DARK": "Theme: dark",
   "AKTUELT_SHOW_REVEAL": "Show the welcome again",
-  "REVEAL_DONT_SHOW": "Do not show again"
+  "REVEAL_DONT_SHOW": "Do not show again",
+  "MENU": "Menu",
+  "BUY_PRODUCTS": "Products",
+  "BUY_RESIDENTS": "Residents",
+  "ACCOUNT": "Account and settings",
+  "THEME_TITLE": "Theme",
+  "THEME_OPT_AUTO": "Follow device",
+  "THEME_OPT_LIGHT": "Light",
+  "THEME_OPT_DARK": "Dark",
+  "LANGUAGE": "Language",
+  "MENU_HIDE": "Hide the menu (kiosk)",
+  "MENU_SHOW": "Show the menu"
 }

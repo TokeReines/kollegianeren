@@ -2,19 +2,20 @@
 
   <div layout="column" class="buypage-left">
 
+    <h2 class="section-label">{{ "BUY_PRODUCTS" | translate }}</h2>
     <div layout="row wrap" class="buypage-group disable-text-selection">
       @for (product of products; track product) {
         <mat-card (click)="selectProduct(product)"
           (contextmenu)="deselectProduct(product, $event)"
-          [class.mat-elevation-z5]="product.selected" class="mat-elevation-z buypage-grid-card">
+          [class.selected]="product.selected" class="buypage-grid-card">
           <mat-card-title-group>
             @if (!!product.clId) {
-              <div matBadge="{{product.amount}}" class="image-wrapper">
+              <div matBadge="{{product.amount}}" class="image-wrapper product-tile">
                 <img [src]="product.clId | clUrl:'c_fit,q_50,w_50,h_75':'png'" class="product" alt="">
               </div>
             }
             @if (!!product.image && !product.clId) {
-              <div class="image-wrapper" matBadge="{{product.amount}}">
+              <div class="image-wrapper product-tile" matBadge="{{product.amount}}">
                 <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
               </div>
             }
@@ -27,12 +28,12 @@
         </mat-card>
       }
     </div>
-    <mat-divider></mat-divider>
+    <h2 class="section-label">{{ "BUY_RESIDENTS" | translate }}</h2>
 
     <div layout="row wrap" class="buypage-group disable-text-selection">
       @for (user of users; track user) {
         <mat-card (click)="selectUser(user, $event)" (contextmenu)="selectUser(user, $event)"
-          [class.mat-elevation-z5]="user.selected" class="mat-elevation-z buypage-grid-card">
+          [class.selected]="user.selected" class="buypage-grid-card">
           <mat-card-title-group>
             @if (!!user.clId) {
               <div class="image-wrapper">
@@ -57,16 +58,17 @@
 
   <div class="buypage-cart-card">
     @if (selectedProduct) {
-      <mat-card class="mat-elevation-z5">
-        @if (!!selectedProduct.image) {
-          <img mat-card-image [src]="selectedProduct.image" class="cart-image">
-        }
-        @if (!!selectedProduct.clId) {
-          <div>
-            <img [src]="selectedProduct.clId | clUrl:'c_lpad,q_100,w_168,h_200':'png'" class="cart-image" alt="">
-          </div>
-        }
-        <mat-card-title class="cart-title">{{selectedProduct.name}}</mat-card-title>
+      <mat-card>
+        <div class="image-wrapper product-tile cart-picture">
+          @if (!!selectedProduct.clId) {
+            <img [src]="selectedProduct.clId | clUrl:'c_fit,q_80,w_112,h_112':'png'" class="cart-image" alt="">
+          } @else if (!!selectedProduct.image) {
+            <img [src]="selectedProduct.image" class="cart-image" alt="">
+          } @else {
+            <mat-icon>local_drink</mat-icon>
+          }
+        </div>
+        <div class="cart-title">{{selectedProduct.name}}</div>
         <table class="ehp-table">
           <tbody>
             <tr>
@@ -84,12 +86,11 @@
           </tbody>
         </table>
         <mat-card-actions class="cart-buttons">
+          <button mat-button (click)="cancel()">{{ "CANCEL" | translate }}</button>
           <button mat-flat-button [disabled]="!selectedUsers.length" (click)="purchase()">{{ "BEERSYSTEM_BUY" | translate }}</button>
-          <button mat-button color="warning" (click)="cancel()">{{ "CANCEL" | translate }}</button>
         </mat-card-actions>
       </mat-card>
     }
-
   </div>
 </div>
 <button mat-fab class="bottom-right" (click)="openHistorySheet()">
