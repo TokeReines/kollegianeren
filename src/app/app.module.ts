@@ -42,6 +42,7 @@ import { MakerInboxComponent } from './components/maker-inbox/maker-inbox.compon
 import { RevealDialogComponent } from './components/reveal-dialog/reveal-dialog.component';
 import { AccessComponent } from './components/access/access.component';
 import { PrivacyComponent } from './components/privacy/privacy.component';
+import { StatsComponent } from './components/stats/stats.component';
 
 // Dates read the Danish way (29. september 2026) in both languages; the kitchens are Danish.
 registerLocaleData(localeDa);
@@ -77,7 +78,8 @@ export function setupTranslateFactory(
         MakerInboxComponent,
         RevealDialogComponent,
         AccessComponent,
-        PrivacyComponent
+        PrivacyComponent,
+        StatsComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         // Built only for -c dev and -c production (angular.json); the emulator dev server has none.
