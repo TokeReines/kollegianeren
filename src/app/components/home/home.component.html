@@ -1,5 +1,5 @@
-@if (!(online | async)) {
+@if (!online()) {
   <div class="offline" role="status"><mat-icon>cloud_off</mat-icon> {{ "OFFLINE_BANNER" | translate }}</div>
 }
-<app-toolbar></app-toolbar>
-<app-navigation></app-navigation>
+<app-toolbar />
+<app-navigation />

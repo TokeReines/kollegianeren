@@ -2,95 +2,98 @@
   <h1>{{ "STATS_TITLE" | translate }}</h1>
 
   <div class="filters">
-    @for (d of [7, 30, 90]; track d) {
-      <button [attr.aria-pressed]="days === d" [class.on]="days === d" mat-stroked-button (click)="setDays(d)">
+    @for (d of periods; track d) {
+      <button mat-stroked-button [attr.aria-pressed]="days() === d" [class.on]="days() === d" (click)="days.set(d)">
         {{ d }} {{ "STATS_DAYS" | translate }}
       </button>
     }
     <span class="grow"></span>
-    <button mat-button (click)="showTable = !showTable">
-      <mat-icon>{{ showTable ? 'bar_chart' : 'table_rows' }}</mat-icon>
-      {{ (showTable ? "STATS_SHOW_CHARTS" : "STATS_SHOW_TABLE") | translate }}
+    <button mat-button (click)="showTable.set(!showTable())">
+      <mat-icon>{{ showTable() ? 'bar_chart' : 'table_rows' }}</mat-icon>
+      {{ (showTable() ? "STATS_SHOW_CHARTS" : "STATS_SHOW_TABLE") | translate }}
     </button>
   </div>
 
-  <div class="tiles" [class.dim]="loading">
-    <div class="tile"><div class="value">{{ totals.kr | number:'1.0-0' }} kr.</div><div class="label">{{ "STATS_REVENUE" | translate }}</div></div>
-    <div class="tile"><div class="value">{{ totals.purchases }}</div><div class="label">{{ "STATS_PURCHASES" | translate }}</div></div>
-    <div class="tile"><div class="value">{{ totals.units }}</div><div class="label">{{ "STATS_UNITS" | translate }}</div></div>
-    @if (totals.profit !== null) {
-      <div class="tile"><div class="value">{{ totals.profit | number:'1.0-0' }} kr.</div><div class="label">{{ "STATS_PROFIT" | translate }}</div></div>
-    }
-    <div class="tile"><div class="value">{{ totals.buyers }}</div><div class="label">{{ "STATS_BUYERS" | translate }}</div></div>
-  </div>
-
-  @if (!totals.purchases && !loading) {
-    <p class="muted">{{ "STATS_EMPTY" | translate }}</p>
-  } @else if (showTable) {
-    <h2>{{ "STATS_TOP_PRODUCTS" | translate }}</h2>
-    <table class="data">
-      <tr><th>{{ "STATS_PRODUCT" | translate }}</th><th class="num">kr.</th><th class="num">{{ "PIECES" | translate }}</th></tr>
-      @for (p of products; track p.name) {
-        <tr><td>{{ p.name }}</td><td class="num">{{ p.kr | number:'1.0-2' }}</td><td class="num">{{ p.units }}</td></tr>
+  @if (stats(); as s) {
+    <div class="tiles" [class.dim]="loading()">
+      <div class="tile"><div class="value">{{ s.totals.kr | number:'1.0-0' }} kr.</div><div class="label">{{ "STATS_REVENUE" | translate }}</div></div>
+      <div class="tile"><div class="value">{{ s.totals.purchases }}</div><div class="label">{{ "STATS_PURCHASES" | translate }}</div></div>
+      <div class="tile"><div class="value">{{ s.totals.units }}</div><div class="label">{{ "STATS_UNITS" | translate }}</div></div>
+      @if (s.totals.profit !== null) {
+        <div class="tile"><div class="value">{{ s.totals.profit | number:'1.0-0' }} kr.</div><div class="label">{{ "STATS_PROFIT" | translate }}</div></div>
       }
-    </table>
-    <h2>{{ "STATS_PER_DAY" | translate }}</h2>
-    <table class="data">
-      <tr><th>{{ "STATS_DAY" | translate }}</th><th class="num">kr.</th><th class="num">{{ "STATS_PURCHASES" | translate }}</th></tr>
-      @for (d of daily; track d.date) {
-        <tr><td>{{ d.date | date:'EEE d. MMM' }}</td><td class="num">{{ d.kr | number:'1.0-2' }}</td><td class="num">{{ d.purchases }}</td></tr>
-      }
-    </table>
-  } @else {
-    <h2>{{ "STATS_TOP_PRODUCTS" | translate }}</h2>
-    <div class="hbars" [class.dim]="loading">
-      @for (p of products; track p.name) {
-        <div class="hbar" (mousemove)="show($event, tipProduct(p))" (mouseleave)="hide()">
-          <span class="name">{{ p.name }}</span>
-          <span class="track"><span class="fill" [style.width.%]="p.kr / maxProductKr * 100"></span></span>
-          <span class="val">{{ p.kr | number:'1.0-0' }} kr.</span>
-        </div>
-      }
+      <div class="tile"><div class="value">{{ s.totals.buyers }}</div><div class="label">{{ "STATS_BUYERS" | translate }}</div></div>
     </div>
 
-    <h2>{{ "STATS_PER_DAY" | translate }}</h2>
-    <div class="vbars" [class.dim]="loading" [class.dense]="days > 30">
-      <span class="ymax">{{ maxDayKr | number:'1.0-0' }} kr.</span>
-      @for (d of daily; track d.date) {
-        <div class="col" (mousemove)="show($event, tipDay(d))" (mouseleave)="hide()">
-          <span class="bar" [style.height.%]="d.kr / maxDayKr * 100"></span>
-        </div>
-      }
-    </div>
-    <div class="xaxis">
-      <span>{{ daily[0]?.date | date:'d. MMM' }}</span>
-      <span>{{ daily[daily.length - 1]?.date | date:'d. MMM' }}</span>
-    </div>
-
-    <h2>{{ "STATS_WHEN" | translate }}</h2>
-    <div class="heat" [class.dim]="loading">
-      <span></span>
-      @for (h of hours; track h) {
-        <span class="hour">{{ h % 3 === 0 ? h : '' }}</span>
-      }
-      @for (row of heat; track $index; let wd = $index) {
-        <span class="wd">{{ weekdays[wd] }}</span>
-        @for (c of row; track $index; let h = $index) {
-          <span class="cell" [attr.data-level]="level(c)"
-                (mousemove)="show($event, tipCell(wd, h, c))" (mouseleave)="hide()"></span>
+    @if (!s.totals.purchases) {
+      <p class="muted">{{ "STATS_EMPTY" | translate }}</p>
+    } @else if (showTable()) {
+      <h2>{{ "STATS_TOP_PRODUCTS" | translate }}</h2>
+      <table class="data">
+        <tr><th>{{ "STATS_PRODUCT" | translate }}</th><th class="num">kr.</th><th class="num">{{ "PIECES" | translate }}</th></tr>
+        @for (p of s.products; track p.name) {
+          <tr><td>{{ p.name }}</td><td class="num">{{ p.kr | number:'1.0-2' }}</td><td class="num">{{ p.units }}</td></tr>
         }
-      }
-    </div>
-    <div class="legend">
-      <span>{{ "STATS_FEWER" | translate }}</span>
-      @for (l of [0, 1, 2, 3, 4]; track l) {
-        <span class="cell" [attr.data-level]="l"></span>
-      }
-      <span>{{ "STATS_MORE" | translate }}</span>
-    </div>
+      </table>
+      <h2>{{ "STATS_PER_DAY" | translate }}</h2>
+      <table class="data">
+        <tr><th>{{ "STATS_DAY" | translate }}</th><th class="num">kr.</th><th class="num">{{ "STATS_PURCHASES" | translate }}</th></tr>
+        @for (d of s.daily; track d.date) {
+          <tr><td>{{ d.date | date:'EEE d. MMM' }}</td><td class="num">{{ d.kr | number:'1.0-2' }}</td><td class="num">{{ d.purchases }}</td></tr>
+        }
+      </table>
+    } @else {
+      <h2>{{ "STATS_TOP_PRODUCTS" | translate }}</h2>
+      <div class="hbars" [class.dim]="loading()">
+        @for (p of s.products; track p.name) {
+          <div class="hbar" (mousemove)="show($event, tipProduct(p))" (mouseleave)="tip.set(null)">
+            <span class="name">{{ p.name }}</span>
+            <span class="track"><span class="fill" [style.width.%]="p.kr / maxProductKr() * 100"></span></span>
+            <span class="val">{{ p.kr | number:'1.0-0' }} kr.</span>
+          </div>
+        }
+      </div>
+
+      <h2>{{ "STATS_PER_DAY" | translate }}</h2>
+      <div class="vbars" [class.dim]="loading()" [class.dense]="days() > 30">
+        <span class="ymax">{{ maxDayKr() | number:'1.0-0' }} kr.</span>
+        @for (d of s.daily; track d.date) {
+          <div class="col" (mousemove)="show($event, tipDay(d))" (mouseleave)="tip.set(null)">
+            <span class="bar" [style.height.%]="d.kr / maxDayKr() * 100"></span>
+          </div>
+        }
+      </div>
+      <div class="xaxis">
+        <span>{{ s.daily[0]?.date | date:'d. MMM' }}</span>
+        <span>{{ s.daily[s.daily.length - 1]?.date | date:'d. MMM' }}</span>
+      </div>
+
+      <h2>{{ "STATS_WHEN" | translate }}</h2>
+      <div class="heat" [class.dim]="loading()">
+        <span></span>
+        @for (h of hours; track h) {
+          <span class="hour">{{ h % 3 === 0 ? h : '' }}</span>
+        }
+        @for (row of s.heat; track $index; let wd = $index) {
+          <span class="wd">{{ weekdays()[wd] }}</span>
+          @for (c of row; track $index; let h = $index) {
+            <span class="cell" [attr.data-level]="level(c)" (mousemove)="show($event, tipCell(wd, h, c))" (mouseleave)="tip.set(null)"></span>
+          }
+        }
+      </div>
+      <div class="legend">
+        <span>{{ "STATS_FEWER" | translate }}</span>
+        @for (l of [0, 1, 2, 3, 4]; track l) {
+          <span class="cell" [attr.data-level]="l"></span>
+        }
+        <span>{{ "STATS_MORE" | translate }}</span>
+      </div>
+    }
+  } @else if (loading()) {
+    <p class="muted">…</p>
   }
 
-  @if (tip) {
-    <div class="tooltip" [style.left.px]="tip.x" [style.top.px]="tip.y">{{ tip.text }}</div>
+  @if (tip(); as t) {
+    <div class="tooltip" [style.left.px]="t.x" [style.top.px]="t.y">{{ t.text }}</div>
   }
 </div>

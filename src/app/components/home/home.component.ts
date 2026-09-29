@@ -1,30 +1,34 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { AppUpdateService } from '../../services/app-update.service';
-import { RevealDialogComponent, revealWanted } from '../reveal-dialog/reveal-dialog.component';
-import { AuthService } from '../../services/auth.service';
-import { filter, take } from 'rxjs/operators';
+import {Component, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {User} from 'firebase/auth';
+import {filter, take} from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {MatIconModule} from '@angular/material/icon';
+import {AppUpdateService} from '../../services/app-update.service';
+import {AuthService} from '../../services/auth.service';
+import {TranslatePipe} from '../../translate.pipe';
+import {NavigationComponent} from '../navigation/navigation.component';
+import {ToolbarComponent} from '../toolbar/toolbar.component';
+import {openReveal, revealWanted} from '../reveal-dialog/reveal-dialog.component';
 
+// The signed-in shell: offline banner, top app bar, navigation and the page.
 @Component({
-    selector: 'app-home',
-    templateUrl: './home.component.html',
-    styleUrls: ['./home.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-home',
+  imports: [MatIconModule, TranslatePipe, NavigationComponent, ToolbarComponent],
+  templateUrl: './home.component.html',
+  styleUrl: './home.component.scss',
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent {
+  private readonly appUpdate = inject(AppUpdateService);
+  protected readonly online = this.appUpdate.online;
 
-  online = this.appUpdate.online;
-
-  constructor(private dialog: MatDialog, private appUpdate: AppUpdateService, private auth: AuthService) { }
-
-  ngOnInit() {
+  constructor() {
     this.appUpdate.start();
-    this.auth.user.pipe(filter(u => !!u && !u.isAnonymous), take(1)).subscribe(user => {
+    const dialog = inject(MatDialog);
+    inject(AuthService).user$.pipe(filter((u): u is User => !!u && !u.isAnonymous), take(1), takeUntilDestroyed()).subscribe(user => {
       if (revealWanted(user.uid)) {
-        this.dialog.open(RevealDialogComponent, {maxWidth: '96vw', autoFocus: false, data: {uid: user.uid}});
+        openReveal(dialog, {uid: user.uid});
       }
     });
   }
-
 }

@@ -65,3 +65,8 @@
 .page {
   padding: 24px;
 }
+
+.threads .active {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}

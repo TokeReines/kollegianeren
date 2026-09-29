@@ -1,12 +1,12 @@
-<mat-sidenav-container class="nav-container" [class.with-rail]="!(narrow | async) && !(railHidden | async)">
-  <mat-sidenav #sidenav [mode]="(narrow | async) ? 'over' : 'side'" [opened]="!(narrow | async) && !(railHidden | async)" role="navigation">
-    @if (narrow | async) {
+<mat-sidenav-container class="nav-container" [class.with-rail]="sidenav.showsRail()">
+  <mat-sidenav [mode]="sidenav.narrow() ? 'over' : 'side'" [opened]="sidenav.opened()" (openedChange)="openedChange($event)" role="navigation">
+    @if (sidenav.narrow()) {
       <!-- Phones: a slide-over list. -->
       <mat-nav-list>
-        @for (item of items | async; track item.path) {
-          <a mat-list-item (click)="sidenav.close()" [routerLink]="item.path" routerLinkActive #rla="routerLinkActive" [activated]="rla.isActive"
-             [routerLinkActiveOptions]="{exact: !!item.exact}">
-            <mat-icon matListItemIcon [matBadge]="(item.badge | async) || null" matBadgeColor="accent" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
+        @for (item of items(); track item.path) {
+          <a mat-list-item (click)="sidenav.phoneMenuOpen.set(false)" [routerLink]="item.path" routerLinkActive #rla="routerLinkActive"
+             [activated]="rla.isActive" [routerLinkActiveOptions]="{exact: !!item.exact}">
+            <mat-icon matListItemIcon [matBadge]="item.badge || null" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
             <span matListItemTitle>{{ item.label | translate }}</span>
           </a>
         }
@@ -14,10 +14,10 @@
     } @else {
       <!-- Tablets and up: a Material 3 navigation rail, so the buy grid keeps its width. -->
       <nav class="rail">
-        @for (item of items | async; track item.path) {
+        @for (item of items(); track item.path) {
           <a class="rail-item" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact: !!item.exact}">
             <span class="indicator">
-              <mat-icon [matBadge]="(item.badge | async) || null" matBadgeColor="accent" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
+              <mat-icon [matBadge]="item.badge || null" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
             </span>
             <span class="label">{{ item.label | translate }}</span>
           </a>
@@ -26,6 +26,6 @@
     }
   </mat-sidenav>
   <mat-sidenav-content class="sidenav-content">
-    <router-outlet></router-outlet>
+    <router-outlet />
   </mat-sidenav-content>
 </mat-sidenav-container>

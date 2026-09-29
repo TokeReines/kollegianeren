@@ -1,26 +1,22 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { TranslateService } from '../../services/translate.service';
+import {Component, inject} from '@angular/core';
+import {MatButtonModule} from '@angular/material/button';
+import {TranslateService} from '../../services/translate.service';
 
+// DA/EN switch in the corner of the pages shown before login.
 @Component({
-    selector: 'app-language-button',
-    templateUrl: './language-button.component.html',
-    styleUrls: ['./language-button.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-language-button',
+  imports: [MatButtonModule],
+  template: `
+    <button mat-button (click)="toggle()" [attr.aria-label]="i18n.language() === 'da' ? 'English' : 'Dansk'">
+      {{ i18n.language() === 'da' ? 'EN' : 'DA' }}
+    </button>
+  `,
+  styles: `:host { position: absolute; top: 12px; right: 12px; }`,
 })
-export class LanguageButtonComponent implements OnInit {
-  currentLanguage: string = this.translate.getLanguage();
+export class LanguageButtonComponent {
+  protected readonly i18n = inject(TranslateService);
 
-  constructor(private translate: TranslateService) { }
-
-  ngOnInit() { }
-
-  setLang() {
-    if (this.currentLanguage === 'en') {
-      this.currentLanguage = 'da';
-    } else {
-      this.currentLanguage = 'en';
-    }
-    this.translate.use(this.currentLanguage);
+  protected toggle() {
+    this.i18n.use(this.i18n.language() === 'da' ? 'en' : 'da');
   }
 }

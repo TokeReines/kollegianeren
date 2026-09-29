@@ -1,7 +1,7 @@
 <div class="reveal">
   <div class="ghost">
-    @if (!photoFailed) {
-      <img src="assets/img/maker.jpg" alt="Toke" (error)="photoFailed = true">
+    @if (!photoFailed()) {
+      <img src="assets/img/maker.jpg" alt="Toke" (error)="photoFailed.set(true)">
     } @else {
       <span class="emoji" aria-hidden="true">👻</span>
     }
@@ -15,7 +15,7 @@
     <button mat-stroked-button (click)="go('/aktuelt', 'chat')">{{ "MAKER_WRITE" | translate }}</button>
     <button mat-button (click)="close()">{{ "REVEAL_CLOSE" | translate }}</button>
   </div>
-  @if (data?.uid) {
+  @if (data.uid) {
     <mat-checkbox class="hide" [(ngModel)]="hideForGood">{{ "REVEAL_DONT_SHOW" | translate }}</mat-checkbox>
   }
 </div>

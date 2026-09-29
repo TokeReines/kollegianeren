@@ -1,12 +1,12 @@
-<div [class.page]="!embedded">
-  @if (embedded) {
+<div [class.page]="!embedded()">
+  @if (embedded()) {
     <h2 class="title"><img class="avatar" src="assets/img/maker/today.jpg" alt=""> {{ "MAKER_WRITE" | translate }}</h2>
   } @else {
     <h1>{{ "MAKER_WRITE" | translate }}</h1>
   }
   <p class="intro">{{ "MAKER_INTRO" | translate }}</p>
 
-  @if (embedded) {
+  @if (embedded()) {
     <!-- Who is behind it: then, the dorm days, today. -->
     <div class="about" [attr.aria-label]="'MAKER_ABOUT' | translate">
       @for (p of photos; track p.src) {
@@ -19,14 +19,14 @@
   }
 
   <div class="thread">
-    @for (m of messages; track m.id) {
+    @for (m of messages(); track m.id) {
       <div class="bubble" [class.mine]="m.from === 'kitchen'" [class.maker]="m.from === 'maker'">
         <div class="text">{{ m.text }}</div>
         <div class="meta">
           @if (m.from === 'maker') {
             <img class="mini" src="assets/img/maker/today.jpg" alt="">
           }
-          {{ m.from === 'maker' ? 'Toke' : ("MAKER_YOU" | translate) }} · {{ m.createdAt?.toDate() | date:'d/M HH:mm' }}
+          {{ m.from === 'maker' ? 'Toke' : ("MAKER_YOU" | translate) }} · {{ m.createdAt.toDate() | date:'d/M HH:mm' }}
         </div>
       </div>
     } @empty {
@@ -35,10 +35,10 @@
   </div>
 
   <div class="composer">
-    <mat-form-field appearance="outline" class="grow">
+    <mat-form-field class="grow">
       <mat-label>{{ "MAKER_PLACEHOLDER" | translate }}</mat-label>
-      <textarea #composer matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="text.trim() && send()"></textarea>
+      <textarea #composer matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="send()"></textarea>
     </mat-form-field>
-    <button mat-flat-button [disabled]="!text.trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
+    <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
   </div>
 </div>

@@ -1,17 +1,17 @@
 <div class="page">
   <h1>{{ "ACCESS_TITLE" | translate }}</h1>
 
-  @if ((role | async) === 'tablet') {
+  @if (role() === 'tablet') {
     <p class="muted">{{ "ACCESS_TABLET_ONLY" | translate }}</p>
   } @else {
     <mat-card>
-      <mat-card-title>{{ "ACCESS_KITCHEN" | translate }}: {{ kitchenName | async }}</mat-card-title>
+      <mat-card-title>{{ "ACCESS_KITCHEN" | translate }}: {{ kitchenName() }}</mat-card-title>
       <div class="row">
-        <mat-form-field appearance="outline" class="grow">
+        <mat-form-field class="grow">
           <mat-label>{{ "ACCESS_NEW_NAME" | translate }}</mat-label>
-          <input matInput [(ngModel)]="newName" maxlength="40">
+          <input matInput [(ngModel)]="newName" maxlength="40" (keydown.enter)="newName().trim() && rename()">
         </mat-form-field>
-        <button mat-stroked-button [disabled]="!newName.trim()" (click)="rename()">{{ "ACCESS_RENAME" | translate }}</button>
+        <button mat-stroked-button [disabled]="!newName().trim()" (click)="rename()">{{ "ACCESS_RENAME" | translate }}</button>
       </div>
     </mat-card>
 
@@ -19,15 +19,15 @@
       <mat-card-title>{{ "ACCESS_LOGINS" | translate }}</mat-card-title>
       <p class="muted">{{ "ACCESS_LOGINS_HINT" | translate }}</p>
       <table class="list">
-        @if (isLegacyOwner | async) {
+        @if (isLegacyOwner()) {
           <tr><td>{{ "ACCESS_MAIN_LOGIN" | translate }}</td><td>{{ "ROLE_OWNER" | translate }}</td><td></td></tr>
         }
-        @for (m of members | async; track m.id) {
+        @for (m of members(); track m.id) {
           <tr>
             <td>{{ m.email }}</td>
             <td>{{ ("ROLE_" + m.role.toUpperCase()) | translate }}</td>
             <td>
-              @if ((role | async) === 'owner') {
+              @if (role() === 'owner') {
                 <button mat-icon-button (click)="remove(m)" [attr.aria-label]="'ACCESS_REMOVE' | translate"><mat-icon>person_remove</mat-icon></button>
               }
             </td>
@@ -36,7 +36,7 @@
       </table>
 
       <div class="row">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{ "ACCESS_ROLE" | translate }}</mat-label>
           <mat-select [(ngModel)]="inviteRole">
             <mat-option value="tablet">{{ "ROLE_TABLET" | translate }}</mat-option>
@@ -57,22 +57,22 @@
     <mat-card>
       <mat-card-title>{{ "ACCESS_OPEN_INVITES" | translate }}</mat-card-title>
       <table class="list">
-        @for (i of invites | async; track i.id) {
+        @for (i of invites(); track i.id) {
           <tr>
             <td><code>{{ i.id }}</code></td>
             <td>{{ ("ROLE_" + i.role.toUpperCase()) | translate }}</td>
-            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt?.toDate() | date:'d. MMM' }}</td>
+            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt.toDate() | date:'d. MMM' }}</td>
             <td class="actions">
               <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
               <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>
         }
-        @for (i of referrals | async; track i.id) {
+        @for (i of referrals(); track i.id) {
           <tr>
             <td><code>{{ i.id }}</code></td>
             <td>{{ "ACCESS_NEW_KITCHEN" | translate }}</td>
-            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt?.toDate() | date:'d. MMM' }}</td>
+            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt.toDate() | date:'d. MMM' }}</td>
             <td class="actions">
               <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
               <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>

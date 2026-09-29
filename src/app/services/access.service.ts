@@ -1,65 +1,37 @@
-import {Injectable} from '@angular/core';
-import {
-  Timestamp, collection, deleteDoc, doc, getDoc, query, serverTimestamp, setDoc, where, writeBatch,
-} from 'firebase/firestore';
-import {Observable} from 'rxjs';
-import {filter, switchMap} from 'rxjs/operators';
+import {Injectable, inject} from '@angular/core';
+import {Timestamp, collection, deleteDoc, doc, getDoc, query, serverTimestamp, setDoc, where, writeBatch} from 'firebase/firestore';
+import {Observable, filter, switchMap} from 'rxjs';
+import {User} from 'firebase/auth';
 import {AuthService, Role} from './auth.service';
+import {INVITE_DAYS, Invite, Member, newCode} from '../interfaces/invite';
 import {auth, db, watch} from '../firebase';
+import {kitchenCollection, watchInKitchen} from './kitchen-data';
 
-export interface Invite {
-  id: string;
-  kitchenId: string | null;
-  role: Role;
-  createdBy: string;
-  createdAt: any;
-  expiresAt: any;
-  usedBy: string | null;
-  usedAt: any;
-}
-
-export interface Member {
-  id: string;
-  role: Role;
-  email: string;
-  joinedAt: any;
-}
-
-const INVITE_DAYS = 14;
-// No 0/O, 1/I/l: codes get read aloud and typed on tablets.
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-
-export function newCode(length = 12): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(length));
-  return Array.from(bytes, b => ALPHABET[b % ALPHABET.length]).join('');
-}
-
-export function inviteLink(code: string): string {
-  return `${location.origin}/register?invite=${code}`;
+function signedInUser(): User {
+  if (!auth.currentUser) {
+    throw new Error('Not signed in');
+  }
+  return auth.currentUser;
 }
 
 // Access to a kitchen: its extra logins (members), invites to join it, and referral invites that
 // let someone create a new kitchen. The rules (firestore.rules) are what actually enforce this.
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({providedIn: 'root'})
 export class AccessService {
-
-  constructor(private auth: AuthService) {
-  }
+  private readonly auth = inject(AuthService);
 
   members(): Observable<Member[]> {
-    return this.auth.kitchenId.pipe(switchMap(kid => watch<Member>(collection(db, 'kitchens', kid, 'members'))));
+    return watchInKitchen<Member>(this.auth.kitchenId$, kid => kitchenCollection(kid, 'members'));
   }
 
   invites(): Observable<Invite[]> {
-    return this.auth.kitchenId.pipe(switchMap(kid =>
-      watch<Invite>(query(collection(db, 'invites'), where('kitchenId', '==', kid)))));
+    return watchInKitchen<Invite>(this.auth.kitchenId$, kid => query(collection(db, 'invites'), where('kitchenId', '==', kid)));
   }
 
   referrals(): Observable<Invite[]> {
-    return this.auth.user.pipe(filter(user => !!user), switchMap(user =>
-      watch<Invite>(query(collection(db, 'invites'), where('createdBy', '==', user.uid), where('kitchenId', '==', null)))));
+    return this.auth.user$.pipe(
+      filter((user): user is User => !!user),
+      switchMap(user => watch<Invite>(query(collection(db, 'invites'), where('createdBy', '==', user.uid), where('kitchenId', '==', null)))));
   }
 
   // role 'owner' with kitchenId null is a referral: the holder creates a new kitchen.
@@ -68,7 +40,7 @@ export class AccessService {
     await setDoc(doc(db, 'invites', code), {
       kitchenId: forNewKitchen ? null : this.auth.currentKitchenId,
       role: forNewKitchen ? 'owner' : role,
-      createdBy: auth.currentUser.uid,
+      createdBy: signedInUser().uid,
       createdAt: serverTimestamp(),
       expiresAt: Timestamp.fromMillis(Date.now() + INVITE_DAYS * 864e5),
       usedBy: null,
@@ -82,9 +54,8 @@ export class AccessService {
   }
 
   removeMember(member: Member) {
-    const kid = this.auth.currentKitchenId;
     const batch = writeBatch(db);
-    batch.delete(doc(db, 'kitchens', kid, 'members', member.id));
+    batch.delete(doc(kitchenCollection(this.auth.currentKitchenId, 'members'), member.id));
     batch.delete(doc(db, 'memberships', member.id));
     return batch.commit();
   }
@@ -101,7 +72,7 @@ export class AccessService {
       return null;
     }
     const invite = {id: snap.id, ...snap.data()} as Invite;
-    let kitchenName = null;
+    let kitchenName: string | null = null;
     if (invite.kitchenId) {
       const k = await getDoc(doc(db, 'kitchens', invite.kitchenId));
       kitchenName = k.exists() ? k.get('name') : null;
@@ -111,8 +82,8 @@ export class AccessService {
 
   // Redeems an invite for the signed-in user in one batch: marks it used, creates the new kitchen
   // for a referral, and writes the membership and member documents.
-  async redeem(invite: Invite, newKitchenName?: string): Promise<string> {
-    const user = auth.currentUser;
+  async redeem(invite: Invite, newKitchenName = ''): Promise<string> {
+    const user = signedInUser();
     const kitchenId = invite.kitchenId || doc(collection(db, 'kitchens')).id;
     const batch = writeBatch(db);
     batch.update(doc(db, 'invites', invite.id), {usedBy: user.uid, usedAt: serverTimestamp()});
@@ -120,7 +91,7 @@ export class AccessService {
       batch.set(doc(db, 'kitchens', kitchenId), {id: kitchenId, name: newKitchenName.trim()});
     }
     batch.set(doc(db, 'memberships', user.uid), {kitchenId, role: invite.role, invite: invite.id, joinedAt: serverTimestamp()});
-    batch.set(doc(db, 'kitchens', kitchenId, 'members', user.uid), {role: invite.role, email: user.email || '', joinedAt: serverTimestamp()});
+    batch.set(doc(kitchenCollection(kitchenId, 'members'), user.uid), {role: invite.role, email: user.email || '', joinedAt: serverTimestamp()});
     await batch.commit();
     return kitchenId;
   }

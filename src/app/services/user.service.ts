@@ -1,36 +1,32 @@
-import {Injectable} from '@angular/core';
-import {addDoc, collection, deleteDoc, doc, updateDoc} from 'firebase/firestore';
-import {switchMap} from 'rxjs/operators';
-import {User} from '../interfaces/user';
+import {Injectable, inject} from '@angular/core';
+import {addDoc, deleteDoc, doc, updateDoc} from 'firebase/firestore';
+import {Observable} from 'rxjs';
+import {User, UserFields} from '../interfaces/user';
 import {AuthService} from './auth.service';
-import {db, watch} from '../firebase';
+import {kitchenCollection, watchInKitchen} from './kitchen-data';
 
 // Residents of the signed-in kitchen (the `users` collection).
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({providedIn: 'root'})
 export class UserService {
+  private readonly auth = inject(AuthService);
 
-  constructor(private auth: AuthService) {
+  private users() {
+    return kitchenCollection(this.auth.currentKitchenId, 'users');
   }
 
-  private users(uid = this.auth.currentKitchenId) {
-    return collection(db, 'kitchens', uid, 'users');
+  list(): Observable<User[]> {
+    return watchInKitchen<User>(this.auth.kitchenId$, kid => kitchenCollection(kid, 'users'));
   }
 
-  list() {
-    return this.auth.kitchenId.pipe(switchMap(uid => watch<User>(this.users(uid))));
+  add(user: UserFields) {
+    return addDoc(this.users(), {...user, kitchen: this.auth.currentKitchenId});
   }
 
-  update(user: User) {
-    return updateDoc(doc(this.users(), user.id), {...user});
+  update(user: User, fields: Partial<UserFields>) {
+    return updateDoc(doc(this.users(), user.id), fields);
   }
 
   delete(user: User) {
     return deleteDoc(doc(this.users(), user.id));
-  }
-
-  add(user: User) {
-    return addDoc(this.users(), user);
   }
 }

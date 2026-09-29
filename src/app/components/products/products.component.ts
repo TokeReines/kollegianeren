@@ -1,119 +1,100 @@
-import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
+import {Component, computed, effect, inject, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatDialog} from '@angular/material/dialog';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSort, MatSortModule} from '@angular/material/sort';
+import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {DecimalPipe} from '@angular/common';
+import {EditableProduct, Product, isLowStock, margin, tracksStock} from '../../interfaces/product';
 import {ProductService} from '../../services/product.service';
-import {Observable} from 'rxjs';
-import {Product} from '../../interfaces/product';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
-import {EditProductDialogComponent} from './edit-product-dialog/edit-product-dialog.component';
-import {AddProductDialogComponent} from './add-product-dialog/add-product-dialog.component';
-import {map} from 'rxjs/operators';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {isLowStock, margin, tracksStock} from '../../interfaces/product';
+import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
+import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
-
+import {ProductPictureComponent} from '../shared/product-picture.component';
+import {ProductDialogComponent} from './product-dialog.component';
+import {sortValue} from '../../table-sort';
 
 @Component({
-    selector: 'app-products',
-    templateUrl: './products.component.html',
-    styleUrls: ['./products.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-products',
+  imports: [DecimalPipe, MatButtonModule, MatCheckboxModule, MatIconModule, MatSortModule, MatTableModule, MatTooltipModule,
+    TranslatePipe, ProductPictureComponent],
+  templateUrl: './products.component.html',
+  styleUrl: './products.component.scss',
 })
-export class ProductsComponent implements OnInit {
-  products = new MatTableDataSource<Product>([]);
-  @ViewChild(MatSort, { static: true }) sort: MatSort;
-  displayedColumns = ['image', 'name', 'retailPrice', 'price', 'margin', 'stock', 'active', 'edit', 'delete'];
-  lowStock: Product[] = [];
-  lowStockText = '';
-  margin = margin;
-  tracksStock = tracksStock;
-  isLowStock = isLowStock;
+export class ProductsComponent {
+  private readonly productService = inject(ProductService);
+  private readonly dialog = inject(MatDialog);
+  private readonly notify = inject(Notify);
+  private readonly i18n = inject(TranslateService);
+  private readonly confirm = inject(Confirm);
 
-  constructor(public productService: ProductService, public dialog: MatDialog, private snackBar: MatSnackBar,
-              private translate: TranslateService, private confirm: Confirm) {
+  private readonly products = toSignal(this.productService.list(), {initialValue: []});
+  private readonly sort = viewChild.required(MatSort);
+  protected readonly table = new MatTableDataSource<Product>([]);
+  protected readonly displayedColumns = ['image', 'name', 'retailPrice', 'price', 'margin', 'stock', 'active', 'edit', 'delete'];
+  protected readonly lowStock = computed(() => this.products().filter(p => p.active && isLowStock(p)));
+  protected readonly lowStockText = computed(() => this.lowStock()
+    .map(p => `${p.name} (${(p.stock ?? 0) > 0 ? p.stock : this.i18n.t('PRODUCTS_SOLD_OUT')})`).join(', '));
+  protected readonly margin = margin;
+  protected readonly tracksStock = tracksStock;
+  protected readonly isLowStock = isLowStock;
+
+  constructor() {
+    this.table.sortingDataAccessor = (p, column) => column === 'margin' ? margin(p) ?? 0 : sortValue(p[column as keyof Product]);
+    effect(() => this.table.sort = this.sort());
+    effect(() => this.table.data = this.products());
   }
 
-  ngOnInit() {
-    this.products.sort = this.sort;
-    this.productService.list().subscribe(data => {
-      this.products.data = data;
-      this.lowStock = data.filter(p => p.active && isLowStock(p));
-      this.lowStockText = this.lowStock
-        .map(p => `${p.name} (${p.stock > 0 ? p.stock : this.t('PRODUCTS_SOLD_OUT')})`).join(', ');
-    });
+  protected edit(product: Product | null = null) {
+    this.dialog.open<ProductDialogComponent, Product | null, EditableProduct>(ProductDialogComponent, {width: '440px', maxWidth: '94vw', data: product})
+      .afterClosed().subscribe(fields => {
+        if (fields) {
+          (product ? this.productService.update(product, fields) : this.productService.add(fields)).catch(this.notify.error);
+        }
+      });
   }
 
-  openEditDialog(product) {
-    // The dialog edits a copy, so cancelling leaves the row untouched.
-    const dialogRef = this.dialog.open(EditProductDialogComponent, {
-      width: '400px',
-      height: '600px',
-      data: {...product}
-    });
-
-    dialogRef.afterClosed().subscribe(editedProduct => {
-      if (editedProduct) {
-        this.productService.update(editedProduct).catch(this.fail);
-      }
-    });
+  protected setActive(product: Product, active: boolean) {
+    this.productService.update(product, {active}).catch(this.notify.error);
   }
-
-  openAddDialog() {
-    const dialogRef = this.dialog.open(AddProductDialogComponent, {
-      width: '400px',
-      height: '600px',
-      data: {}
-    });
-
-    dialogRef.afterClosed().subscribe(newProduct => {
-      if (newProduct) {
-        this.productService.add(newProduct);
-      }
-    });
-  }
-
-
-  private t(key: string) {
-    return this.translate.data[key] || key;
-  }
-
-  private fail = (e: Error) => this.snackBar.open(e.message, 'OK', {duration: 6000});
 
   async trackStock(product: Product) {
-    const n = await this.confirm.ask({
-      title: `${this.t('PRODUCTS_STOCK_TRACK')}: ${product.name}`, confirm: this.t('PRODUCTS_STOCK_TRACK'),
-      number: {label: this.t('PRODUCTS_STOCK_START'), value: 0, min: 0},
+    const t = (k: string) => this.i18n.t(k);
+    const n = await this.confirm.number({
+      title: `${t('PRODUCTS_STOCK_TRACK')}: ${product.name}`, confirm: t('PRODUCTS_STOCK_TRACK'),
+      number: {label: t('PRODUCTS_STOCK_START'), value: 0, min: 0},
     });
     if (n !== undefined) {
-      this.productService.setStock(product.id, n).catch(this.fail);
+      this.productService.setStock(product.id, n).catch(this.notify.error);
     }
   }
 
   async receive(product: Product) {
-    const n = await this.confirm.ask({
-      title: `${this.t('PRODUCTS_RECEIVE_TITLE')}: ${product.name}`, message: this.t('PRODUCTS_RECEIVE_HINT'),
-      confirm: this.t('SAVE'), number: {label: this.t('PRODUCTS_STOCK_RECEIVE'), value: 24},
+    const t = (k: string) => this.i18n.t(k);
+    const n = await this.confirm.number({
+      title: `${t('PRODUCTS_RECEIVE_TITLE')}: ${product.name}`, message: t('PRODUCTS_RECEIVE_HINT'),
+      confirm: t('SAVE'), number: {label: t('PRODUCTS_STOCK_RECEIVE'), value: 24},
     });
     if (n) {
-      this.productService.adjustStock(product.id, n).catch(this.fail);
+      this.productService.adjustStock(product.id, n).catch(this.notify.error);
     }
   }
 
   async stopTracking(product: Product) {
-    const ok = await this.confirm.ask({title: `${this.t('PRODUCTS_STOCK_STOP')} ${product.name}?`, confirm: this.t('PRODUCTS_STOCK_STOP_OK')});
-    if (ok) {
-      this.productService.setStock(product.id, null).catch(this.fail);
+    const t = (k: string) => this.i18n.t(k);
+    if (await this.confirm.ask({title: `${t('PRODUCTS_STOCK_STOP')} ${product.name}?`, confirm: t('PRODUCTS_STOCK_STOP_OK')})) {
+      this.productService.setStock(product.id, null).catch(this.notify.error);
     }
   }
 
   async remove(product: Product) {
-    const ok = await this.confirm.ask({
-      title: `${this.t('DELETE')} ${product.name}?`, message: this.t('PRODUCTS_DELETE_CONFIRM'), confirm: this.t('DELETE'), danger: true,
-    });
-    if (ok) {
-      this.productService.delete(product).catch(this.fail);
+    const t = (k: string) => this.i18n.t(k);
+    if (await this.confirm.ask({title: `${t('DELETE')} ${product.name}?`, message: t('PRODUCTS_DELETE_CONFIRM'), confirm: t('DELETE'), danger: true})) {
+      this.productService.delete(product).catch(this.notify.error);
     }
   }
 }

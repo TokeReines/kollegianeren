@@ -1,138 +1,123 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, computed, inject, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {DecimalPipe} from '@angular/common';
+import {map} from 'rxjs';
+import {MatBadgeModule} from '@angular/material/badge';
+import {MatBottomSheet} from '@angular/material/bottom-sheet';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCardModule} from '@angular/material/card';
+import {MatIconModule} from '@angular/material/icon';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {Product, byName, tracksStock} from '../../interfaces/product';
+import {User, byRoom} from '../../interfaces/user';
 import {ProductService} from '../../services/product.service';
-import {BuyableProduct} from '../../models/buyable-product';
-import {BuyableUser} from '../../models/buyable-user';
-import {UserService} from '../../services/user.service';
-import {Purchase} from '../../interfaces/purchase';
 import {PurchaseService} from '../../services/purchase.service';
-import { MatBottomSheet } from '@angular/material/bottom-sheet';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
+import {UserService} from '../../services/user.service';
+import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
+import {TranslatePipe} from '../../translate.pipe';
+import {ProductPictureComponent} from '../shared/product-picture.component';
+import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
+import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 
 // How long a purchase can be taken back from the buy screen.
 const UNDO_MS = 30000;
 
+// The tablet's screen: tap a product (again for more), tap one or more residents, buy.
+// Right-click (long press) a product to take one off.
 @Component({
-    selector: 'app-buy-page',
-    templateUrl: './buy-page.component.html',
-    styleUrls: ['./buy-page.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-buy-page',
+  imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatCardModule, MatIconModule, MatTooltipModule, TranslatePipe,
+    ProductPictureComponent, ResidentAvatarComponent],
+  templateUrl: './buy-page.component.html',
+  styleUrl: './buy-page.component.scss',
 })
-export class BuyPageComponent implements OnInit {
-  products: Array<BuyableProduct>;
-  users: Array<BuyableUser>;
-  selectedProduct: BuyableProduct;
-  selectedUsers: Array<BuyableUser> = [];
+export class BuyPageComponent {
+  private readonly productService = inject(ProductService);
+  private readonly purchaseService = inject(PurchaseService);
+  private readonly notify = inject(Notify);
+  private readonly i18n = inject(TranslateService);
+  private readonly bottomSheet = inject(MatBottomSheet);
 
-  constructor(private productService: ProductService, private userService: UserService, private purchaseService: PurchaseService,
-              public snackBar: MatSnackBar, private historyBottomSheet: MatBottomSheet, private translate: TranslateService) {
+  protected readonly products = toSignal(this.productService.list().pipe(map(list => list.filter(p => p.active).sort(byName))), {initialValue: []});
+  protected readonly residents = toSignal(inject(UserService).list().pipe(map(list => list.filter(u => u.active).sort(byRoom))), {initialValue: []});
+
+  private readonly productId = signal<string | null>(null);
+  protected readonly amount = signal(0);
+  // In the order they were tapped, which is the order they are named in afterwards.
+  private readonly residentIds = signal<string[]>([]);
+  protected readonly product = computed(() => this.products().find(p => p.id === this.productId()) ?? null);
+  protected readonly buyers = computed(() => this.residentIds()
+    .map(id => this.residents().find(u => u.id === id)).filter((u): u is User => !!u));
+
+  protected isSelected(product: Product) {
+    return product.id === this.productId();
   }
 
-  ngOnInit() {
-    this.productService.list().subscribe(result => {
-      this.products = new Array<BuyableProduct>();
-      result.filter(product => product.active).sort((p1, p2) => {
-        return p1.name.localeCompare(p2.name);
-      }).forEach(p => {
-        this.products.push(new BuyableProduct(p));
-      });
-    });
-    this.userService.list().subscribe(result => {
-      this.users = new Array<BuyableUser>();
-      result.filter(user => user.active).sort((u1, u2) => {
-        return u1.room.localeCompare(u2.room);
-      }).forEach(p => {
-        this.users.push(new BuyableUser(p));
-      });
-    });
+  protected isBuyer(user: User) {
+    return this.residentIds().includes(user.id);
   }
 
-  selectUser(user, event) {
+  protected addOne(product: Product) {
+    if (!this.isSelected(product)) {
+      this.productId.set(product.id);
+      this.amount.set(0);
+    }
+    this.amount.update(n => n + 1);
+  }
+
+  protected takeOne(product: Product, event: Event) {
     event.preventDefault();
-    if (!user.selected) {
-      this.selectedUsers.push(user);
-    } else {
-      this.selectedUsers.splice(this.selectedUsers.indexOf(user), 1);
+    if (!this.isSelected(product)) {
+      return;
     }
-    user.selected = !user.selected;
+    this.amount.update(n => n - 1);
+    if (this.amount() <= 0) {
+      this.productId.set(null);
+    }
   }
 
-  deselectProduct(product, event) {
+  protected toggleBuyer(user: User, event: Event) {
     event.preventDefault();
-    if (product.amount > 0) {
-      product.amount--;
+    this.residentIds.update(ids => ids.includes(user.id) ? ids.filter(id => id !== user.id) : [...ids, user.id]);
+  }
+
+  protected cancel() {
+    this.productId.set(null);
+    this.amount.set(0);
+    this.residentIds.set([]);
+  }
+
+  protected purchase() {
+    const product = this.product();
+    const buyers = this.buyers();
+    const amount = this.amount();
+    if (!product || !buyers.length || amount < 1) {
+      return;
     }
-
-    if (product.amount === 0) {
-      this.selectedProduct = null;
-      product.amount = null;
-      product.selected = false;
-    }
-  }
-
-  selectProduct(product) {
-    this.selectedProduct = product;
-    product.amount++;
-    product.selected = true;
-
-    this.products.filter(p => p !== product).forEach(p => {
-      if (p !== product) {
-        p.selected = false;
-        p.amount = null;
-      }
-    });
-  }
-
-  cancel() {
-    this.products.forEach(p => {
-      p.selected = false;
-      p.amount = null;
-    });
-    this.users.forEach(u => {
-      u.selected = false;
-    });
-    this.selectedUsers = [];
-    this.selectedProduct = null;
-  }
-
-  purchase() {
-    const t = (key: string) => this.translate.data[key] || key;
-    const writes = this.selectedUsers.map(user => {
-      const p = <Purchase>{
-        productName: this.selectedProduct.name,
-        productId: this.selectedProduct.id,
-        amount: this.selectedProduct.amount,
-        price: this.selectedProduct.price * this.selectedProduct.amount,
-        userId: user.id,
-        userName: user.name,
-        userRoom: user.room
-      };
-      return this.purchaseService.add(p);
-    });
-    const product = this.selectedProduct;
-    const sold = product.amount * writes.length;
-    const tracked = typeof product.stock === 'number';
-    if (tracked) {
+    const t = (key: string) => this.i18n.t(key);
+    const writes = buyers.map(user => this.purchaseService.add({
+      productId: product.id, productName: product.name, amount, price: product.price * amount,
+      userId: user.id, userName: user.name, userRoom: user.room,
+    }));
+    const sold = amount * buyers.length;
+    if (tracksStock(product)) {
       this.productService.adjustStock(product.id, -sold).catch(() => undefined);
     }
-    const message = this.selectedUsers.map(u => u.name).join(t('BEERSYSTEM_AND')) + t('BEERSYSTEM_BOUGHT') +
-      this.selectedProduct.amount + ' ' + this.selectedProduct.name;
+    const message = buyers.map(u => u.name).join(t('BEERSYSTEM_AND')) + t('BEERSYSTEM_BOUGHT') + amount + ' ' + product.name;
     // Wrong tap? The purchase can be taken back for a short while, straight from the buy screen.
-    this.snackBar.open(message, t('BEERSYSTEM_UNDO'), {duration: UNDO_MS}).onAction().subscribe(() => {
-      // Deletes queue like any other write, so this works offline too.
-      if (tracked) {
+    // Deletes queue like any other write, so this works offline too.
+    this.notify.action(message, t('BEERSYSTEM_UNDO'), UNDO_MS).subscribe(() => {
+      if (tracksStock(product)) {
         this.productService.adjustStock(product.id, sold).catch(() => undefined);
       }
-      Promise.all(writes.map(w => this.purchaseService.deleteRef(w.ref)))
-        .then(() => this.snackBar.open(t('BEERSYSTEM_UNDONE'), undefined, {duration: 4000}),
-          err => this.snackBar.open(err.message, 'OK', {duration: 6000}));
+      Promise.all(writes.map(w => this.purchaseService.delete(w.ref)))
+        .then(() => this.notify.info(t('BEERSYSTEM_UNDONE')), this.notify.error);
     });
     this.cancel();
   }
 
-  openHistorySheet(): void {
-    this.historyBottomSheet.open(HistoryBottomSheetComponent);
+  protected openHistory() {
+    this.bottomSheet.open(HistoryBottomSheetComponent);
   }
 }

@@ -1,10 +1,21 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
-import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
-import {ActivatedRoute, Router} from '@angular/router';
+import {Component, OnInit, computed, inject, input, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {Router, RouterLink} from '@angular/router';
+import {map} from 'rxjs';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCardModule} from '@angular/material/card';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
+import {MatInputModule} from '@angular/material/input';
 import {AuthService} from '../../services/auth.service';
-import {AccessService, Invite} from '../../services/access.service';
+import {AccessService} from '../../services/access.service';
+import {Invite} from '../../interfaces/invite';
 import {KitchenService} from '../../services/kitchen.service';
+import {kitchenKey} from '../../interfaces/kitchen';
 import {TranslateService} from '../../services/translate.service';
+import {TranslatePipe} from '../../translate.pipe';
+import {LanguageButtonComponent} from '../language-button/language-button.component';
 
 // The dorm's kitchens, offered as suggestions when an invite creates a new kitchen.
 const DORM_KITCHENS = [
@@ -17,92 +28,81 @@ const DORM_KITCHENS = [
 // (create a new kitchen). The code is checked before any account is created.
 @Component({
   selector: 'app-register',
+  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
+    TranslatePipe, LanguageButtonComponent],
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false
+  styleUrl: './register.component.scss',
 })
 export class RegisterComponent implements OnInit {
-  form: UntypedFormGroup;
-  hidePassword = true;
-  invite: Invite | null = null;
-  inviteKitchen: string | null = null;
-  inviteError = '';
-  submitError = '';
-  busy = false;
-  suggestions: string[] = DORM_KITCHENS;
+  private readonly auth = inject(AuthService);
+  private readonly access = inject(AccessService);
+  private readonly router = inject(Router);
+  private readonly i18n = inject(TranslateService);
 
-  constructor(
-    private authService: AuthService,
-    private access: AccessService,
-    private kitchens: KitchenService,
-    private translate: TranslateService,
-    private route: ActivatedRoute,
-    private router: Router,
-  ) {
-  }
+  // ?invite=CODE from an invite link.
+  readonly invite = input('');
+  protected readonly form = inject(NonNullableFormBuilder).group({
+    code: ['', Validators.required],
+    kitchenName: [''],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+  });
+  protected readonly hidePassword = signal(true);
+  protected readonly validInvite = signal<Invite | null>(null);
+  protected readonly inviteKitchen = signal<string | null>(null);
+  protected readonly inviteError = signal('');
+  protected readonly submitError = signal('');
+  protected readonly busy = signal(false);
+  protected readonly isReferral = computed(() => !!this.validInvite() && !this.validInvite()?.kitchenId);
+  // Kitchens without a login yet.
+  protected readonly suggestions = toSignal(inject(KitchenService).list().pipe(map(taken => {
+    const used = new Set(taken.map(k => kitchenKey(k.name)));
+    return DORM_KITCHENS.filter(name => !used.has(kitchenKey(name)));
+  })), {initialValue: DORM_KITCHENS});
 
   ngOnInit() {
-    this.form = new UntypedFormGroup({
-      code: new UntypedFormControl('', [Validators.required]),
-      kitchenName: new UntypedFormControl(''),
-      email: new UntypedFormControl('', [Validators.required, Validators.email]),
-      password: new UntypedFormControl('', [Validators.required, Validators.minLength(6)]),
-    });
-    this.kitchens.list().subscribe(taken => {
-      const key = (name: string) => String(name).toLowerCase().replace(/[\s.]/g, '').replace(/^gamle/, 'gl').replace(/^(mellemste|ml)/, 'm');
-      const used = new Set(taken.map(k => key(k.name)));
-      this.suggestions = DORM_KITCHENS.filter(name => !used.has(key(name)));
-    });
-    const code = this.route.snapshot.queryParamMap.get('invite');
-    if (code) {
-      this.form.patchValue({code});
+    if (this.invite()) {
+      this.form.patchValue({code: this.invite()});
       this.check();
     }
   }
 
-  private t(key: string) {
-    return this.translate.data[key] || key;
-  }
-
-  async check() {
-    this.inviteError = '';
-    this.invite = null;
-    const code = String(this.form.value.code || '').trim();
+  protected async check() {
+    this.inviteError.set('');
+    this.validInvite.set(null);
+    const code = this.form.controls.code.value.trim();
     if (!code) {
       return;
     }
     const found = await this.access.lookup(code).catch(() => null);
-    const expired = found && found.invite.expiresAt?.toMillis() < Date.now();
+    const expired = !!found && found.invite.expiresAt?.toMillis() < Date.now();
     if (!found || found.invite.usedBy || expired) {
-      this.inviteError = this.t(!found ? 'REGISTER_INVITE_UNKNOWN' : found.invite.usedBy ? 'REGISTER_INVITE_USED' : 'REGISTER_INVITE_EXPIRED');
+      this.inviteError.set(this.i18n.t(!found ? 'REGISTER_INVITE_UNKNOWN' : found.invite.usedBy ? 'REGISTER_INVITE_USED' : 'REGISTER_INVITE_EXPIRED'));
       return;
     }
-    this.invite = found.invite;
-    this.inviteKitchen = found.kitchenName;
-    const name = this.form.get('kitchenName');
-    name.setValidators(this.isReferral ? [Validators.required, Validators.maxLength(40)] : []);
+    this.validInvite.set(found.invite);
+    this.inviteKitchen.set(found.kitchenName);
+    const name = this.form.controls.kitchenName;
+    name.setValidators(this.isReferral() ? [Validators.required, Validators.maxLength(40)] : []);
     name.updateValueAndValidity();
   }
 
-  get isReferral() {
-    return !!this.invite && !this.invite.kitchenId;
-  }
-
-  async onSubmit() {
-    if (this.form.invalid || !this.invite || this.busy) {
+  protected async submit() {
+    const invite = this.validInvite();
+    if (this.form.invalid || !invite || this.busy()) {
       return;
     }
-    this.busy = true;
-    this.submitError = '';
+    const {email, password, kitchenName} = this.form.getRawValue();
+    this.busy.set(true);
+    this.submitError.set('');
     try {
-      await this.authService.emailSignup(this.form.value.email, this.form.value.password);
-      await this.access.redeem(this.invite, this.form.value.kitchenName);
-      this.router.navigate(['']);
+      await this.auth.emailSignup(email.trim(), password);
+      await this.access.redeem(invite, kitchenName);
+      await this.router.navigate(['']);
     } catch (e) {
-      this.submitError = e.message;
+      this.submitError.set((e as Error).message);
     } finally {
-      this.busy = false;
+      this.busy.set(false);
     }
   }
 }

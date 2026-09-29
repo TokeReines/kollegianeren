@@ -1,98 +1,84 @@
-@if (lowStock.length) {
+@if (lowStock().length) {
   <div class="low-stock" role="status">
     <mat-icon>inventory_2</mat-icon>
     {{ "PRODUCTS_LOW_STOCK" | translate }}
-    <b>{{ lowStockText }}</b>
+    <b>{{ lowStockText() }}</b>
   </div>
 }
+
 <div class="table-scroll">
-<mat-table #table [dataSource]="products" matSort matSortActive="name" matSortDirection="asc" class="animate wide-table products-table">
+  <table mat-table [dataSource]="table" matSort matSortActive="name" matSortDirection="asc" class="wide-table products-table">
+    <ng-container matColumnDef="image" sticky>
+      <th mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</th>
+      <td mat-cell *matCellDef="let product"><app-product-picture [product]="product" [size]="48" /></td>
+    </ng-container>
 
-  <ng-container matColumnDef="image" sticky>
-    <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_PRODUCT_PICTURE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product">
-      <!--<img [src]="product.image" alt="./assets/img/maribo.png" class="table-image">-->
-      @if (!!product.clId) {
-        <div class="image-wrapper product-tile">
-          <img [src]="product.clId | clUrl:'c_fit,q_50,w_75,h_75':'png'" class="product" alt="">
-        </div>
-      }
-      @if (!product.image && !product.clId) {
-        <div class="image-wrapper placeholder"><mat-icon>local_drink</mat-icon></div>
-      }
-      @if (!!product.image) {
-        <div class="image-wrapper product-tile">
-          <img [src]="product.image" class="product" alt="./assets/img/maribo.png">
-        </div>
-      }
-    </mat-cell>
-  </ng-container>
+    <ng-container matColumnDef="name" sticky>
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "NAME" | translate }}</th>
+      <td mat-cell *matCellDef="let product">{{ product.name }}</td>
+    </ng-container>
 
-  <ng-container matColumnDef="name" sticky>
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "NAME" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product"> {{ product.name }} </mat-cell>
-  </ng-container>
+    <ng-container matColumnDef="retailPrice">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_RETAIL_PRICE" | translate }}</th>
+      <td mat-cell *matCellDef="let product">@if (product.retailPrice != null) { {{ product.retailPrice | number:'1.0-2' }} kr. }</td>
+    </ng-container>
 
+    <ng-container matColumnDef="price">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_SALES_PRICE" | translate }}</th>
+      <td mat-cell *matCellDef="let product">@if (product.price != null) { {{ product.price | number:'1.0-2' }} kr. }</td>
+    </ng-container>
 
-  <ng-container matColumnDef="retailPrice">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_RETAIL_PRICE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product"> @if (product.retailPrice != null) { {{ product.retailPrice | number:'1.0-2' }} kr. } </mat-cell>
-  </ng-container>
+    <ng-container matColumnDef="margin">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_MARGIN" | translate }}</th>
+      <td mat-cell *matCellDef="let product">
+        @let m = margin(product);
+        @if (m !== null) {
+          <span [class.negative]="m < 0">{{ m | number:'1.0-2' }} kr.</span>
+        }
+      </td>
+    </ng-container>
 
-  <ng-container matColumnDef="price">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_SALES_PRICE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product"> @if (product.price != null) { {{ product.price | number:'1.0-2' }} kr. } </mat-cell>
-  </ng-container>
+    <ng-container matColumnDef="stock">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "PRODUCTS_STOCK" | translate }}</th>
+      <td mat-cell *matCellDef="let product">
+        @if (tracksStock(product)) {
+          <span class="stock-cell">
+            <span class="stock" [class.low]="isLowStock(product)">{{ product.stock > 0 ? product.stock : ("PRODUCTS_SOLD_OUT" | translate) }}</span>
+            <button mat-icon-button (click)="receive(product)" [attr.aria-label]="'PRODUCTS_RECEIVE_TITLE' | translate" [matTooltip]="'PRODUCTS_RECEIVE_TITLE' | translate"><mat-icon>add_box</mat-icon></button>
+            <button mat-icon-button (click)="stopTracking(product)" [attr.aria-label]="'PRODUCTS_STOCK_STOP' | translate" [matTooltip]="'PRODUCTS_STOCK_STOP' | translate"><mat-icon>block</mat-icon></button>
+          </span>
+        } @else {
+          <button mat-button (click)="trackStock(product)">{{ "PRODUCTS_STOCK_TRACK" | translate }}</button>
+        }
+      </td>
+    </ng-container>
 
-  <ng-container matColumnDef="margin">
-    <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_MARGIN" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product">
-      @if (margin(product) !== null) {
-        <span [class.negative]="margin(product) < 0">{{ margin(product) | number:'1.0-2' }} kr.</span>
-      }
-    </mat-cell>
-  </ng-container>
+    <ng-container matColumnDef="active">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACTIVE" | translate }}</th>
+      <td mat-cell *matCellDef="let product">
+        <mat-checkbox [checked]="product.active" (change)="setActive(product, $event.checked)" [aria-label]="'PRODUCTS_FRIDGE' | translate" />
+      </td>
+    </ng-container>
 
-  <ng-container matColumnDef="stock">
-    <mat-header-cell *matHeaderCellDef>{{ "PRODUCTS_STOCK" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product">
-      @if (tracksStock(product)) {
-        <span class="stock" [class.low]="isLowStock(product)">{{ product.stock > 0 ? product.stock : ("PRODUCTS_SOLD_OUT" | translate) }}</span>
-        <button mat-icon-button (click)="receive(product)" [attr.aria-label]="'PRODUCTS_RECEIVE_TITLE' | translate"><mat-icon>add_box</mat-icon></button>
-        <button mat-icon-button (click)="stopTracking(product)" [attr.aria-label]="'PRODUCTS_STOCK_STOP' | translate"><mat-icon>block</mat-icon></button>
-      } @else {
-        <button mat-button (click)="trackStock(product)">{{ "PRODUCTS_STOCK_TRACK" | translate }}</button>
-      }
-    </mat-cell>
-  </ng-container>
+    <ng-container matColumnDef="edit">
+      <th mat-header-cell *matHeaderCellDef>{{ "EDIT" | translate }}</th>
+      <td mat-cell *matCellDef="let product">
+        <button mat-icon-button (click)="edit(product)" [attr.aria-label]="'EDIT' | translate"><mat-icon>edit</mat-icon></button>
+      </td>
+    </ng-container>
 
-  <ng-container matColumnDef="active">
-    <mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACTIVE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product">
-      <mat-checkbox [(ngModel)]="product.active" (change)="productService.update(product)"></mat-checkbox>
-    </mat-cell>
-  </ng-container>
+    <ng-container matColumnDef="delete">
+      <th mat-header-cell *matHeaderCellDef>{{ "DELETE" | translate }}</th>
+      <td mat-cell *matCellDef="let product">
+        <button mat-icon-button (click)="remove(product)" [attr.aria-label]="'DELETE' | translate"><mat-icon>delete</mat-icon></button>
+      </td>
+    </ng-container>
 
-  <ng-container matColumnDef="edit">
-    <mat-header-cell *matHeaderCellDef>{{ "EDIT" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product">
-      <button mat-icon-button (click)="openEditDialog(product)">
-        <mat-icon>edit</mat-icon>
-      </button>
-    </mat-cell>
-  </ng-container>
-
-  <ng-container matColumnDef="delete">
-    <mat-header-cell *matHeaderCellDef>{{ "DELETE" | translate }}</mat-header-cell>
-    <mat-cell *matCellDef="let product">
-      <button mat-icon-button (click)="remove(product)" [attr.aria-label]="'DELETE' | translate">
-        <mat-icon>delete</mat-icon>
-      </button>
-    </mat-cell>
-  </ng-container>
-
-  <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-  <mat-row *matRowDef="let product; columns: displayedColumns;" class="animate"></mat-row>
-</mat-table>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let product; columns: displayedColumns"></tr>
+  </table>
 </div>
-<button mat-fab class="bottom-right" (click)="openAddDialog()" [attr.aria-label]="'PRODUCTS_NEW' | translate"><mat-icon>add</mat-icon></button>
+
+<button mat-fab class="bottom-right" (click)="edit()" [attr.aria-label]="'PRODUCTS_NEW' | translate" [matTooltip]="'PRODUCTS_NEW' | translate">
+  <mat-icon>add</mat-icon>
+</button>
