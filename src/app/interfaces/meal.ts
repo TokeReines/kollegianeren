@@ -1,7 +1,7 @@
 import {Timestamp} from 'firebase/firestore';
 import {millis} from '../time';
 
-export const MEAL_TAGS = ['meat', 'pork', 'fish', 'vegetarian', 'vegan', 'dairy', 'gluten', 'nuts'] as const;
+export const MEAL_TAGS = ['meat', 'pork', 'fish', 'vegetarian', 'vegan', 'glutenFree', 'dairy', 'nuts'] as const;
 export type MealTag = typeof MEAL_TAGS[number];
 
 // How many hours before the meal the sign-up closes; 0 is when we eat.

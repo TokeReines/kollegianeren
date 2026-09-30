@@ -222,7 +222,7 @@
   "FOOD_MENU": "Menu",
   "FOOD_NOTES": "Noter",
   "FOOD_NOTES_HINT": "Fx ingredienser, pris pr. person eller hvad man skal have med",
-  "FOOD_TAGS": "Indeholder",
+  "FOOD_TAGS": "Om maden",
   "FOOD_CLOSES": "Tilmelding lukker",
   "FOOD_CLOSES_48": "2 døgn før",
   "FOOD_CLOSES_24": "24 timer før",
@@ -246,7 +246,6 @@
   "FOOD_TAG_vegetarian": "Vegetar",
   "FOOD_TAG_vegan": "Vegansk",
   "FOOD_TAG_dairy": "Mælk",
-  "FOOD_TAG_gluten": "Gluten",
   "FOOD_TAG_nuts": "Nødder",
   "FOOD_WEEK": "Uge",
   "FOOD_COOKS": "laver mad",
@@ -260,5 +259,6 @@
   "FOOD_DAY_TAKEN": "Der er allerede madklub den dag. Vælg en anden dag.",
   "FOOD_COOK_MANY": "laver mad",
   "FOOD_I_COOK_TOO": "Jeg laver også mad",
-  "FOOD_COOKS_LABEL": "Kokke"
+  "FOOD_COOKS_LABEL": "Kokke",
+  "FOOD_TAG_glutenFree": "Glutenfri"
 }
