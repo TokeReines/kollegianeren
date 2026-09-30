@@ -19,7 +19,7 @@
   "REGISTER_TO_LOGIN": "Tilbage til login",
   "RESET_ENTER_EMAIL": "Indtast email for at nulstille",
   "RESET_PASSWORD": "Nulstil kode",
-  "RESET_PASSWORD_CONFIRMATION": "Et link til at nulstille din kode er sendt til ",
+  "RESET_PASSWORD_CONFIRMATION": "Hvis der er et login til denne email, er der nu sendt et link til at nulstille koden:",
   "MENU_BEERSYSTEM": "Ølsystem",
   "MENU_PRODUCTS": "Produkter",
   "MENU_RESIDENTS": "Beboere",

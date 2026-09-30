@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {environment} from '../../environments/environment';
 
 // Product and resident pictures live on Cloudinary. Uploads use an unsigned preset (no secrets in
-// the app); the emulator build has none, so uploads fail there instead of landing in prod.
+// the app); dev and the emulator use the kollegianeren_dev preset, which uploads into the dev/ folder.
 @Injectable({providedIn: 'root'})
 export class CloudinaryService {
   readonly canUpload = !!environment.cloudinary.upload_preset;
