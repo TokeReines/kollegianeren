@@ -6,9 +6,10 @@ export const environment = {
   emulators: false,
   production: false,
   // Unsigned upload preset only; Cloudinary API keys and secrets never belong in the app.
+  // The production account (the old dev account was disabled), uploading into its dev/ folder.
   cloudinary: {
-    cloud_name: 'egmontkollegiet-dev',
-    upload_preset: 'ml_default'
+    cloud_name: 'egmontkollegiet',
+    upload_preset: 'kollegianeren_dev'
   },
   firebase: {
     apiKey: 'AIzaSyBQYwdOvSjikzel3fLDmO7wY75byglR5T4',

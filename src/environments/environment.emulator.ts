@@ -5,9 +5,9 @@ export const environment = {
   production: false,
   cloudinary: {
     // Anonymised data still points at prod product images; delivery URLs are public.
-    // No upload preset, so uploads fail instead of landing in the prod account.
+    // Uploads go to the dev/ folder (unsigned preset kollegianeren_dev), never among prod's.
     cloud_name: 'egmontkollegiet',
-    upload_preset: ''
+    upload_preset: 'kollegianeren_dev'
   },
   firebase: {
     apiKey: 'demo-key',
