@@ -22,6 +22,7 @@ const LAUNCH = {
 Kollegianeren er bygget om fra bunden. Det her er nyt:
 
 • Ny købsside: varerne til venstre, de mest købte først, og beboerne til højre. Vælg en vare og en eller flere beboere, og tryk Køb.
+• Madklub: tryk "Jeg laver mad" på en dag, og tilføj menu, tidspunkt og hvad maden indeholder, når I er klar. De andre tilmelder sig med et tryk, og tilmeldingen lukker 24 timer før. I kan også bladre tilbage og se tidligere uger.
 • Fortryd: ramte I forkert, så åbn Seneste køb og tryk Fortryd inden for et minut.
 • Sikkerhed: jeres køkkens varer, beboere og køb kan nu kun ses af jeres eget køkken.
 • Hurtigere: appen er under halvt så stor og starter hurtigere på tablets.
@@ -30,6 +31,7 @@ Kollegianeren er bygget om fra bunden. Det her er nyt:
 • Virker uden net: tabletten husker købene og sender dem, når forbindelsen er tilbage.
 • Regnskab: vælg en periode, søg, og eksportér til Excel eller CSV.
 • Statistik, lager og avance: se hvad der bliver drukket, og hvornår varerne slipper op.
+• Madklubstatistik: under Statistik kan I se, hvor mange der spiser med, hvem der laver mad, og hvilke dage der er madklub.
 • Flere logins: et tablet-login, der kun kan købe, og et til kassereren. Nye køkkener kommer ind med en invitation.
 • Aktuelt: nyheder her, og en direkte linje til mig lige ved siden af.
 
