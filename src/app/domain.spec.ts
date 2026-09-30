@@ -8,7 +8,7 @@ import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
 import {computeFoodStats} from './components/stats/food-stats';
-import {Meal, MealTag, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
+import {Meal, MealTag, atTime, closeHours, closeHoursFor, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
 import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
@@ -97,6 +97,16 @@ describe('food club', () => {
     expect(s.people['b']).toEqual({ate: 2, cooked: 1, guests: 5}); // shared the second one
     expect(s.people['c']).toEqual({ate: 2, cooked: 0, guests: 0}); // their own food club is still to come
     expect(s.people['e']).toEqual({ate: 1, cooked: 0, guests: 0});
+  });
+
+  it('never books a dinner with its sign-up already closed', () => {
+    const now = new Date(2026, 8, 30, 16, 1).getTime();
+    const hoursBefore = (m: {date: Timestamp, closesAt: Timestamp}) => (m.date.toMillis() - m.closesAt.toMillis()) / 3.6e6;
+    expect(hoursBefore(newMeal(new Date(2026, 8, 30), 'u1', now))).toBe(0); // tonight: open until we eat
+    expect(hoursBefore(newMeal(new Date(2026, 9, 1), 'u1', now))).toBe(24); // tomorrow 18:30: 24 hours still fits
+    expect(closeHoursFor(new Date(2026, 9, 1, 12), 24, now)).toBe(12); // tomorrow at noon: 24 hours has passed
+    expect(closeHoursFor(new Date(2026, 9, 5, 18), 48, now)).toBe(48);
+    expect(closeHoursFor(new Date(2026, 8, 29, 18), 24, now)).toBe(24); // history keeps its choice
   });
 
   it('numbers weeks as Danish calendars do', () => {

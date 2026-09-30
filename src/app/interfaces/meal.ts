@@ -50,10 +50,21 @@ export function closeHours(meal: Pick<Meal, 'date' | 'closesAt'>): number {
 export const DEFAULT_TIME = '18:30';
 export const DEFAULT_CLOSE_HOURS = 24;
 
-export function newMeal(day: Date, cookId: string): MealFields {
+// The closing time for a dinner at `date`: `wanted` hours before if that is still ahead, or else
+// the longest shorter choice that is, so a dinner booked the same day is not closed from the start.
+// A dinner already eaten (history) keeps what was asked for.
+export function closeHoursFor(date: Date, wanted: number, now = Date.now()): number {
+  if (date.getTime() <= now) {
+    return wanted;
+  }
+  return CLOSE_HOURS.find(h => h <= wanted && date.getTime() - h * 3.6e6 > now) ?? 0;
+}
+
+export function newMeal(day: Date, cookId: string, now = Date.now()): MealFields {
   const date = atTime(day, DEFAULT_TIME);
+  const hours = closeHoursFor(date, DEFAULT_CLOSE_HOURS, now);
   return {
-    date: Timestamp.fromDate(date), closesAt: Timestamp.fromMillis(date.getTime() - DEFAULT_CLOSE_HOURS * 3.6e6),
+    date: Timestamp.fromDate(date), closesAt: Timestamp.fromMillis(date.getTime() - hours * 3.6e6),
     cooks: [cookId], menu: '', notes: '', tags: [], askCook: false,
   };
 }
