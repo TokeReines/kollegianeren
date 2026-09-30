@@ -266,7 +266,7 @@
   "FOOD_STATS_COOKS": "Forskellige kokke",
   "FOOD_STATS_DAY_SHARE": "Dage med madklub",
   "FOOD_STATS_PER_DAY": "Spisende pr. dag",
-  "FOOD_STATS_WEEKDAYS": "Madklubber pr. ugedag",
+  "FOOD_STATS_WEEKDAYS": "Ugedage",
   "FOOD_STATS_EMPTY": "Ingen madklub i perioden endnu.",
   "FOOD_STATS_NONE": "ingen madklub",
   "FOOD_LAST_WEEK": "Sidste uge",
@@ -278,13 +278,12 @@
   "FOOD_STATS_TIME": "gang",
   "FOOD_STATS_TIMES": "gange",
   "FOOD_TAG_lactoseFree": "Laktosefri",
-  "FOOD_STATS_BY_COOK": "Madklubber pr. kok",
-  "FOOD_STATS_GUESTS_BY_COOK": "Spisende hos hver kok",
   "FOOD_STATS_GUESTS": "Spisende",
-  "FOOD_STATS_PER_MEAL_SHORT": "pr. madklub",
   "FOOD_COOK_ONE": "Kok",
-  "FOOD_STATS_BY_EATER": "Spiste med pr. beboer",
   "FOOD_STATS_RESIDENTS_TABLE": "Beboere",
   "FOOD_STATS_ATE_COL": "Spiste med",
-  "FOOD_STATS_COOKED_COL": "Lavede mad"
+  "FOOD_STATS_COOKED_COL": "Lavede mad",
+  "FOOD_STATS_RESIDENTS": "Beboere",
+  "FOOD_STATS_NO_TAGS": "Ingen mærker brugt endnu.",
+  "FOOD_STATS_FOR": "for i alt"
 }

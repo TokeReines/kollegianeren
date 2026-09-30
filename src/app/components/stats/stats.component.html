@@ -86,62 +86,53 @@
           <span>{{ f.daily[f.daily.length - 1]?.date | date:'d. MMM' }}</span>
         </div>
 
-        <h2>{{ "FOOD_STATS_BY_EATER" | translate }}</h2>
-        <div class="hbars" [class.dim]="loading()">
+        <!-- One chart for everyone: the bar is how often they ate, the darker part how many of
+             those they cooked (cooks eat at their own food club, so it always fits inside). -->
+        <div class="chart-head">
+          <h2>{{ "FOOD_STATS_RESIDENTS" | translate }}</h2>
+          <span class="key"><span class="swatch ate"></span>{{ "FOOD_STATS_ATE_COL" | translate }}</span>
+          <span class="key"><span class="swatch cooked"></span>{{ "FOOD_STATS_COOKED_COL" | translate }}</span>
+        </div>
+        <div class="hbars people" [class.dim]="loading()">
           @for (r of byAte(); track r.id) {
-            <div class="hbar" (mousemove)="show($event, tipEater(r))" (mouseleave)="tip.set(null)">
+            <div class="hbar" (mousemove)="show($event, tipPerson(r))" (mouseleave)="tip.set(null)">
               <span class="name">{{ r.name }}</span>
-              <span class="track"><span class="fill" [style.width.%]="r.ate / maxAte() * 100"></span></span>
-              <span class="val">{{ r.ate }}</span>
+              <span class="track">
+                <span class="fill ate" [style.width.%]="r.ate / maxAte() * 100">
+                  <span class="fill cooked" [style.width.%]="r.cookedShare * 100"></span>
+                </span>
+              </span>
+              <span class="val">{{ r.ate }}@if (r.cooked) {<span class="cooked-n"> · {{ r.cooked }} <mat-icon inline>soup_kitchen</mat-icon></span>}</span>
             </div>
           }
         </div>
 
-        <h2>{{ "FOOD_STATS_BY_COOK" | translate }}</h2>
-        <div class="hbars" [class.dim]="loading()">
-          @for (r of byCooked(); track r.id) {
-            <div class="hbar" (mousemove)="show($event, tipCook(r))" (mouseleave)="tip.set(null)">
-              <span class="name">{{ r.name }}</span>
-              <span class="track"><span class="fill" [style.width.%]="r.cooked / maxCooked() * 100"></span></span>
-              <span class="val">{{ r.cooked }}</span>
+        <div class="panels">
+          <section class="panel">
+            <h2>{{ "FOOD_STATS_WEEKDAYS" | translate }}</h2>
+            <div class="week-cols" [class.dim]="loading()">
+              @for (w of f.weekdays; track w.weekday) {
+                <div class="wcol" (mousemove)="show($event, tipWeekday(w))" (mouseleave)="tip.set(null)">
+                  <span class="n">{{ w.meals || '' }}</span>
+                  <span class="slot"><span class="bar" [style.height.%]="w.meals / maxWeekdayMeals() * 100"></span></span>
+                  <span class="wd">{{ weekdays()[w.weekday] }}</span>
+                </div>
+              }
             </div>
-          }
-        </div>
-
-        <h2>{{ "FOOD_STATS_GUESTS_BY_COOK" | translate }}</h2>
-        <div class="hbars" [class.dim]="loading()">
-          @for (r of byGuests(); track r.id) {
-            <div class="hbar" (mousemove)="show($event, tipCook(r))" (mouseleave)="tip.set(null)">
-              <span class="name">{{ r.name }}</span>
-              <span class="track"><span class="fill" [style.width.%]="r.guests / maxGuests() * 100"></span></span>
-              <span class="val">{{ r.guests }}</span>
-            </div>
-          }
-        </div>
-
-        <h2>{{ "FOOD_STATS_WEEKDAYS" | translate }}</h2>
-        <div class="hbars" [class.dim]="loading()">
-          @for (w of f.weekdays; track w.weekday) {
-            <div class="hbar" (mousemove)="show($event, tipWeekday(w))" (mouseleave)="tip.set(null)">
-              <span class="name">{{ weekdays()[w.weekday] }}</span>
-              <span class="track"><span class="fill" [style.width.%]="w.meals / maxWeekdayMeals() * 100"></span></span>
-              <span class="val">{{ w.meals }}</span>
-            </div>
-          }
-        </div>
-
-        @if (f.tags.length) {
-          <h2>{{ "FOOD_TAGS" | translate }}</h2>
-          <div class="hbars" [class.dim]="loading()">
-            @for (t of f.tags; track t.tag) {
-              <div class="hbar" (mousemove)="show($event, tipTag(t))" (mouseleave)="tip.set(null)">
-                <span class="name">{{ "FOOD_TAG_" + t.tag | translate }}</span>
-                <span class="track"><span class="fill" [style.width.%]="t.meals / maxTagMeals() * 100"></span></span>
-                <span class="val">{{ t.meals }}</span>
+          </section>
+          <section class="panel">
+            <h2>{{ "FOOD_TAGS" | translate }}</h2>
+            @if (f.tags.length) {
+              <div class="tag-counts" [class.dim]="loading()">
+                @for (t of f.tags; track t.tag) {
+                  <span class="tag-count">{{ "FOOD_TAG_" + t.tag | translate }} <b>{{ t.meals }}</b></span>
+                }
               </div>
+            } @else {
+              <p class="muted">{{ "FOOD_STATS_NO_TAGS" | translate }}</p>
             }
-          </div>
-        }
+          </section>
+        </div>
       }
     } @else if (loading()) {
       <p class="muted">…</p>

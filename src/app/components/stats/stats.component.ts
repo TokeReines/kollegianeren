@@ -12,7 +12,7 @@ import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {DayRow, ProductRow, Stats, heatLevel} from './stats';
 import {StatsService} from './stats.service';
-import {FoodDayRow, FoodStats, TagRow, WeekdayRow} from './food-stats';
+import {FoodDayRow, FoodStats, WeekdayRow} from './food-stats';
 
 const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']};
 
@@ -42,21 +42,17 @@ export class StatsComponent {
     switchMap(v => v === 'food' ? this.users.list() : of([]))), {initialValue: []});
   private readonly names = computed(() => new Map(this.allResidents().map(u => [u.id, u.name])));
   // Everyone who ate or cooked in the period.
+  // cookedShare: the part of their bar (times eaten) that they cooked themselves.
   private readonly personRows = computed(() => Object.entries(this.food()?.people ?? {})
-    .map(([id, p]) => ({id, name: this.names().get(id) ?? '?', ...p})));
-  private readonly cookRows = computed(() => this.personRows().filter(r => r.cooked > 0));
+    .map(([id, p]) => ({id, name: this.names().get(id) ?? '?', ...p, cookedShare: p.ate ? Math.min(p.cooked, p.ate) / p.ate : 0})));
   protected readonly byAte = computed(() => this.personRows().filter(r => r.ate > 0)
-    .sort((a, b) => b.ate - a.ate || a.name.localeCompare(b.name, 'da')));
-  protected readonly byCooked = computed(() => [...this.cookRows()].sort((a, b) => b.cooked - a.cooked || b.guests - a.guests));
-  protected readonly byGuests = computed(() => [...this.cookRows()].sort((a, b) => b.guests - a.guests || b.cooked - a.cooked));
+    .sort((a, b) => b.ate - a.ate || b.cooked - a.cooked || a.name.localeCompare(b.name, 'da')));
   // The table: everyone, by room.
   protected readonly byRoomRows = computed(() => {
     const rooms = new Map(this.allResidents().map(u => [u.id, u.room]));
     return [...this.personRows()].sort((a, b) => byRoom({room: rooms.get(a.id) ?? ''}, {room: rooms.get(b.id) ?? ''}));
   });
   protected readonly maxAte = computed(() => Math.max(1, ...this.personRows().map(r => r.ate)));
-  protected readonly maxCooked = computed(() => Math.max(1, ...this.cookRows().map(r => r.cooked)));
-  protected readonly maxGuests = computed(() => Math.max(1, ...this.cookRows().map(r => r.guests)));
   private readonly result = resource({
     params: () => this.view() === 'beer' ? this.days() : undefined,
     loader: ({params}) => this.statsService.load(params),
@@ -72,7 +68,6 @@ export class StatsComponent {
   });
   protected readonly maxDayEaters = computed(() => Math.max(1, ...(this.food()?.daily ?? []).map(d => d.eaters)));
   protected readonly maxWeekdayMeals = computed(() => Math.max(1, ...(this.food()?.weekdays ?? []).map(d => d.meals)));
-  protected readonly maxTagMeals = computed(() => Math.max(1, ...(this.food()?.tags ?? []).map(t => t.meals)));
   // The previous period's numbers stay (dimmed) while the next one loads.
   protected readonly stats = linkedSignal<Stats | undefined, Stats | null>({
     source: () => this.result.hasValue() ? this.result.value() : undefined,
@@ -121,20 +116,12 @@ export class StatsComponent {
     return `${this.weekdays()[w.weekday]}: ${w.meals} ${this.i18n.t('FOOD_STATS_MEALS').toLowerCase()}, ${avg} ${this.i18n.t('FOOD_STATS_PER_MEAL').toLowerCase()}`;
   }
 
-  // "Anna: spiste med 12 gange, lavede mad 2 gange".
-  protected tipEater(r: {name: string, ate: number, cooked: number}) {
+  // "Anna: spiste med 12 gange, lavede mad 2 gange for i alt 27 spisende".
+  protected tipPerson(r: {name: string, ate: number, cooked: number, guests: number}) {
     const times = (n: number) => `${n} ${this.i18n.t(n === 1 ? 'FOOD_STATS_TIME' : 'FOOD_STATS_TIMES')}`;
-    return `${r.name}: ${this.i18n.t('FOOD_STATS_ATE').toLowerCase()} ${times(r.ate)}, ${this.i18n.t('FOOD_STATS_COOKED')} ${times(r.cooked)}`;
-  }
-
-  // "Anna: 3 madklubber, 27 spisende (9 pr. madklub)".
-  protected tipCook(r: {name: string, cooked: number, guests: number}) {
-    const t = (k: string) => this.i18n.t(k).toLowerCase();
-    return `${r.name}: ${r.cooked} ${t('FOOD_STATS_MEALS')}, ${r.guests} ${t('FOOD_EATERS')} (${Math.round(r.guests / r.cooked * 10) / 10} ${t('FOOD_STATS_PER_MEAL_SHORT')})`;
-  }
-
-  protected tipTag(t: TagRow) {
-    return `${this.i18n.t('FOOD_TAG_' + t.tag)}: ${t.meals} ${this.i18n.t('FOOD_STATS_MEALS').toLowerCase()}`;
+    const cooked = `${this.i18n.t('FOOD_STATS_COOKED')} ${times(r.cooked)}`;
+    return `${r.name}: ${this.i18n.t('FOOD_STATS_ATE').toLowerCase()} ${times(r.ate)}, ${cooked}` +
+      (r.cooked ? ` ${this.i18n.t('FOOD_STATS_FOR')} ${r.guests} ${this.i18n.t('FOOD_STATS_GUESTS').toLowerCase()}` : '');
   }
 
   protected show(event: MouseEvent, text: string) {

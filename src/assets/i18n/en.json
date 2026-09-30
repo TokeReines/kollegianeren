@@ -266,7 +266,7 @@
   "FOOD_STATS_COOKS": "Different cooks",
   "FOOD_STATS_DAY_SHARE": "Days with food club",
   "FOOD_STATS_PER_DAY": "Eaters per day",
-  "FOOD_STATS_WEEKDAYS": "Food clubs per weekday",
+  "FOOD_STATS_WEEKDAYS": "Weekdays",
   "FOOD_STATS_EMPTY": "No food club in this period yet.",
   "FOOD_STATS_NONE": "no food club",
   "FOOD_LAST_WEEK": "Last week",
@@ -278,13 +278,12 @@
   "FOOD_STATS_TIME": "time",
   "FOOD_STATS_TIMES": "times",
   "FOOD_TAG_lactoseFree": "Lactose free",
-  "FOOD_STATS_BY_COOK": "Food clubs per cook",
-  "FOOD_STATS_GUESTS_BY_COOK": "Eaters at each cook's food clubs",
   "FOOD_STATS_GUESTS": "Eaters",
-  "FOOD_STATS_PER_MEAL_SHORT": "per food club",
   "FOOD_COOK_ONE": "Cook",
-  "FOOD_STATS_BY_EATER": "Times each resident ate",
   "FOOD_STATS_RESIDENTS_TABLE": "Residents",
   "FOOD_STATS_ATE_COL": "Ate",
-  "FOOD_STATS_COOKED_COL": "Cooked"
+  "FOOD_STATS_COOKED_COL": "Cooked",
+  "FOOD_STATS_RESIDENTS": "Residents",
+  "FOOD_STATS_NO_TAGS": "No tags used yet.",
+  "FOOD_STATS_FOR": "for"
 }
