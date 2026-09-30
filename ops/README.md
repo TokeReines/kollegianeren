@@ -92,3 +92,7 @@ Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 ## Removing kitchens and logins
 
 `node remove-kitchens.js --project prod --kitchens <ids> [--logins <uids>] [--confirm]` archives each kitchen (doc, subcollections and anything that points at it) to `~/kollegianeren-archive/<project>/`, then deletes it with its legacy owner login. Refuses kitchens with purchases unless `--allow-purchases`; without `--confirm` it is a dry run. Used on 2026-09-30 for five empty kitchens and five logins from 2016 that were never used (#66).
+
+## Auth settings
+
+node auth-config.js --project dev shows email enumeration protection, the authorised domains and the sign-in methods; --email-privacy on|off and --domains a,b change them (Identity Toolkit admin API, works on prod too).

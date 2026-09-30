@@ -19,7 +19,7 @@
   "REGISTER_TO_LOGIN": "Back to sign in",
   "RESET_ENTER_EMAIL": "Enter your email to reset password",
   "RESET_PASSWORD": "Reset password",
-  "RESET_PASSWORD_CONFIRMATION": "A link to reset your password has been sent to ",
+  "RESET_PASSWORD_CONFIRMATION": "If this email has a login, a link to reset the password is on its way:",
   "MENU_BEERSYSTEM": "Beer system",
   "MENU_PRODUCTS": "Products",
   "MENU_RESIDENTS": "Residents",
