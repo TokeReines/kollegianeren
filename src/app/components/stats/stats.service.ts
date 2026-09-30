@@ -1,10 +1,12 @@
 import {Injectable, inject} from '@angular/core';
 import {getDocs, query, where} from 'firebase/firestore';
 import {firstValueFrom} from 'rxjs';
+import {Meal} from '../../interfaces/meal';
 import {Purchase} from '../../interfaces/purchase';
 import {AuthService} from '../../services/auth.service';
 import {kitchenCollection} from '../../services/kitchen-data';
 import {Stats, computeStats, periodStart} from './stats';
+import {FoodStats, computeFoodStats} from './food-stats';
 
 // How long a result is reused before the purchases are read again.
 const FRESH_MS = 15 * 60e3;
@@ -16,15 +18,31 @@ export class StatsService {
   private readonly auth = inject(AuthService);
   private readonly cache = new Map<string, {at: number, stats: Promise<Stats>}>();
 
+  private readonly foodCache = new Map<string, {at: number, stats: Promise<FoodStats>}>();
+
   load(days: number): Promise<Stats> {
+    return this.cached(this.cache, days, () => this.read(days));
+  }
+
+  // Food club: one read per meal in the period, a few dozen at most.
+  loadFood(days: number): Promise<FoodStats> {
+    return this.cached(this.foodCache, days, async () => {
+      const kid = await firstValueFrom(this.auth.kitchenId$);
+      const from = periodStart(days);
+      const meals = await getDocs(query(kitchenCollection(kid, 'meals'), where('date', '>=', from), where('date', '<', new Date())));
+      return computeFoodStats(meals.docs.map(d => d.data() as Meal), from, days);
+    });
+  }
+
+  private cached<T>(cache: Map<string, {at: number, stats: Promise<T>}>, days: number, read: () => Promise<T>): Promise<T> {
     const key = `${this.auth.membership()?.kitchenId}:${days}`;
-    const hit = this.cache.get(key);
+    const hit = cache.get(key);
     if (hit && Date.now() - hit.at < FRESH_MS) {
       return hit.stats;
     }
-    const stats = this.read(days);
-    this.cache.set(key, {at: Date.now(), stats});
-    stats.catch(() => this.cache.delete(key));
+    const stats = read();
+    cache.set(key, {at: Date.now(), stats});
+    stats.catch(() => cache.delete(key));
     return stats;
   }
 

@@ -260,5 +260,14 @@
   "FOOD_COOK_MANY": "laver mad",
   "FOOD_I_COOK_TOO": "Jeg laver også mad",
   "FOOD_COOKS_LABEL": "Kokke",
-  "FOOD_TAG_glutenFree": "Glutenfri"
+  "FOOD_TAG_glutenFree": "Glutenfri",
+  "FOOD_STATS_MEALS": "Madklubber",
+  "FOOD_STATS_EATERS": "Kuverter",
+  "FOOD_STATS_PER_MEAL": "Spisende pr. madklub",
+  "FOOD_STATS_COOKS": "Forskellige kokke",
+  "FOOD_STATS_DAY_SHARE": "Dage med madklub",
+  "FOOD_STATS_PER_DAY": "Spisende pr. dag",
+  "FOOD_STATS_WEEKDAYS": "Madklubber pr. ugedag",
+  "FOOD_STATS_EMPTY": "Ingen madklub i perioden endnu.",
+  "FOOD_STATS_NONE": "ingen madklub"
 }
