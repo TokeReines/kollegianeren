@@ -79,6 +79,21 @@
   align-self: flex-start;
 }
 
+// History: shown as it was, a little quieter.
+.past {
+  opacity: 0.75;
+}
+
+.none {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.back-to-now {
+  display: flex;
+  margin: -4px auto 8px;
+}
+
 .meal {
   display: flex;
   flex-direction: column;

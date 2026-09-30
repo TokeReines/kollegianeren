@@ -35,7 +35,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <div class="when">
         <mat-form-field>
           <mat-label>{{ "FOOD_DATE" | translate }}</mat-label>
-          <input matInput [matDatepicker]="picker" [min]="today" formControlName="day" readonly (click)="picker.open()">
+          <input matInput [matDatepicker]="picker" [min]="minDay" formControlName="day" readonly (click)="picker.open()">
           <mat-datepicker-toggle matIconSuffix [for]="picker" />
           <mat-datepicker #picker />
         </mat-form-field>
@@ -98,7 +98,9 @@ export class MealDialogComponent {
   protected readonly residents = this.data.residents;
   protected readonly tagOptions = MEAL_TAGS;
   protected readonly closeOptions = CLOSE_HOURS;
-  protected readonly today = new Date(new Date().setHours(0, 0, 0, 0));
+  // New dates from today on; a past meal (history) keeps its own date valid.
+  private readonly today = new Date(new Date().setHours(0, 0, 0, 0));
+  protected readonly minDay = this.meal && this.meal.date.toDate() < this.today ? null : this.today;
 
   private readonly date = this.meal?.date.toDate() ?? null;
   protected readonly form = inject(NonNullableFormBuilder).group({

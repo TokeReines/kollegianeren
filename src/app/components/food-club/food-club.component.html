@@ -2,19 +2,22 @@
   <h1>{{ "FOOD_TITLE" | translate }}</h1>
 
   <nav class="pager" [attr.aria-label]="'FOOD_WEEK' | translate">
-    <button mat-icon-button [disabled]="page() === 0" (click)="turn(-1)" [attr.aria-label]="'FOOD_PREV_WEEK' | translate"
+    <button mat-icon-button [disabled]="page() === weeksBack" (click)="turn(-1)" [attr.aria-label]="'FOOD_PREV_WEEK' | translate"
             [matTooltip]="'FOOD_PREV_WEEK' | translate"><mat-icon>chevron_left</mat-icon></button>
     <div class="range">
-      <span class="week">{{ (page() === 0 ? "FOOD_THIS_WEEK" : page() === 1 ? "FOOD_NEXT_WEEK" : "FOOD_WEEK") | translate }}{{ page() > 1 ? " " + weekNumber() : "" }}</span>
-      <span class="dates">{{ "FOOD_WEEK" | translate }} {{ weekNumber() }} · {{ monday() | date:'d. MMM' }} {{ "FOOD_TO" | translate }} {{ sunday() | date:'d. MMM' }}</span>
+      <span class="week">{{ weekLabel() }}</span>
+      <span class="dates">{{ "FOOD_WEEK" | translate }} {{ weekNumber() }} · {{ monday() | date:'d. MMM' }} {{ "FOOD_TO" | translate }} {{ sunday() | date:'d. MMM y' }}</span>
     </div>
-    <button mat-icon-button (click)="turn(1)" [attr.aria-label]="'FOOD_NEXT_WEEK' | translate"
+    <button mat-icon-button [disabled]="page() === weeksAhead" (click)="turn(1)" [attr.aria-label]="'FOOD_NEXT_WEEK' | translate"
             [matTooltip]="'FOOD_NEXT_WEEK' | translate"><mat-icon>chevron_right</mat-icon></button>
   </nav>
+  @if (page() !== 0) {
+    <button mat-button class="back-to-now" (click)="page.set(0)"><mat-icon>today</mat-icon> {{ "FOOD_BACK_TO_NOW" | translate }}</button>
+  }
 
   <div class="days">
     @for (d of days(); track d.day.getTime()) {
-      <div class="day" [class.today]="isToday(d.day)" [class.free]="!d.meals.length">
+      <div class="day" [class.today]="isToday(d.day)" [class.free]="!d.meals.length" [class.past]="d.past">
         <div class="date" [attr.aria-label]="d.day | date:'EEEE d. MMMM'">
           <span class="weekday">{{ d.day | date:'EEE' }}</span>
           <span class="num">{{ d.day | date:'d' }}</span>
@@ -37,7 +40,9 @@
                 <button mat-icon-button [matMenuTriggerFor]="more" [attr.aria-label]="'FOOD_MORE' | translate"><mat-icon>more_vert</mat-icon></button>
                 <mat-menu #more="matMenu">
                   <button mat-menu-item (click)="details(m)"><mat-icon>edit</mat-icon><span>{{ "FOOD_EDIT" | translate }}</span></button>
-                  <button mat-menu-item (click)="addCook(m)"><mat-icon>soup_kitchen</mat-icon><span>{{ "FOOD_I_COOK_TOO" | translate }}</span></button>
+                  @if (!d.past) {
+                    <button mat-menu-item (click)="addCook(m)"><mat-icon>soup_kitchen</mat-icon><span>{{ "FOOD_I_COOK_TOO" | translate }}</span></button>
+                  }
                   @if (!open(m)) {
                     <button mat-menu-item (click)="signups(m)"><mat-icon>group_add</mat-icon><span>{{ "FOOD_EDIT_SIGNUPS" | translate }}</span></button>
                   }
@@ -47,7 +52,7 @@
 
               @if (m.menu) {
                 <h3 class="menu">{{ m.menu }}</h3>
-              } @else {
+              } @else if (!d.past) {
                 <button mat-button class="add-details" (click)="details(m)"><mat-icon>edit_note</mat-icon> {{ "FOOD_ADD_DETAILS" | translate }}</button>
               }
               @if (m.tags.length) {
@@ -71,20 +76,24 @@
                       <span class="more">+{{ people.length - faces }}</span>
                     }
                   </div>
-                  <span class="count">{{ m.signups.length }} {{ "FOOD_EATERS" | translate }}</span>
+                  <span class="count">{{ m.signups.length }} {{ (d.past ? "FOOD_ATE" : "FOOD_EATERS") | translate }}</span>
                 </div>
                 @if (open(m)) {
                   <div class="action">
                     <button mat-flat-button (click)="signups(m)"><mat-icon>how_to_reg</mat-icon> {{ "FOOD_SIGN_UP" | translate }}</button>
                     <span class="closes">{{ "FOOD_CLOSES_AT" | translate }} {{ m.closesAt.toDate() | date:'EEE d. MMM HH:mm' }}</span>
                   </div>
-                } @else {
+                } @else if (!d.past) {
                   <span class="status"><mat-icon>{{ m.askCook ? 'forum' : 'lock' }}</mat-icon> {{ (m.askCook ? "FOOD_ASK" : "FOOD_CLOSED") | translate }}</span>
                 }
               </div>
             </div>
           } @empty {
-            <button mat-stroked-button class="book" (click)="book(d.day)"><mat-icon>add</mat-icon> {{ "FOOD_I_COOK" | translate }}</button>
+            @if (d.past) {
+              <span class="none">{{ "FOOD_NONE" | translate }}</span>
+            } @else {
+              <button mat-stroked-button class="book" (click)="book(d.day)"><mat-icon>add</mat-icon> {{ "FOOD_I_COOK" | translate }}</button>
+            }
           }
         </div>
       </div>

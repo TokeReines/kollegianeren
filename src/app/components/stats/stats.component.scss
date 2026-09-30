@@ -234,3 +234,154 @@ h2 {
 .muted {
   color: var(--mat-sys-on-surface-variant);
 }
+
+// Madklub. A heading with its colour key on the same line.
+.chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 28px 0 12px;
+
+  h2 {
+    margin: 0 auto 0 0;
+  }
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Two steps of the validated ramp: times eaten, and the darker share of those they cooked.
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+
+  &.ate {
+    background: var(--heat-0);
+  }
+
+  &.cooked {
+    background: var(--heat-3);
+  }
+}
+
+.people .hbar {
+  grid-template-columns: minmax(90px, 180px) 1fr auto;
+
+  .fill.ate {
+    background: var(--heat-0);
+    overflow: hidden;
+  }
+
+  .fill.cooked {
+    min-width: 0;
+    background: var(--heat-3);
+    border-radius: 0;
+  }
+
+  .val {
+    min-width: 64px;
+  }
+
+  .cooked-n {
+    white-space: nowrap;
+
+    // Same height as the text, so every row lines up.
+    mat-icon {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      line-height: 16px;
+      vertical-align: -3px;
+    }
+  }
+}
+
+// Phones: a narrower name column leaves the bars room.
+@media (max-width: 600px) {
+  .hbar,
+  .people .hbar {
+    grid-template-columns: 100px 1fr auto;
+    gap: 8px;
+  }
+}
+
+// Weekdays and tags side by side, stacked on a phone.
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.panel {
+  padding: 12px 16px 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+
+  h2 {
+    margin: 0 0 12px;
+  }
+}
+
+.week-cols {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  height: 140px;
+}
+
+.wcol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+
+  .slot {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    width: 100%;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .bar {
+    width: 100%;
+    background: var(--bar);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .n,
+  .wd {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &:hover .bar {
+    filter: brightness(1.15);
+  }
+}
+
+.tag-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-count {
+  padding: 6px 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+
+  b {
+    margin-left: 4px;
+  }
+}
