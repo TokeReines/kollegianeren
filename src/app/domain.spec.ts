@@ -7,7 +7,8 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
-import {Meal, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
+import {computeFoodStats} from './components/stats/food-stats';
+import {Meal, MealTag, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
 import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
@@ -76,6 +77,20 @@ describe('food club', () => {
   it('keys a meal by its local day, one meal a day', () => {
     expect(dayKey(new Date(2026, 9, 1, 23, 30))).toBe('2026-10-01');
     expect(dayKey(new Date(2026, 11, 31, 0, 5))).toBe('2026-12-31');
+  });
+
+  it('counts eaten meals per day, weekday and tag, without ranking cooks', () => {
+    const m = (d: number, cooks: string[], signups: string[], tags: MealTag[] = []) => ({date: at(2026, 9, d, 18), cooks, signups, tags});
+    const from = new Date(2026, 8, 21);
+    const s = computeFoodStats([
+      m(22, ['a'], ['a', 'b', 'c'], ['vegan']),
+      m(24, ['a', 'b'], ['a', 'b', 'c', 'd', 'e'], ['vegan', 'glutenFree']),
+      m(29, ['c'], ['c']), // not eaten yet
+    ], from, 7, at(2026, 9, 27, 12).toMillis());
+    expect(s.totals).toEqual({meals: 2, eaters: 8, perMeal: 4, cooks: 2, dayShare: 2 / 7});
+    expect(s.daily.map(d => d.eaters)).toEqual([0, 3, 0, 5, 0, 0, 0]);
+    expect(s.weekdays[1]).toEqual({weekday: 1, meals: 1, eaters: 3}); // Tuesday
+    expect(s.tags).toEqual([{tag: 'vegan', meals: 2}, {tag: 'glutenFree', meals: 1}]);
   });
 
   it('numbers weeks as Danish calendars do', () => {

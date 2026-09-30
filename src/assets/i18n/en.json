@@ -260,5 +260,14 @@
   "FOOD_COOK_MANY": "cook",
   "FOOD_I_COOK_TOO": "I will cook too",
   "FOOD_COOKS_LABEL": "Cooks",
-  "FOOD_TAG_glutenFree": "Gluten free"
+  "FOOD_TAG_glutenFree": "Gluten free",
+  "FOOD_STATS_MEALS": "Food clubs",
+  "FOOD_STATS_EATERS": "Plates",
+  "FOOD_STATS_PER_MEAL": "Eaters per food club",
+  "FOOD_STATS_COOKS": "Different cooks",
+  "FOOD_STATS_DAY_SHARE": "Days with food club",
+  "FOOD_STATS_PER_DAY": "Eaters per day",
+  "FOOD_STATS_WEEKDAYS": "Food clubs per weekday",
+  "FOOD_STATS_EMPTY": "No food club in this period yet.",
+  "FOOD_STATS_NONE": "no food club"
 }

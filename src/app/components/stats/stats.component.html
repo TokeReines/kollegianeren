@@ -1,6 +1,15 @@
 <div class="page">
   <h1>{{ "STATS_TITLE" | translate }}</h1>
 
+  <div class="filters views">
+    <button mat-stroked-button [attr.aria-pressed]="view() === 'beer'" [class.on]="view() === 'beer'" (click)="view.set('beer')">
+      <mat-icon>sports_bar</mat-icon> {{ "MENU_BEERSYSTEM" | translate }}
+    </button>
+    <button mat-stroked-button [attr.aria-pressed]="view() === 'food'" [class.on]="view() === 'food'" (click)="view.set('food')">
+      <mat-icon>restaurant</mat-icon> {{ "MENU_FOOD_CLUB" | translate }}
+    </button>
+  </div>
+
   <div class="filters">
     @for (d of periods; track d) {
       <button mat-stroked-button [attr.aria-pressed]="days() === d" [class.on]="days() === d" (click)="days.set(d)">
@@ -14,7 +23,87 @@
     </button>
   </div>
 
-  @if (stats(); as s) {
+  @if (view() === 'food') {
+    @if (food(); as f) {
+      <div class="tiles" [class.dim]="loading()">
+        <div class="tile"><div class="value">{{ f.totals.meals }}</div><div class="label">{{ "FOOD_STATS_MEALS" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.eaters }}</div><div class="label">{{ "FOOD_STATS_EATERS" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.perMeal | number:'1.0-1' }}</div><div class="label">{{ "FOOD_STATS_PER_MEAL" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.cooks }}</div><div class="label">{{ "FOOD_STATS_COOKS" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.dayShare * 100 | number:'1.0-0' }} %</div><div class="label">{{ "FOOD_STATS_DAY_SHARE" | translate }}</div></div>
+      </div>
+
+      @if (!f.totals.meals) {
+        <p class="muted">{{ "FOOD_STATS_EMPTY" | translate }}</p>
+      } @else if (showTable()) {
+        <h2>{{ "FOOD_STATS_PER_DAY" | translate }}</h2>
+        <table class="data">
+          <tr><th>{{ "STATS_DAY" | translate }}</th><th class="num">{{ "FOOD_STATS_EATERS" | translate }}</th></tr>
+          @for (d of f.daily; track d.date) {
+            @if (d.meals) {
+              <tr><td>{{ d.date | date:'EEE d. MMM' }}</td><td class="num">{{ d.eaters }}</td></tr>
+            }
+          }
+        </table>
+        <h2>{{ "FOOD_STATS_WEEKDAYS" | translate }}</h2>
+        <table class="data">
+          <tr><th>{{ "STATS_DAY" | translate }}</th><th class="num">{{ "FOOD_STATS_MEALS" | translate }}</th><th class="num">{{ "FOOD_STATS_EATERS" | translate }}</th></tr>
+          @for (w of f.weekdays; track w.weekday) {
+            <tr><td>{{ weekdays()[w.weekday] }}</td><td class="num">{{ w.meals }}</td><td class="num">{{ w.eaters }}</td></tr>
+          }
+        </table>
+        @if (f.tags.length) {
+          <h2>{{ "FOOD_TAGS" | translate }}</h2>
+          <table class="data">
+            <tr><th></th><th class="num">{{ "FOOD_STATS_MEALS" | translate }}</th></tr>
+            @for (t of f.tags; track t.tag) {
+              <tr><td>{{ "FOOD_TAG_" + t.tag | translate }}</td><td class="num">{{ t.meals }}</td></tr>
+            }
+          </table>
+        }
+      } @else {
+        <h2>{{ "FOOD_STATS_PER_DAY" | translate }}</h2>
+        <div class="vbars" [class.dim]="loading()" [class.dense]="days() > 30">
+          <span class="ymax">{{ maxDayEaters() }}</span>
+          @for (d of f.daily; track d.date) {
+            <div class="col" (mousemove)="show($event, tipFoodDay(d))" (mouseleave)="tip.set(null)">
+              <span class="bar" [style.height.%]="d.eaters / maxDayEaters() * 100"></span>
+            </div>
+          }
+        </div>
+        <div class="xaxis">
+          <span>{{ f.daily[0]?.date | date:'d. MMM' }}</span>
+          <span>{{ f.daily[f.daily.length - 1]?.date | date:'d. MMM' }}</span>
+        </div>
+
+        <h2>{{ "FOOD_STATS_WEEKDAYS" | translate }}</h2>
+        <div class="hbars" [class.dim]="loading()">
+          @for (w of f.weekdays; track w.weekday) {
+            <div class="hbar" (mousemove)="show($event, tipWeekday(w))" (mouseleave)="tip.set(null)">
+              <span class="name">{{ weekdays()[w.weekday] }}</span>
+              <span class="track"><span class="fill" [style.width.%]="w.meals / maxWeekdayMeals() * 100"></span></span>
+              <span class="val">{{ w.meals }}</span>
+            </div>
+          }
+        </div>
+
+        @if (f.tags.length) {
+          <h2>{{ "FOOD_TAGS" | translate }}</h2>
+          <div class="hbars" [class.dim]="loading()">
+            @for (t of f.tags; track t.tag) {
+              <div class="hbar" (mousemove)="show($event, tipTag(t))" (mouseleave)="tip.set(null)">
+                <span class="name">{{ "FOOD_TAG_" + t.tag | translate }}</span>
+                <span class="track"><span class="fill" [style.width.%]="t.meals / maxTagMeals() * 100"></span></span>
+                <span class="val">{{ t.meals }}</span>
+              </div>
+            }
+          </div>
+        }
+      }
+    } @else if (loading()) {
+      <p class="muted">…</p>
+    }
+  } @else if (stats(); as s) {
     <div class="tiles" [class.dim]="loading()">
       <div class="tile"><div class="value">{{ s.totals.kr | number:'1.0-0' }} kr.</div><div class="label">{{ "STATS_REVENUE" | translate }}</div></div>
       <div class="tile"><div class="value">{{ s.totals.purchases }}</div><div class="label">{{ "STATS_PURCHASES" | translate }}</div></div>
