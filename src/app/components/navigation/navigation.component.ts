@@ -39,9 +39,9 @@ export class NavigationComponent {
   protected readonly items = computed<NavItem[]>(() => {
     const manage = this.auth.canManage();
     return [
-      {path: '/', icon: 'local_grocery_store', label: 'MENU_BEERSYSTEM', exact: true},
+      {path: '/', icon: 'sports_bar', label: 'MENU_BEERSYSTEM', exact: true},
       ...(manage ? [
-        {path: '/products', icon: 'local_bar', label: 'MENU_PRODUCTS'},
+        {path: '/products', icon: 'inventory_2', label: 'MENU_PRODUCTS'},
         {path: '/users', icon: 'people', label: 'MENU_RESIDENTS'},
         {path: '/accounting', icon: 'receipt_long', label: 'MENU_ACCOUNTING'},
       ] : []),
