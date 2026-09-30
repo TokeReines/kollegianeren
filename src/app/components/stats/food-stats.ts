@@ -6,6 +6,20 @@ export interface TagRow { tag: MealTag; meals: number; }
 // ate: food clubs eaten at; cooked: food clubs cooked; guests: eaters at the ones they cooked.
 export interface PersonRow { ate: number; cooked: number; guests: number; }
 
+export type StatsMeal = Pick<Meal, 'date' | 'cooks' | 'signups' | 'tags'>;
+
+// The meals of a period as read, so the page can narrow them to one resident without reading again.
+export interface FoodData {
+  meals: StatsMeal[];
+  from: Date;
+  days: number;
+}
+
+// The food clubs a resident ate at or cooked.
+export function forResident(meals: StatsMeal[], id: string): StatsMeal[] {
+  return meals.filter(m => m.signups.includes(id) || m.cooks.includes(id));
+}
+
 export interface FoodStats {
   totals: {meals: number, eaters: number, perMeal: number, cooks: number, dayShare: number};
   // One row per day of the period, days without food club included.
@@ -21,7 +35,7 @@ export interface FoodStats {
 // Food club over the `days` days from `from`, counting meals that have been eaten (before `now`).
 // Per resident: how often they ate and cooked, and how many ate at their food clubs (a cook shared
 // by several gets the full count).
-export function computeFoodStats(meals: Pick<Meal, 'date' | 'cooks' | 'signups' | 'tags'>[], from: Date, days: number, now = Date.now()): FoodStats {
+export function computeFoodStats(meals: StatsMeal[], from: Date, days: number, now = Date.now()): FoodStats {
   const byDay = new Map<string, FoodDayRow>();
   for (let i = 0; i < days; i++) {
     const d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i);

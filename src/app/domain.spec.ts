@@ -7,7 +7,7 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
-import {computeFoodStats} from './components/stats/food-stats';
+import {computeFoodStats, forResident} from './components/stats/food-stats';
 import {Meal, MealTag, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
@@ -96,6 +96,10 @@ describe('food club', () => {
     expect(s.people['b']).toEqual({ate: 2, cooked: 1, guests: 5}); // shared the second one
     expect(s.people['c']).toEqual({ate: 2, cooked: 0, guests: 0}); // their own food club is still to come
     expect(s.people['e']).toEqual({ate: 1, cooked: 0, guests: 0});
+    // One resident: only the food clubs they ate at or cooked.
+    const meals = [m(22, ['a'], ['a', 'b', 'c']), m(24, ['b'], ['b', 'd']), m(25, ['d'], ['c', 'd'])];
+    expect(forResident(meals, 'c').map(x => x.date.toDate().getDate())).toEqual([22, 25]);
+    expect(forResident(meals, 'b').map(x => x.date.toDate().getDate())).toEqual([22, 24]);
   });
 
   it('numbers weeks as Danish calendars do', () => {

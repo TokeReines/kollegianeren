@@ -25,15 +25,7 @@
 
   @if (view() === 'food') {
     @if (food(); as f) {
-      <div class="tiles" [class.dim]="loading()">
-        <div class="tile"><div class="value">{{ f.totals.meals }}</div><div class="label">{{ "FOOD_STATS_MEALS" | translate }}</div></div>
-        <div class="tile"><div class="value">{{ f.totals.eaters }}</div><div class="label">{{ "FOOD_STATS_EATERS" | translate }}</div></div>
-        <div class="tile"><div class="value">{{ f.totals.perMeal | number:'1.0-1' }}</div><div class="label">{{ "FOOD_STATS_PER_MEAL" | translate }}</div></div>
-        <div class="tile"><div class="value">{{ f.totals.cooks }}</div><div class="label">{{ "FOOD_STATS_COOKS" | translate }}</div></div>
-        <div class="tile"><div class="value">{{ f.totals.dayShare * 100 | number:'1.0-0' }} %</div><div class="label">{{ "FOOD_STATS_DAY_SHARE" | translate }}</div></div>
-      </div>
-
-      <!-- One resident at a time, never a list: how often did I eat and cook? -->
+      <!-- The whole kitchen, or only the food clubs one resident ate at or cooked. -->
       <div class="person">
         <mat-form-field subscriptSizing="dynamic">
           <mat-label>{{ "FOOD_STATS_PERSON" | translate }}</mat-label>
@@ -54,6 +46,14 @@
             {{ "FOOD_STATS_IN_LAST" | translate }} {{ days() }} {{ "STATS_DAYS" | translate }}.
           </p>
         }
+      </div>
+
+      <div class="tiles" [class.dim]="loading()">
+        <div class="tile"><div class="value">{{ f.totals.meals }}</div><div class="label">{{ "FOOD_STATS_MEALS" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.eaters }}</div><div class="label">{{ "FOOD_STATS_EATERS" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.perMeal | number:'1.0-1' }}</div><div class="label">{{ "FOOD_STATS_PER_MEAL" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.cooks }}</div><div class="label">{{ "FOOD_STATS_COOKS" | translate }}</div></div>
+        <div class="tile"><div class="value">{{ f.totals.dayShare * 100 | number:'1.0-0' }} %</div><div class="label">{{ "FOOD_STATS_DAY_SHARE" | translate }}</div></div>
       </div>
 
       @if (!f.totals.meals) {

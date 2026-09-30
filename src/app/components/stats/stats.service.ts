@@ -6,7 +6,7 @@ import {Purchase} from '../../interfaces/purchase';
 import {AuthService} from '../../services/auth.service';
 import {kitchenCollection} from '../../services/kitchen-data';
 import {Stats, computeStats, periodStart} from './stats';
-import {FoodStats, computeFoodStats} from './food-stats';
+import {FoodData} from './food-stats';
 
 // How long a result is reused before the purchases are read again.
 const FRESH_MS = 15 * 60e3;
@@ -17,20 +17,20 @@ const FRESH_MS = 15 * 60e3;
 export class StatsService {
   private readonly auth = inject(AuthService);
   private readonly cache = new Map<string, {at: number, stats: Promise<Stats>}>();
-
-  private readonly foodCache = new Map<string, {at: number, stats: Promise<FoodStats>}>();
+  private readonly foodCache = new Map<string, {at: number, stats: Promise<FoodData>}>();
 
   load(days: number): Promise<Stats> {
     return this.cached(this.cache, days, () => this.read(days));
   }
 
-  // Food club: one read per meal in the period, a few dozen at most.
-  loadFood(days: number): Promise<FoodStats> {
+  // Food club: one read per meal in the period, a few hundred at most. The meals themselves are
+  // kept, so the page can narrow them to one resident without another read.
+  loadFood(days: number): Promise<FoodData> {
     return this.cached(this.foodCache, days, async () => {
       const kid = await firstValueFrom(this.auth.kitchenId$);
       const from = periodStart(days);
       const meals = await getDocs(query(kitchenCollection(kid, 'meals'), where('date', '>=', from), where('date', '<', new Date())));
-      return computeFoodStats(meals.docs.map(d => d.data() as Meal), from, days);
+      return {meals: meals.docs.map(d => d.data() as Meal), from, days};
     });
   }
 

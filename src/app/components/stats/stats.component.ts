@@ -13,7 +13,7 @@ import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {DayRow, ProductRow, Stats, heatLevel} from './stats';
 import {StatsService} from './stats.service';
-import {FoodDayRow, FoodStats, TagRow, WeekdayRow} from './food-stats';
+import {FoodData, FoodDayRow, FoodStats, TagRow, WeekdayRow, computeFoodStats, forResident} from './food-stats';
 
 const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']};
 
@@ -45,7 +45,7 @@ export class StatsComponent {
   protected readonly residents = computed(() => this.allResidents().filter(u => !u.movedOutAt).sort(byRoom));
   protected readonly personId = signal('');
   protected readonly person = computed(() => {
-    const id = this.personId(), f = this.food();
+    const id = this.personId(), f = this.kitchenFood();
     return id && f ? f.people[id] ?? {ate: 0, cooked: 0, guests: 0} : null;
   });
   // Everyone who cooked in the period, most food clubs first, and most guests first.
@@ -67,9 +67,19 @@ export class StatsComponent {
     loader: ({params}) => this.statsService.loadFood(params),
   });
   protected readonly loading = computed(() => this.result.isLoading() || this.foodResult.isLoading());
-  protected readonly food = linkedSignal<FoodStats | undefined, FoodStats | null>({
+  private readonly foodData = linkedSignal<FoodData | undefined, FoodData | null>({
     source: () => this.foodResult.hasValue() ? this.foodResult.value() : undefined,
     computation: (next, previous) => next ?? previous?.value ?? null,
+  });
+  // The whole kitchen, for the one-resident line.
+  private readonly kitchenFood = computed(() => {
+    const d = this.foodData();
+    return d ? computeFoodStats(d.meals, d.from, d.days) : null;
+  });
+  // What the page shows: the kitchen, or only the food clubs the chosen resident ate at or cooked.
+  protected readonly food = computed<FoodStats | null>(() => {
+    const d = this.foodData(), id = this.personId();
+    return d && id ? computeFoodStats(forResident(d.meals, id), d.from, d.days) : this.kitchenFood();
   });
   protected readonly maxDayEaters = computed(() => Math.max(1, ...(this.food()?.daily ?? []).map(d => d.eaters)));
   protected readonly maxWeekdayMeals = computed(() => Math.max(1, ...(this.food()?.weekdays ?? []).map(d => d.meals)));

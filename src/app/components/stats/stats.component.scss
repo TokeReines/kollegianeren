@@ -241,8 +241,9 @@ h2 {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 16px;
-  // Room for the field's floating label under the tiles.
-  margin: 24px 0 8px;
+  // Top padding: room for the field's floating label.
+  margin: 0 0 16px;
+  padding-top: 6px;
 
   mat-form-field {
     width: min(100%, 280px);
