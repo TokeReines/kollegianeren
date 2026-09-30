@@ -1,24 +1,12 @@
 import {Meal, MealTag} from '../../interfaces/meal';
 
-export interface FoodDayRow { date: Date; meals: number; eaters: number; }
+export interface FoodDayRow { date: Date; meals: number; eaters: number; cooks: string[]; }
 export interface WeekdayRow { weekday: number; meals: number; eaters: number; }
 export interface TagRow { tag: MealTag; meals: number; }
 // ate: food clubs eaten at; cooked: food clubs cooked; guests: eaters at the ones they cooked.
 export interface PersonRow { ate: number; cooked: number; guests: number; }
 
 export type StatsMeal = Pick<Meal, 'date' | 'cooks' | 'signups' | 'tags'>;
-
-// The meals of a period as read, so the page can narrow them to one resident without reading again.
-export interface FoodData {
-  meals: StatsMeal[];
-  from: Date;
-  days: number;
-}
-
-// The food clubs a resident ate at or cooked.
-export function forResident(meals: StatsMeal[], id: string): StatsMeal[] {
-  return meals.filter(m => m.signups.includes(id) || m.cooks.includes(id));
-}
 
 export interface FoodStats {
   totals: {meals: number, eaters: number, perMeal: number, cooks: number, dayShare: number};
@@ -28,7 +16,7 @@ export interface FoodStats {
   weekdays: WeekdayRow[];
   // Most used first; tags never used are left out.
   tags: TagRow[];
-  // Per resident id: for the per-cook charts and the one-resident lookup.
+  // Per resident id, for the per-resident charts.
   people: Record<string, PersonRow>;
 }
 
@@ -39,7 +27,7 @@ export function computeFoodStats(meals: StatsMeal[], from: Date, days: number, n
   const byDay = new Map<string, FoodDayRow>();
   for (let i = 0; i < days; i++) {
     const d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i);
-    byDay.set(d.toDateString(), {date: d, meals: 0, eaters: 0});
+    byDay.set(d.toDateString(), {date: d, meals: 0, eaters: 0, cooks: []});
   }
   const weekdays: WeekdayRow[] = Array.from({length: 7}, (_, weekday) => ({weekday, meals: 0, eaters: 0}));
   const tags = new Map<MealTag, number>();
@@ -58,6 +46,7 @@ export function computeFoodStats(meals: StatsMeal[], from: Date, days: number, n
     eaters += n;
     day.meals++;
     day.eaters += n;
+    day.cooks.push(...m.cooks);
     const wd = weekdays[(t.getDay() + 6) % 7];
     wd.meals++;
     wd.eaters += n;

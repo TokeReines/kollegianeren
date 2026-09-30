@@ -25,29 +25,6 @@
 
   @if (view() === 'food') {
     @if (food(); as f) {
-      <!-- The whole kitchen, or only the food clubs one resident ate at or cooked. -->
-      <div class="person">
-        <mat-form-field subscriptSizing="dynamic">
-          <mat-label>{{ "FOOD_STATS_PERSON" | translate }}</mat-label>
-          <mat-select [value]="personId()" (valueChange)="personId.set($event)">
-            <mat-option value="">{{ "FOOD_STATS_PERSON_NONE" | translate }}</mat-option>
-            @for (u of residents(); track u.id) {
-              <mat-option [value]="u.id">{{ u.name }} ({{ u.room }})</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        @if (person(); as p) {
-          <p class="person-result" role="status">
-            {{ "FOOD_STATS_ATE" | translate }} <b>{{ p.ate }}</b> {{ (p.ate === 1 ? "FOOD_STATS_TIME" : "FOOD_STATS_TIMES") | translate }},
-            {{ "FOOD_STATS_COOKED" | translate }} <b>{{ p.cooked }}</b> {{ (p.cooked === 1 ? "FOOD_STATS_TIME" : "FOOD_STATS_TIMES") | translate }}
-            @if (p.cooked) {
-              {{ "FOOD_STATS_FOR" | translate }} <b>{{ p.guests }}</b> {{ "FOOD_EATERS" | translate }}
-            }
-            {{ "FOOD_STATS_IN_LAST" | translate }} {{ days() }} {{ "STATS_DAYS" | translate }}.
-          </p>
-        }
-      </div>
-
       <div class="tiles" [class.dim]="loading()">
         <div class="tile"><div class="value">{{ f.totals.meals }}</div><div class="label">{{ "FOOD_STATS_MEALS" | translate }}</div></div>
         <div class="tile"><div class="value">{{ f.totals.eaters }}</div><div class="label">{{ "FOOD_STATS_EATERS" | translate }}</div></div>
@@ -68,11 +45,14 @@
             }
           }
         </table>
-        <h2>{{ "FOOD_STATS_COOKS_TABLE" | translate }}</h2>
+        <h2>{{ "FOOD_STATS_RESIDENTS_TABLE" | translate }}</h2>
         <table class="data">
-          <tr><th>{{ "FOOD_COOKS_LABEL" | translate }}</th><th class="num">{{ "FOOD_STATS_MEALS" | translate }}</th><th class="num">{{ "FOOD_STATS_GUESTS" | translate }}</th></tr>
-          @for (r of byCooked(); track r.id) {
-            <tr><td>{{ r.name }}</td><td class="num">{{ r.cooked }}</td><td class="num">{{ r.guests }}</td></tr>
+          <tr>
+            <th>{{ "NAME" | translate }}</th><th class="num">{{ "FOOD_STATS_ATE_COL" | translate }}</th>
+            <th class="num">{{ "FOOD_STATS_COOKED_COL" | translate }}</th><th class="num">{{ "FOOD_STATS_GUESTS" | translate }}</th>
+          </tr>
+          @for (r of byRoomRows(); track r.id) {
+            <tr><td>{{ r.name }}</td><td class="num">{{ r.ate }}</td><td class="num">{{ r.cooked }}</td><td class="num">{{ r.guests }}</td></tr>
           }
         </table>
         <h2>{{ "FOOD_STATS_WEEKDAYS" | translate }}</h2>
@@ -104,6 +84,17 @@
         <div class="xaxis">
           <span>{{ f.daily[0]?.date | date:'d. MMM' }}</span>
           <span>{{ f.daily[f.daily.length - 1]?.date | date:'d. MMM' }}</span>
+        </div>
+
+        <h2>{{ "FOOD_STATS_BY_EATER" | translate }}</h2>
+        <div class="hbars" [class.dim]="loading()">
+          @for (r of byAte(); track r.id) {
+            <div class="hbar" (mousemove)="show($event, tipEater(r))" (mouseleave)="tip.set(null)">
+              <span class="name">{{ r.name }}</span>
+              <span class="track"><span class="fill" [style.width.%]="r.ate / maxAte() * 100"></span></span>
+              <span class="val">{{ r.ate }}</span>
+            </div>
+          }
         </div>
 
         <h2>{{ "FOOD_STATS_BY_COOK" | translate }}</h2>

@@ -7,7 +7,7 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
-import {computeFoodStats, forResident} from './components/stats/food-stats';
+import {computeFoodStats} from './components/stats/food-stats';
 import {Meal, MealTag, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
@@ -90,16 +90,13 @@ describe('food club', () => {
     ], from, 7, at(2026, 9, 27, 12).toMillis());
     expect(s.totals).toEqual({meals: 2, eaters: 8, perMeal: 4, cooks: 2, dayShare: 2 / 7});
     expect(s.daily.map(d => d.eaters)).toEqual([0, 3, 0, 5, 0, 0, 0]);
+    expect(s.daily[3].cooks).toEqual(['a', 'b']);
     expect(s.weekdays[1]).toEqual({weekday: 1, meals: 1, eaters: 3}); // Tuesday
     expect(s.tags).toEqual([{tag: 'vegan', meals: 2}, {tag: 'glutenFree', meals: 1}]);
     expect(s.people['a']).toEqual({ate: 2, cooked: 2, guests: 8});
     expect(s.people['b']).toEqual({ate: 2, cooked: 1, guests: 5}); // shared the second one
     expect(s.people['c']).toEqual({ate: 2, cooked: 0, guests: 0}); // their own food club is still to come
     expect(s.people['e']).toEqual({ate: 1, cooked: 0, guests: 0});
-    // One resident: only the food clubs they ate at or cooked.
-    const meals = [m(22, ['a'], ['a', 'b', 'c']), m(24, ['b'], ['b', 'd']), m(25, ['d'], ['c', 'd'])];
-    expect(forResident(meals, 'c').map(x => x.date.toDate().getDate())).toEqual([22, 25]);
-    expect(forResident(meals, 'b').map(x => x.date.toDate().getDate())).toEqual([22, 24]);
   });
 
   it('numbers weeks as Danish calendars do', () => {

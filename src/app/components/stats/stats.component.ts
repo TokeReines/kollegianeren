@@ -3,17 +3,16 @@ import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {of, switchMap} from 'rxjs';
 import {DatePipe, DecimalPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
-import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
-import {MatSelectModule} from '@angular/material/select';
 import {byRoom} from '../../interfaces/user';
 import {UserService} from '../../services/user.service';
 import {kr} from '../../format';
+import {joinNames} from '../buy-page/basket';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {DayRow, ProductRow, Stats, heatLevel} from './stats';
 import {StatsService} from './stats.service';
-import {FoodData, FoodDayRow, FoodStats, TagRow, WeekdayRow, computeFoodStats, forResident} from './food-stats';
+import {FoodDayRow, FoodStats, TagRow, WeekdayRow} from './food-stats';
 
 const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']};
 
@@ -21,7 +20,7 @@ const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: [
 // people drink, on purpose; the food club does show who cooks, since cooking is what it is about.
 @Component({
   selector: 'app-stats',
-  imports: [DatePipe, DecimalPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatSelectModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, MatButtonModule, MatIconModule, TranslatePipe],
   templateUrl: './stats.component.html',
   styleUrl: './stats.component.scss',
 })
@@ -38,24 +37,24 @@ export class StatsComponent {
   protected readonly view = signal<'beer' | 'food'>('beer');
   // A year of food club is a few hundred reads; a year of purchases would be thousands.
   protected readonly periods = computed(() => this.view() === 'food' ? [30, 90, 365] : [7, 30, 90]);
-  // The residents are read only for the Madklub view: names for the per-cook charts, and the
-  // one-resident lookup.
+  // The residents are read only for the Madklub view, for the names in its charts.
   private readonly allResidents = toSignal(toObservable(this.view).pipe(
     switchMap(v => v === 'food' ? this.users.list() : of([]))), {initialValue: []});
-  protected readonly residents = computed(() => this.allResidents().filter(u => !u.movedOutAt).sort(byRoom));
-  protected readonly personId = signal('');
-  protected readonly person = computed(() => {
-    const id = this.personId(), f = this.kitchenFood();
-    return id && f ? f.people[id] ?? {ate: 0, cooked: 0, guests: 0} : null;
-  });
-  // Everyone who cooked in the period, most food clubs first, and most guests first.
-  private readonly cookRows = computed(() => {
-    const names = new Map(this.allResidents().map(u => [u.id, u.name]));
-    return Object.entries(this.food()?.people ?? {}).filter(([, p]) => p.cooked > 0)
-      .map(([id, p]) => ({id, name: names.get(id) ?? '?', ...p}));
-  });
+  private readonly names = computed(() => new Map(this.allResidents().map(u => [u.id, u.name])));
+  // Everyone who ate or cooked in the period.
+  private readonly personRows = computed(() => Object.entries(this.food()?.people ?? {})
+    .map(([id, p]) => ({id, name: this.names().get(id) ?? '?', ...p})));
+  private readonly cookRows = computed(() => this.personRows().filter(r => r.cooked > 0));
+  protected readonly byAte = computed(() => this.personRows().filter(r => r.ate > 0)
+    .sort((a, b) => b.ate - a.ate || a.name.localeCompare(b.name, 'da')));
   protected readonly byCooked = computed(() => [...this.cookRows()].sort((a, b) => b.cooked - a.cooked || b.guests - a.guests));
   protected readonly byGuests = computed(() => [...this.cookRows()].sort((a, b) => b.guests - a.guests || b.cooked - a.cooked));
+  // The table: everyone, by room.
+  protected readonly byRoomRows = computed(() => {
+    const rooms = new Map(this.allResidents().map(u => [u.id, u.room]));
+    return [...this.personRows()].sort((a, b) => byRoom({room: rooms.get(a.id) ?? ''}, {room: rooms.get(b.id) ?? ''}));
+  });
+  protected readonly maxAte = computed(() => Math.max(1, ...this.personRows().map(r => r.ate)));
   protected readonly maxCooked = computed(() => Math.max(1, ...this.cookRows().map(r => r.cooked)));
   protected readonly maxGuests = computed(() => Math.max(1, ...this.cookRows().map(r => r.guests)));
   private readonly result = resource({
@@ -67,19 +66,9 @@ export class StatsComponent {
     loader: ({params}) => this.statsService.loadFood(params),
   });
   protected readonly loading = computed(() => this.result.isLoading() || this.foodResult.isLoading());
-  private readonly foodData = linkedSignal<FoodData | undefined, FoodData | null>({
+  protected readonly food = linkedSignal<FoodStats | undefined, FoodStats | null>({
     source: () => this.foodResult.hasValue() ? this.foodResult.value() : undefined,
     computation: (next, previous) => next ?? previous?.value ?? null,
-  });
-  // The whole kitchen, for the one-resident line.
-  private readonly kitchenFood = computed(() => {
-    const d = this.foodData();
-    return d ? computeFoodStats(d.meals, d.from, d.days) : null;
-  });
-  // What the page shows: the kitchen, or only the food clubs the chosen resident ate at or cooked.
-  protected readonly food = computed<FoodStats | null>(() => {
-    const d = this.foodData(), id = this.personId();
-    return d && id ? computeFoodStats(forResident(d.meals, id), d.from, d.days) : this.kitchenFood();
   });
   protected readonly maxDayEaters = computed(() => Math.max(1, ...(this.food()?.daily ?? []).map(d => d.eaters)));
   protected readonly maxWeekdayMeals = computed(() => Math.max(1, ...(this.food()?.weekdays ?? []).map(d => d.meals)));
@@ -119,12 +108,23 @@ export class StatsComponent {
 
   protected tipFoodDay(d: FoodDayRow) {
     const day = new Intl.DateTimeFormat('da-DK', {weekday: 'short', day: 'numeric', month: 'short'}).format(d.date);
-    return d.meals ? `${day}: ${d.eaters} ${this.i18n.t('FOOD_EATERS')}` : `${day}: ${this.i18n.t('FOOD_STATS_NONE')}`;
+    if (!d.meals) {
+      return `${day}: ${this.i18n.t('FOOD_STATS_NONE')}`;
+    }
+    // "tors. 24. sep.: 12 spiser med. Kok: Anna og Bo"
+    const cooks = joinNames(d.cooks.map(id => this.names().get(id) ?? '?'), this.i18n.t('BEERSYSTEM_AND'));
+    return `${day}: ${d.eaters} ${this.i18n.t('FOOD_EATERS')}. ${this.i18n.t(d.cooks.length > 1 ? 'FOOD_COOKS_LABEL' : 'FOOD_COOK_ONE')}: ${cooks}`;
   }
 
   protected tipWeekday(w: WeekdayRow) {
     const avg = w.meals ? Math.round(w.eaters / w.meals * 10) / 10 : 0;
     return `${this.weekdays()[w.weekday]}: ${w.meals} ${this.i18n.t('FOOD_STATS_MEALS').toLowerCase()}, ${avg} ${this.i18n.t('FOOD_STATS_PER_MEAL').toLowerCase()}`;
+  }
+
+  // "Anna: spiste med 12 gange, lavede mad 2 gange".
+  protected tipEater(r: {name: string, ate: number, cooked: number}) {
+    const times = (n: number) => `${n} ${this.i18n.t(n === 1 ? 'FOOD_STATS_TIME' : 'FOOD_STATS_TIMES')}`;
+    return `${r.name}: ${this.i18n.t('FOOD_STATS_ATE').toLowerCase()} ${times(r.ate)}, ${this.i18n.t('FOOD_STATS_COOKED')} ${times(r.cooked)}`;
   }
 
   // "Anna: 3 madklubber, 27 spisende (9 pr. madklub)".
