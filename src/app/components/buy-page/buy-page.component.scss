@@ -12,12 +12,17 @@
   -webkit-touch-callout: none;
 
   // The amount on a product: large enough to read from a step away.
+  // Primary, not the default error red: it is part of the selection, not an alert. A circle for
+  // 1-9, a pill from 10; flat, sitting on the picture's corner without covering a small bottle.
   @include mat.badge-overrides((
-    large-size-container-size: 28px,
+    background-color: var(--mat-sys-primary),
+    text-color: var(--mat-sys-on-primary),
+    large-size-container-size: 24px,
     large-size-container-padding: 0 7px,
-    large-size-text-size: 16px,
-    large-size-line-height: 28px,
-    large-size-container-offset: -10px 0,
+    large-size-text-size: 14px,
+    large-size-line-height: 24px,
+    large-size-container-offset: -8px 0,
+    large-size-container-overlap-offset: -8px,
     text-weight: 700,
   ));
 }
