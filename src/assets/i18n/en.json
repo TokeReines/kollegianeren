@@ -215,9 +215,7 @@
   "HISTORY_UNDO_CONFIRM": "Undo purchase",
   "MENU_FOOD_CLUB": "Food club",
   "FOOD_TITLE": "Food club",
-  "FOOD_NEW": "New food club",
-  "FOOD_EDIT": "Edit food club",
-  "FOOD_EMPTY": "No food club coming up. Tap + to cook for the kitchen.",
+  "FOOD_EDIT": "Menu and details",
   "FOOD_DATE": "Date",
   "FOOD_TIME": "Dinner time",
   "FOOD_AT": "at",
@@ -250,5 +248,14 @@
   "FOOD_TAG_vegan": "Vegan",
   "FOOD_TAG_dairy": "Dairy",
   "FOOD_TAG_gluten": "Gluten",
-  "FOOD_TAG_nuts": "Nuts"
+  "FOOD_TAG_nuts": "Nuts",
+  "FOOD_WEEK": "Week",
+  "FOOD_COOKS": "cooks",
+  "FOOD_ADD_DETAILS": "Add menu and details",
+  "FOOD_I_COOK": "I'll cook",
+  "FOOD_WHO_COOKS": "Who cooks on",
+  "FOOD_THIS_WEEK": "This week",
+  "FOOD_NEXT_WEEK": "Next week",
+  "FOOD_PREV_WEEK": "Previous week",
+  "FOOD_TO": "to"
 }

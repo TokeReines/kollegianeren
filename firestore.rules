@@ -243,7 +243,7 @@ service cloud.firestore {
             && d.keys().hasAll(['date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
             && d.date is timestamp && d.closesAt is timestamp && d.closesAt <= d.date
             && d.cookId is string
-            && d.menu is string && d.menu.size() >= 1 && d.menu.size() <= 200
+            && d.menu is string && d.menu.size() <= 200
             && d.notes is string && d.notes.size() <= 2000
             && d.tags is list && d.tags.size() <= 12
             && d.askCook is bool

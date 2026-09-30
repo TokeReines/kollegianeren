@@ -14,12 +14,10 @@ export class MealService {
     return kitchenCollection(this.auth.currentKitchenId, 'meals');
   }
 
-  // Today's and coming meals, soonest first.
-  upcoming(): Observable<Meal[]> {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Meals from `from` up to `to`, soonest first: one week of the page, a handful of reads.
+  between(from: Date, to: Date): Observable<Meal[]> {
     return watchInKitchen<Meal>(this.auth.kitchenId$, kid =>
-      query(kitchenCollection(kid, 'meals'), where('date', '>=', today), orderBy('date'), limit(30)));
+      query(kitchenCollection(kid, 'meals'), where('date', '>=', from), where('date', '<', to), orderBy('date'), limit(50)));
   }
 
   // The cook eats too.

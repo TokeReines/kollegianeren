@@ -1,72 +1,91 @@
 <div class="page">
   <h1>{{ "FOOD_TITLE" | translate }}</h1>
 
-  <div class="meals">
-    @for (m of meals(); track m.id) {
-      @let cook = resident(m.cookId);
-      @let people = eaters(m);
-      <mat-card class="meal">
-        <div class="head">
-          <div class="when">
-            <span class="day">{{ m.date.toDate() | date:'EEEE d. MMMM' }}</span>
-            <span class="time">{{ "FOOD_AT" | translate }} {{ m.date.toDate() | date:'HH:mm' }}</span>
-          </div>
-          <button mat-icon-button [matMenuTriggerFor]="more" [attr.aria-label]="'FOOD_MORE' | translate"><mat-icon>more_vert</mat-icon></button>
-          <mat-menu #more="matMenu">
-            <button mat-menu-item (click)="edit(m)"><mat-icon>edit</mat-icon><span>{{ "EDIT" | translate }}</span></button>
-            @if (!open(m)) {
-              <button mat-menu-item (click)="signups(m)"><mat-icon>group_add</mat-icon><span>{{ "FOOD_EDIT_SIGNUPS" | translate }}</span></button>
-            }
-            <button mat-menu-item (click)="remove(m)"><mat-icon>delete</mat-icon><span>{{ "DELETE" | translate }}</span></button>
-          </mat-menu>
+  <nav class="pager" [attr.aria-label]="'FOOD_WEEK' | translate">
+    <button mat-icon-button [disabled]="page() === 0" (click)="turn(-1)" [attr.aria-label]="'FOOD_PREV_WEEK' | translate"
+            [matTooltip]="'FOOD_PREV_WEEK' | translate"><mat-icon>chevron_left</mat-icon></button>
+    <div class="range">
+      <span class="week">{{ (page() === 0 ? "FOOD_THIS_WEEK" : page() === 1 ? "FOOD_NEXT_WEEK" : "FOOD_WEEK") | translate }}{{ page() > 1 ? " " + weekNumber() : "" }}</span>
+      <span class="dates">{{ "FOOD_WEEK" | translate }} {{ weekNumber() }} · {{ monday() | date:'d. MMM' }} {{ "FOOD_TO" | translate }} {{ sunday() | date:'d. MMM' }}</span>
+    </div>
+    <button mat-icon-button (click)="turn(1)" [attr.aria-label]="'FOOD_NEXT_WEEK' | translate"
+            [matTooltip]="'FOOD_NEXT_WEEK' | translate"><mat-icon>chevron_right</mat-icon></button>
+  </nav>
+
+  <div class="days">
+    @for (d of days(); track d.day.getTime()) {
+      <div class="day" [class.today]="isToday(d.day)" [class.free]="!d.meals.length">
+        <div class="date" [attr.aria-label]="d.day | date:'EEEE d. MMMM'">
+          <span class="weekday">{{ d.day | date:'EEE' }}</span>
+          <span class="num">{{ d.day | date:'d' }}</span>
+          <span class="month">{{ d.day | date:'MMM' }}</span>
         </div>
 
-        <h2 class="menu">{{ m.menu }}</h2>
-        @if (cook) {
-          <div class="cook">
-            <app-resident-avatar [resident]="cook" [size]="32" />
-            <span>{{ "FOOD_COOK" | translate }}: <b>{{ cook.name }}</b> ({{ cook.room }})</span>
-          </div>
-        }
-        @if (m.tags.length) {
-          <mat-chip-set class="tags" [attr.aria-label]="'FOOD_TAGS' | translate">
-            @for (t of m.tags; track t) {
-              <mat-chip>{{ "FOOD_TAG_" + t | translate }}</mat-chip>
-            }
-          </mat-chip-set>
-        }
-        @if (m.notes) {
-          <p class="notes">{{ m.notes }}</p>
-        }
+        <div class="body">
+          @for (m of d.meals; track m.id) {
+            @let cook = resident(m.cookId);
+            @let people = eaters(m);
+            <div class="meal">
+              <div class="head">
+                @if (cook) {
+                  <app-resident-avatar [resident]="cook" [size]="32" />
+                }
+                <span class="cook"><b>{{ cook?.name }}</b> {{ "FOOD_COOKS" | translate }}</span>
+                <span class="time">{{ "FOOD_AT" | translate }} {{ m.date.toDate() | date:'HH:mm' }}</span>
+                <button mat-icon-button [matMenuTriggerFor]="more" [attr.aria-label]="'FOOD_MORE' | translate"><mat-icon>more_vert</mat-icon></button>
+                <mat-menu #more="matMenu">
+                  <button mat-menu-item (click)="details(m)"><mat-icon>edit</mat-icon><span>{{ "FOOD_EDIT" | translate }}</span></button>
+                  @if (!open(m)) {
+                    <button mat-menu-item (click)="signups(m)"><mat-icon>group_add</mat-icon><span>{{ "FOOD_EDIT_SIGNUPS" | translate }}</span></button>
+                  }
+                  <button mat-menu-item (click)="remove(m)"><mat-icon>delete</mat-icon><span>{{ "DELETE" | translate }}</span></button>
+                </mat-menu>
+              </div>
 
-        <div class="foot">
-          <div class="eaters">
-            <div class="faces">
-              @for (u of people.slice(0, faces); track u.id) {
-                <app-resident-avatar [resident]="u" [size]="28" [matTooltip]="u.name" />
+              @if (m.menu) {
+                <h3 class="menu">{{ m.menu }}</h3>
+              } @else {
+                <button mat-button class="add-details" (click)="details(m)"><mat-icon>edit_note</mat-icon> {{ "FOOD_ADD_DETAILS" | translate }}</button>
               }
-              @if (people.length > faces) {
-                <span class="more">+{{ people.length - faces }}</span>
+              @if (m.tags.length) {
+                <mat-chip-set class="tags" [attr.aria-label]="'FOOD_TAGS' | translate">
+                  @for (t of m.tags; track t) {
+                    <mat-chip>{{ "FOOD_TAG_" + t | translate }}</mat-chip>
+                  }
+                </mat-chip-set>
               }
+              @if (m.notes) {
+                <p class="notes">{{ m.notes }}</p>
+              }
+
+              <div class="foot">
+                <div class="eaters">
+                  <div class="faces">
+                    @for (u of people.slice(0, faces); track u.id) {
+                      <app-resident-avatar [resident]="u" [size]="28" [matTooltip]="u.name" />
+                    }
+                    @if (people.length > faces) {
+                      <span class="more">+{{ people.length - faces }}</span>
+                    }
+                  </div>
+                  <span class="count">{{ m.signups.length }} {{ "FOOD_EATERS" | translate }}</span>
+                </div>
+                @if (open(m)) {
+                  <div class="action">
+                    <button mat-flat-button (click)="signups(m)"><mat-icon>how_to_reg</mat-icon> {{ "FOOD_SIGN_UP" | translate }}</button>
+                    <span class="closes">{{ "FOOD_CLOSES_AT" | translate }} {{ m.closesAt.toDate() | date:'EEE d. MMM HH:mm' }}</span>
+                  </div>
+                } @else {
+                  <span class="status"><mat-icon>{{ m.askCook ? 'forum' : 'lock' }}</mat-icon> {{ (m.askCook ? "FOOD_ASK" : "FOOD_CLOSED") | translate }}</span>
+                }
+              </div>
             </div>
-            <span class="count">{{ m.signups.length }} {{ "FOOD_EATERS" | translate }}</span>
-          </div>
-          @if (open(m)) {
-            <div class="action">
-              <button mat-flat-button (click)="signups(m)"><mat-icon>how_to_reg</mat-icon> {{ "FOOD_SIGN_UP" | translate }}</button>
-              <span class="closes">{{ "FOOD_CLOSES_AT" | translate }} {{ m.closesAt.toDate() | date:'EEE d. MMM HH:mm' }}</span>
-            </div>
-          } @else {
-            <span class="status"><mat-icon>{{ m.askCook ? 'forum' : 'lock' }}</mat-icon> {{ (m.askCook ? "FOOD_ASK" : "FOOD_CLOSED") | translate }}</span>
+          } @empty {
+            <button mat-stroked-button class="book" (click)="book(d.day)"><mat-icon>add</mat-icon> {{ "FOOD_I_COOK" | translate }}</button>
           }
         </div>
-      </mat-card>
-    } @empty {
-      <p class="empty">{{ "FOOD_EMPTY" | translate }}</p>
+      </div>
     }
   </div>
-</div>
 
-<button mat-fab class="bottom-right" (click)="edit()" [attr.aria-label]="'FOOD_NEW' | translate" [matTooltip]="'FOOD_NEW' | translate">
-  <mat-icon>add</mat-icon>
-</button>
+</div>

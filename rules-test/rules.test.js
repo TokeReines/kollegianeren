@@ -352,13 +352,14 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   });
   const meals = collection(db, 'kitchens', A, 'meals');
   const ref = await assertSucceeds(addDoc(meals, meal()));
+  await assertSucceeds(addDoc(meals, meal({ menu: '', tags: [] }))); // only the cook, details later
   await assertSucceeds(getDocs(query(meals, where('date', '>=', new Date()), orderBy('date'), limit(30))));
   await assertSucceeds(updateDoc(ref, { signups: arrayUnion('u2') }));
   await assertSucceeds(updateDoc(ref, { signups: arrayRemove('u2') }));
   await assertSucceeds(updateDoc(ref, { menu: 'Lasagne og salat', askCook: true }));
   await assertFails(updateDoc(ref, { createdAt: Timestamp.now() }));
   await assertFails(updateDoc(ref, { extra: 1 }));
-  await assertFails(updateDoc(ref, { menu: '' }));
+  await assertFails(updateDoc(ref, { menu: 'x'.repeat(201) }));
   await assertFails(updateDoc(ref, { closesAt: Timestamp.fromMillis(eat.toMillis() + 1) })); // closes after dinner
   await assertFails(addDoc(meals, meal({ createdAt: Timestamp.now() })));
   await assertFails(addDoc(meals, meal({ signups: 'u1' })));

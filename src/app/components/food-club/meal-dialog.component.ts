@@ -26,7 +26,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatChipsModule, MatDatepickerModule, MatFormFieldModule,
     MatInputModule, MatSelectModule, MatSlideToggleModule, TranslatePipe],
   template: `
-    <h2 mat-dialog-title>{{ (meal ? "FOOD_EDIT" : "FOOD_NEW") | translate }}</h2>
+    <h2 mat-dialog-title>{{ "FOOD_EDIT" | translate }}</h2>
     <form mat-dialog-content [formGroup]="form" (ngSubmit)="save()" id="meal-form">
       <mat-form-field class="first">
         <mat-label>{{ "FOOD_MENU" | translate }}</mat-label>
@@ -105,7 +105,7 @@ export class MealDialogComponent {
     day: [this.date as Date | null, Validators.required],
     time: [this.date ? `${pad(this.date.getHours())}:${pad(this.date.getMinutes())}` : '18:30', Validators.required],
     cookId: [this.meal?.cookId ?? '', Validators.required],
-    menu: [this.meal?.menu ?? '', [Validators.required, Validators.maxLength(200)]],
+    menu: [this.meal?.menu ?? '', Validators.maxLength(200)],
     notes: [this.meal?.notes ?? '', Validators.maxLength(2000)],
     tags: [[...(this.meal?.tags ?? [])] as MealTag[]],
     closeHours: [this.meal ? closeHours(this.meal) : 24 as number],
