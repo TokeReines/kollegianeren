@@ -32,4 +32,19 @@ async function usedToday(accessToken, projectId, metric = 'document/read_count')
   return points.reduce((sum, p) => sum + p.value, 0);
 }
 
-module.exports = { SPARK, pacificMidnight, series, usedToday };
+// Reads, writes and deletes per Pacific quota day for the last `days` days, oldest first. Hourly
+// buckets are summed into days, because Monitoring aligns daily buckets to UTC.
+async function dailyUsage(accessToken, projectId, days) {
+  const today = pacificMidnight();
+  const start = new Date(today.getTime() - (days - 1) * 864e5);
+  const byDay = {};
+  for (const [key, metric] of [['reads', 'document/read_count'], ['writes', 'document/write_count'], ['deletes', 'document/delete_count']]) {
+    for (const p of await series(accessToken, projectId, metric, start, new Date(), 3600)) {
+      const day = pacificMidnight(new Date(Date.parse(p.end) - 1)).toISOString().slice(0, 10);
+      (byDay[day] ||= { day, reads: 0, writes: 0, deletes: 0 })[key] += p.value;
+    }
+  }
+  return Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
+}
+
+module.exports = { SPARK, pacificMidnight, series, usedToday, dailyUsage };

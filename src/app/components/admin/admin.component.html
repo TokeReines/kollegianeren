@@ -1,0 +1,160 @@
+<div class="page">
+  <h1>{{ "ADMIN_TITLE" | translate }}</h1>
+
+  @if (stats(); as s) {
+    <p class="meta">
+      {{ "ADMIN_UPDATED" | translate }} {{ s.at.toDate() | date:'EEEE d. MMMM HH:mm' }}. {{ "ADMIN_DAILY" | translate }}
+      <span class="privacy"><mat-icon inline>privacy_tip</mat-icon> {{ "ADMIN_NO_NAMES" | translate }}</span>
+    </p>
+
+    @let t = summary();
+    <div class="tiles">
+      <div class="tile">
+        <div class="value">{{ t.inUse }} <span class="of">/ {{ t.kitchens }}</span></div>
+        <div class="label">{{ "ADMIN_IN_USE" | translate }}</div>
+      </div>
+      <div class="tile">
+        <div class="value">{{ t.onNewApp }} <span class="of">/ {{ t.inUse }}</span></div>
+        <div class="label">{{ "ADMIN_ON_NEW_APP" | translate }}</div>
+      </div>
+      <div class="tile">
+        <div class="value">
+          {{ t.purchases7 | number }}
+          @if (t.purchasesTrend !== null) {
+            <span class="trend" [class.up]="t.purchasesTrend > 0" [class.down]="t.purchasesTrend < 0">{{ t.purchasesTrend > 0 ? '+' : '' }}{{ t.purchasesTrend }} %</span>
+          }
+        </div>
+        <div class="label">{{ "ADMIN_PURCHASES_7" | translate }}</div>
+      </div>
+      <div class="tile">
+        <div class="value">{{ t.meals30 }} <span class="of">· {{ t.eaters30 }} {{ "FOOD_STATS_EATERS" | translate | lowercase }}</span></div>
+        <div class="label">{{ "ADMIN_MEALS_30" | translate }} ({{ t.foodClubKitchens }} {{ "ADMIN_KITCHENS" | translate }})</div>
+      </div>
+    </div>
+
+    @if (s.usage.length) {
+      <h2>{{ "ADMIN_READS" | translate }}</h2>
+      <div class="usage">
+        @for (u of s.usage; track u.day) {
+          <div class="ucol" [matTooltip]="u.day + ': ' + (u.reads | number) + ' ' + ('ADMIN_READS_WORD' | translate) + ', ' + (u.writes | number) + ' ' + ('ADMIN_WRITES_WORD' | translate)">
+            <span class="n">{{ u.reads / 1000 | number:'1.0-1' }}k</span>
+            <span class="slot"><span class="bar" [class.high]="u.reads > readCap * 0.7" [style.height.%]="u.reads / maxReads() * 100"></span></span>
+            <span class="d">{{ u.day.slice(8) }}/{{ u.day.slice(5, 7) }}</span>
+          </div>
+        }
+      </div>
+      <p class="hint">{{ "ADMIN_READS_HINT" | translate }} {{ readCap | number }}. {{ "ADMIN_JOB_READS" | translate }} {{ s.reads }}.</p>
+    }
+
+    <h2>{{ "ADMIN_KITCHENS_TITLE" | translate }}</h2>
+    <div class="table-scroll">
+      <table class="kitchens">
+        <thead>
+          <tr>
+            <th>{{ "ADMIN_KITCHEN" | translate }}</th>
+            <th>{{ "ADMIN_APP" | translate }}</th>
+            <th>{{ "ADMIN_LAST_ACTIVE" | translate }}</th>
+            <th class="num">{{ "ADMIN_TODAY" | translate }}</th>
+            <th class="num">{{ "ADMIN_7_DAYS" | translate }}</th>
+            <th class="num">{{ "ADMIN_30_DAYS" | translate }}</th>
+            <th class="num">{{ "MENU_RESIDENTS" | translate }}</th>
+            <th class="num">{{ "MENU_PRODUCTS" | translate }}</th>
+            <th class="num">{{ "MENU_FOOD_CLUB" | translate }}</th>
+            <th class="num">{{ "ADMIN_LOGINS" | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (k of s.kitchens; track k.id) {
+            @let change = trend(k);
+            <tr class="row" [class.open]="open() === k.id" [class.quiet]="!k.purchases.last30" (click)="toggle(k)">
+              <td class="name">{{ k.name }}</td>
+              <td>
+                @if (k.app) {
+                  <span class="chip" [class.new]="k.app === 'new'">{{ (k.app === 'new' ? "ADMIN_APP_NEW" : "ADMIN_APP_OLD") | translate }}</span>
+                }
+              </td>
+              <td class="when">{{ lastActive(k) | date:'d. MMM HH:mm' }}</td>
+              <td class="num">{{ k.purchases.today || '' }}</td>
+              <td class="num">
+                {{ k.purchases.last7 }}
+                @if (change !== null) {
+                  <span class="trend" [class.up]="change > 0" [class.down]="change < 0">{{ change > 0 ? '+' : '' }}{{ change }} %</span>
+                }
+              </td>
+              <td class="num">{{ k.purchases.last30 }}</td>
+              <td class="num">{{ k.residents.active }}</td>
+              <td class="num">{{ activeProducts(k) }}</td>
+              <td class="num">{{ k.meals.eaten30 + k.meals.upcoming || '' }}</td>
+              <td class="num">{{ k.logins.length }}</td>
+              <td class="chev"><mat-icon>{{ open() === k.id ? 'expand_less' : 'expand_more' }}</mat-icon></td>
+            </tr>
+            @if (open() === k.id) {
+              <tr class="details">
+                <td colspan="11">
+                  <div class="cards">
+                    <section>
+                      <h3>{{ "ADMIN_LOGINS" | translate }}</h3>
+                      @for (l of k.logins; track $index) {
+                        <p><b>{{ "ROLE_" + l.role.toUpperCase() | translate }}</b> · {{ "ADMIN_LAST_USED" | translate }} {{ (l.lastActive?.toDate() | date:'d. MMM y HH:mm') || '?' }}
+                          <span class="muted">· {{ "ADMIN_CREATED" | translate }} {{ (l.created?.toDate() | date:'d. MMM y') || '?' }}</span></p>
+                      }
+                      <p class="muted">{{ "ADMIN_INVITES" | translate }}: {{ k.invites.open }} {{ "ADMIN_OPEN" | translate }}, {{ k.invites.used }} {{ "ADMIN_USED" | translate }}. {{ "ADMIN_LINKS" | translate }}: {{ k.residentLinks }}.</p>
+                    </section>
+                    <section>
+                      <h3>{{ "MENU_RESIDENTS" | translate }}</h3>
+                      <p>{{ k.residents.active }} {{ "ADMIN_ACTIVE" | translate }}, {{ k.residents.total - k.residents.active }} {{ "ADMIN_INACTIVE" | translate }}</p>
+                      <p class="muted">{{ k.residents.movedOut }} {{ "ADMIN_MOVED_OUT" | translate }}, {{ k.residents.anonymised }} {{ "ADMIN_ANONYMISED" | translate }}</p>
+                    </section>
+                    <section>
+                      <h3>{{ "MENU_FOOD_CLUB" | translate }}</h3>
+                      @if (k.meals.eaten30 || k.meals.upcoming) {
+                        <p>{{ k.meals.eaten30 }} {{ "ADMIN_MEALS_EATEN" | translate }}, {{ k.meals.eaters30 }} {{ "FOOD_EATERS" | translate }}, {{ k.meals.cooks30 }} {{ "ADMIN_COOKS" | translate }}</p>
+                        <p class="muted">{{ k.meals.upcoming }} {{ "ADMIN_UPCOMING" | translate }} · {{ "ADMIN_LAST_BOOKED" | translate }} {{ k.meals.lastBookedAt?.toDate() | date:'d. MMM HH:mm' }}</p>
+                      } @else {
+                        <p class="muted">{{ "ADMIN_NO_FOOD_CLUB" | translate }}</p>
+                      }
+                    </section>
+                    <section>
+                      <h3>{{ "ADMIN_MESSAGES" | translate }}</h3>
+                      @if (k.messages.total) {
+                        <p>{{ k.messages.total }} · {{ "ADMIN_LATEST" | translate }} {{ k.messages.lastAt?.toDate() | date:'d. MMM HH:mm' }}
+                          ({{ (k.messages.lastFrom === 'maker' ? "ADMIN_FROM_YOU" : "ADMIN_FROM_KITCHEN") | translate }})</p>
+                      } @else {
+                        <p class="muted">{{ "ADMIN_NO_MESSAGES" | translate }}</p>
+                      }
+                      <p class="muted">{{ "ADMIN_SINCE" | translate }} {{ k.createdAt?.toDate() | date:'d. MMM y' }}</p>
+                    </section>
+                  </div>
+
+                  <h3>{{ "MENU_PRODUCTS" | translate }}</h3>
+                  <table class="products">
+                    <tr>
+                      <th>{{ "NAME" | translate }}</th><th class="num">{{ "ADMIN_PRICE" | translate }}</th><th class="num">{{ "ADMIN_COST" | translate }}</th>
+                      <th class="num">{{ "ADMIN_STOCK" | translate }}</th><th class="num">{{ "ADMIN_SOLD" | translate }}</th>
+                    </tr>
+                    @for (p of k.products; track $index) {
+                      <tr [class.muted]="!p.active">
+                        <td>{{ p.name }}@if (!p.active) { <span class="off">({{ "ADMIN_NOT_IN_FRIDGE" | translate }})</span> }</td>
+                        <td class="num">{{ p.price ?? '' | number:'1.0-2' }}</td>
+                        <td class="num">{{ p.retailPrice ?? '' | number:'1.0-2' }}</td>
+                        <td class="num">{{ p.stock ?? '' }}</td>
+                        <td class="num">{{ p.sold ?? '' }}</td>
+                      </tr>
+                    }
+                  </table>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (loading()) {
+    <p class="muted">…</p>
+  } @else if (error()) {
+    <p class="muted">{{ "ADMIN_ERROR" | translate }}</p>
+  } @else {
+    <p class="muted">{{ "ADMIN_EMPTY" | translate }}</p>
+  }
+</div>
