@@ -91,4 +91,4 @@ Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 
 ## Removing kitchens and logins
 
- archives each kitchen (doc, subcollections and anything that points at it) to , then deletes it with its legacy owner login. Refuses kitchens with purchases unless ; a dry run without . Used on 2026-09-30 for five empty kitchens and five logins from 2016 that were never used (#66).
+`node remove-kitchens.js --project prod --kitchens <ids> [--logins <uids>] [--confirm]` archives each kitchen (doc, subcollections and anything that points at it) to `~/kollegianeren-archive/<project>/`, then deletes it with its legacy owner login. Refuses kitchens with purchases unless `--allow-purchases`; without `--confirm` it is a dry run. Used on 2026-09-30 for five empty kitchens and five logins from 2016 that were never used (#66).
