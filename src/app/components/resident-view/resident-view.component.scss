@@ -1,0 +1,46 @@
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+h2 {
+  font: var(--mat-sys-title-medium);
+  margin: 24px 0 8px;
+}
+
+.tile {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+
+  .value {
+    font: var(--mat-sys-headline-medium);
+  }
+}
+
+.data {
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .num {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.small {
+  font-size: 13px;
+  margin-top: 24px;
+}

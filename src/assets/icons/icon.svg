@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#673ab7"/>
+  <!-- mug handle -->
+  <path d="M338 214h34a46 46 0 0 1 46 46v44a46 46 0 0 1-46 46h-34" fill="none" stroke="#fff" stroke-width="30" stroke-linejoin="round"/>
+  <!-- beer -->
+  <rect x="132" y="196" width="214" height="204" rx="26" fill="#ffc107"/>
+  <rect x="132" y="196" width="214" height="204" rx="26" fill="none" stroke="#fff" stroke-width="22"/>
+  <!-- bubbles -->
+  <circle cx="190" cy="330" r="12" fill="#fff" opacity=".7"/>
+  <circle cx="236" cy="290" r="9" fill="#fff" opacity=".7"/>
+  <circle cx="284" cy="344" r="10" fill="#fff" opacity=".7"/>
+  <!-- foam -->
+  <path d="M122 214c-14-44 22-78 58-66 12-36 64-44 86-14 26-26 74-12 80 26 34 2 46 40 24 58z" fill="#fff"/>
+</svg>

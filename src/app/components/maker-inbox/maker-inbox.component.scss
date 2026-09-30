@@ -1,0 +1,72 @@
+.inbox {
+  display: flex;
+  height: 100%;
+}
+
+.threads {
+  width: 280px;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  overflow: auto;
+}
+
+.thread {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+}
+
+.bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--mat-sys-surface-container-high);
+  align-self: flex-start;
+
+  &.mine {
+    align-self: flex-end;
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+
+    .meta {
+      color: color-mix(in srgb, var(--mat-sys-on-primary) 75%, transparent);
+    }
+  }
+}
+
+.text {
+  white-space: pre-line;
+}
+
+.meta {
+  font-size: 11px;
+  margin-top: 4px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.composer {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 16px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+  padding: 16px;
+}
+
+.page {
+  padding: 24px;
+}
+
+.threads .active {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}

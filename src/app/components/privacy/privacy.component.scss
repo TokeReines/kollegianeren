@@ -1,0 +1,19 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 0;
+  line-height: 1.55;
+
+  h2 {
+    margin-top: 24px;
+    font: var(--mat-sys-title-medium);
+  }
+
+  ul {
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+}

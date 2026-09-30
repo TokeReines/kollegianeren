@@ -3,12 +3,13 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
+  emulators: false,
   production: false,
+  // Unsigned upload preset only; Cloudinary API keys and secrets never belong in the app.
+  // The production account (the old dev account was disabled), uploading into its dev/ folder.
   cloudinary: {
     cloud_name: 'egmontkollegiet',
-    api_key: '135774189578826',
-    api_secret: '350zecUxBcQ1Yel553diSXNlOpA',
-    upload_preset: 'l8l2znwi'
+    upload_preset: 'kollegianeren_dev'
   },
   firebase: {
     apiKey: 'AIzaSyBQYwdOvSjikzel3fLDmO7wY75byglR5T4',
@@ -28,4 +29,4 @@ export const environment = {
  * This import should be commented out in production mode because it will have a negative impact
  * on performance if an error is thrown.
  */
-// import 'zone.js/dist/zone-error';  // Included with Angular CLI.
+// import 'zone.js/plugins/zone-error';  // Included with Angular CLI.

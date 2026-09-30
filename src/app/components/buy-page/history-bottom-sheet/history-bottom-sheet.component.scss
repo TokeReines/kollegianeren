@@ -1,3 +1,28 @@
-.history-cell {
-  width:600px;
+table {
+  width: min(720px, 100%);
+}
+
+td {
+  white-space: nowrap;
+}
+
+td.undo {
+  text-align: right;
+  width: 120px;
+}
+
+// A purchase being taken back is marked red; the slide-out and closing the gap are animated in
+// the component (Web Animations), with Material 3 easing.
+tr.removing {
+  pointer-events: none;
+
+  td {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+    transition: background-color 150ms, color 150ms;
+  }
+
+  .undo button {
+    visibility: hidden;
+  }
 }

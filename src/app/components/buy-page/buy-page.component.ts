@@ -1,118 +1,131 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, DestroyRef, computed, inject, signal, untracked} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {DecimalPipe} from '@angular/common';
+import {map} from 'rxjs';
+import {MatBadgeModule} from '@angular/material/badge';
+import {MatBottomSheet} from '@angular/material/bottom-sheet';
+import {MatButtonModule} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
+import {Product} from '../../interfaces/product';
+import {User, byRoom} from '../../interfaces/user';
 import {ProductService} from '../../services/product.service';
-import {BuyableProduct} from '../../models/buyable-product';
-import {BuyableUser} from '../../models/buyable-user';
-import {UserService} from '../../services/user.service';
-import {Purchase} from '../../interfaces/purchase';
 import {PurchaseService} from '../../services/purchase.service';
-import {MatBottomSheet, MatSnackBar} from '@angular/material';
+import {UserService} from '../../services/user.service';
+import {Notify} from '../../services/notify.service';
+import {TranslateService} from '../../services/translate.service';
+import {TranslatePipe} from '../../translate.pipe';
+import {ProductPictureComponent} from '../shared/product-picture.component';
+import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
+import {describeSale, productOrder} from './basket';
 
+// How long the confirmation of a purchase stays in the bar.
+const CONFIRM_MS = 4000;
+
+// The tablet's screen: tap a product (again for more), tap one or more residents, buy. Every
+// chosen resident gets that many. Tapping another product switches to it; right-click or
+// long-press takes one off. A wrong purchase is taken back under "Seneste køb".
 @Component({
   selector: 'app-buy-page',
+  imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent],
   templateUrl: './buy-page.component.html',
-  styleUrls: ['./buy-page.component.scss']
+  styleUrl: './buy-page.component.scss',
 })
-export class BuyPageComponent implements OnInit {
-  products: Array<BuyableProduct>;
-  users: Array<BuyableUser>;
-  selectedProduct: BuyableProduct;
-  selectedUsers: Array<BuyableUser> = [];
+export class BuyPageComponent {
+  private readonly purchaseService = inject(PurchaseService);
+  private readonly notify = inject(Notify);
+  private readonly i18n = inject(TranslateService);
+  private readonly bottomSheet = inject(MatBottomSheet);
 
-  constructor(private productService: ProductService, private userService: UserService, private purchaseService: PurchaseService,
-              public snackBar: MatSnackBar, private historyBottomSheet: MatBottomSheet) {
+  private readonly allProducts = toSignal(inject(ProductService).list().pipe(map(list => list.filter(p => p.active))), {initialValue: []});
+  // Most bought first. The order is fixed when the page opens (and when products are added or
+  // removed), so tiles do not jump around while people are tapping.
+  private readonly productIds = computed(() => this.allProducts().map(p => p.id).sort().join());
+  private readonly order = computed(() => {
+    this.productIds();
+    return untracked(() => productOrder(this.allProducts()));
+  });
+  protected readonly products = computed(() => {
+    const byId = new Map(this.allProducts().map(p => [p.id, p]));
+    return this.order().map(id => byId.get(id)).filter((p): p is Product => !!p);
+  });
+  protected readonly residents = toSignal(inject(UserService).list().pipe(map(list => list.filter(u => u.active).sort(byRoom))), {initialValue: []});
+
+  private readonly productId = signal<string | null>(null);
+  protected readonly amount = signal(0);
+  // In the order they were tapped, which is the order they are named in afterwards.
+  private readonly buyerIds = signal<string[]>([]);
+  protected readonly product = computed(() => this.allProducts().find(p => p.id === this.productId()) ?? null);
+  protected readonly buyers = computed(() => this.buyerIds()
+    .map(id => this.residents().find(u => u.id === id)).filter((u): u is User => !!u));
+  protected readonly perPerson = computed(() => (this.product()?.price ?? 0) * this.amount());
+
+  // A short confirmation of the last purchase.
+  protected readonly confirmation = signal('');
+  private timer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
   }
 
-  ngOnInit() {
-    this.productService.list().subscribe(result => {
-      this.products = new Array<BuyableProduct>();
-      result.filter(product => product.active).sort((p1, p2) => {
-        return p1.name.localeCompare(p2.name);
-      }).forEach(p => {
-        this.products.push(new BuyableProduct(p));
-      });
-    });
-    this.userService.list().subscribe(result => {
-      this.users = new Array<BuyableUser>();
-      result.filter(user => user.active).sort((u1, u2) => {
-        return u1.room.localeCompare(u2.room);
-      }).forEach(p => {
-        this.users.push(new BuyableUser(p));
-      });
-    });
+  protected amountOf(product: Product): number {
+    return product.id === this.productId() ? this.amount() : 0;
   }
 
-  selectUser(user, event) {
+  protected isBuyer(user: User) {
+    return this.buyerIds().includes(user.id);
+  }
+
+  // Another product starts over at one, as before.
+  protected addOne(product: Product) {
+    if (product.id !== this.productId()) {
+      this.productId.set(product.id);
+      this.amount.set(0);
+    }
+    this.amount.update(n => n + 1);
+  }
+
+  protected takeOne(product: Product, event?: Event) {
+    event?.preventDefault();
+    if (product.id !== this.productId()) {
+      return;
+    }
+    this.amount.update(n => n - 1);
+    if (this.amount() <= 0) {
+      this.productId.set(null);
+    }
+  }
+
+  protected toggleBuyer(user: User, event: Event) {
     event.preventDefault();
-    if (!user.selected) {
-      this.selectedUsers.push(user);
-    } else {
-      this.selectedUsers.splice(this.selectedUsers.indexOf(user), 1);
+    this.buyerIds.update(ids => ids.includes(user.id) ? ids.filter(id => id !== user.id) : [...ids, user.id]);
+  }
+
+  protected clear() {
+    this.productId.set(null);
+    this.amount.set(0);
+    this.buyerIds.set([]);
+  }
+
+  protected buy() {
+    const product = this.product(), buyers = this.buyers(), amount = this.amount();
+    if (!product || !buyers.length || amount < 1) {
+      return;
     }
-    user.selected = !user.selected;
+    this.purchaseService.sell(product, amount, buyers).catch(this.notify.error);
+    const t = (k: string) => this.i18n.t(k);
+    this.confirm(describeSale(buyers.map(u => u.name), [[amount, product.name]],
+      {and: t('BEERSYSTEM_AND'), bought: t('BEERSYSTEM_BOUGHT'), each: t('BUY_EACH')}));
+    this.clear();
   }
 
-  deselectProduct(product, event) {
-    event.preventDefault();
-    if (product.amount > 0) {
-      product.amount--;
-    }
-
-    if (product.amount === 0) {
-      this.selectedProduct = null;
-      product.amount = null;
-      product.selected = false;
-    }
+  protected openHistory() {
+    this.bottomSheet.open(HistoryBottomSheetComponent);
   }
 
-  selectProduct(product) {
-    this.selectedProduct = product;
-    product.amount++;
-    product.selected = true;
-
-    this.products.filter(p => p !== product).forEach(p => {
-      if (p !== product) {
-        p.selected = false;
-        p.amount = null;
-      }
-    });
-  }
-
-  cancel() {
-    this.products.forEach(p => {
-      p.selected = false;
-      p.amount = null;
-    });
-    this.users.forEach(u => {
-      u.selected = false;
-    });
-    this.selectedUsers = [];
-    this.selectedProduct = null;
-  }
-
-  purchase() {
-    const users = [];
-    this.selectedUsers.forEach(user => {
-      const p = <Purchase>{
-        productName: this.selectedProduct.name,
-        productId: this.selectedProduct.id,
-        amount: this.selectedProduct.amount,
-        price: this.selectedProduct.price * this.selectedProduct.amount,
-        userId: user.id,
-        userName: user.name,
-        userRoom: user.room
-      };
-      users.push(user.name);
-      this.purchaseService.add(p);
-    });
-    this.snackBar.open(this.selectedUsers.map(u => u.name).join(' og ') + ' købte ' +
-      this.selectedProduct.amount + ' ' + this.selectedProduct.name, 'Nice!', {
-      duration: 4000,
-    });
-    this.cancel();
-  }
-
-  openHistorySheet(): void {
-    this.historyBottomSheet.open(HistoryBottomSheetComponent);
+  private confirm(text: string) {
+    clearTimeout(this.timer);
+    this.confirmation.set(text);
+    this.timer = setTimeout(() => this.confirmation.set(''), CONFIRM_MS);
   }
 }

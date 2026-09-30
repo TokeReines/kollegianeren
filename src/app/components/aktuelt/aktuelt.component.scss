@@ -1,0 +1,53 @@
+.page {
+  max-width: 1200px;
+}
+
+// News on the left, the chat with Toke on the right; stacked on narrow screens.
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.chat {
+  position: sticky;
+  top: 0;
+  padding: 16px 20px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  scroll-margin-top: 16px;
+}
+
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.announcement,
+.post-form {
+  margin-bottom: 16px;
+}
+
+.body {
+  white-space: pre-line;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.full {
+  width: 100%;
+}
+
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+}

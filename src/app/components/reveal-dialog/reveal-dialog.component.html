@@ -1,0 +1,21 @@
+<div class="reveal">
+  <div class="ghost">
+    @if (!photoFailed()) {
+      <img src="assets/img/maker.jpg" alt="Toke" (error)="photoFailed.set(true)">
+    } @else {
+      <span class="emoji" aria-hidden="true">👻</span>
+    }
+  </div>
+  <h1>{{ "REVEAL_TITLE" | translate }}</h1>
+  <p>{{ "REVEAL_P1" | translate }}</p>
+  <p>{{ "REVEAL_P2" | translate }}</p>
+  <p>{{ "REVEAL_P3" | translate }}</p>
+  <div class="buttons">
+    <button mat-flat-button (click)="go('/aktuelt')">{{ "REVEAL_WHATS_NEW" | translate }}</button>
+    <button mat-stroked-button (click)="go('/aktuelt', 'chat')">{{ "MAKER_WRITE" | translate }}</button>
+    <button mat-button (click)="close()">{{ "REVEAL_CLOSE" | translate }}</button>
+  </div>
+  @if (data.uid) {
+    <mat-checkbox class="hide" [(ngModel)]="hideForGood">{{ "REVEAL_DONT_SHOW" | translate }}</mat-checkbox>
+  }
+</div>

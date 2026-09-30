@@ -1,0 +1,44 @@
+.page {
+  max-width: 760px;
+}
+
+mat-card {
+  margin-bottom: 16px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .actions {
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.5;
+}
+
+.small {
+  font-size: 13px;
+}

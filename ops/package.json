@@ -1,0 +1,21 @@
+{
+  "name": "kollegianeren-ops",
+  "private": true,
+  "description": "Operational scripts for Kollegianeren: backup, restore, usage.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "backup": "node backup.js",
+    "restore": "node restore.js",
+    "usage": "node usage.js"
+  },
+  "dependencies": {
+    "@dicebear/collection": "^9.4.3",
+    "@dicebear/core": "^9.4.3",
+    "firebase-admin": "^13.0.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}

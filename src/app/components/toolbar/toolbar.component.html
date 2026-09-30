@@ -1,17 +1,43 @@
-<mat-toolbar color="primary">
-  <mat-toolbar-row>
-    <button mat-icon-button (click)="toggleSidenav()">
-      <mat-icon>menu</mat-icon>
-    </button>
-    <div class="toolbar-logo" >
-    <img src="./assets/img/navbar_logo.jpg">
+<mat-toolbar>
+  <button class="menu-button" mat-icon-button (click)="sidenav.toggle()" [attr.aria-label]="'MENU' | translate"
+          [matTooltip]="(sidenav.railHidden() ? 'MENU_SHOW' : 'MENU_HIDE') | translate" [matTooltipDisabled]="sidenav.narrow()">
+    <mat-icon>{{ sidenav.narrow() || sidenav.railHidden() ? 'menu' : 'menu_open' }}</mat-icon>
+  </button>
+  <span class="title" [class.kiosk]="sidenav.railHidden()">{{ kitchenName() }}</span>
+  <span class="fill-space"></span>
+  <button class="account-button" mat-icon-button [matMenuTriggerFor]="account" [attr.aria-label]="'ACCOUNT' | translate" [matTooltip]="'ACCOUNT' | translate">
+    <img src="assets/img/navbar_logo.jpg" alt="" />
+  </button>
+  <mat-menu #account="matMenu" xPosition="before" class="account-menu">
+    <div class="account-header" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()" role="presentation">
+      <img src="assets/img/navbar_logo.jpg" alt="" />
+      <div>
+        <div class="account-kitchen">{{ kitchenName() }}</div>
+        <div class="account-email">{{ email() }}</div>
+      </div>
     </div>
-    <span class="fill-space"></span>
-    <mat-menu #menu="matMenu" layout-align="end center">
-      <button mat-menu-item (click)="logout()">Logout</button>
-    </mat-menu>
-    <button mat-icon-button [matMenuTriggerFor]="menu">
-      <mat-icon>more_vert</mat-icon>
+    <mat-divider />
+    <div class="menu-label">{{ "THEME_TITLE" | translate }}</div>
+    @for (m of themes; track m.mode) {
+      <button mat-menu-item role="menuitemradio" [attr.aria-checked]="theme.mode() === m.mode" (click)="theme.mode.set(m.mode)">
+        <mat-icon>{{ m.icon }}</mat-icon>
+        <span>{{ m.label | translate }}</span>
+        @if (theme.mode() === m.mode) { <span class="check material-icons" aria-hidden="true">check</span> }
+      </button>
+    }
+    <mat-divider />
+    <div class="menu-label">{{ "LANGUAGE" | translate }}</div>
+    @for (l of languages; track l.code) {
+      <button mat-menu-item role="menuitemradio" [attr.aria-checked]="i18n.language() === l.code" (click)="i18n.use(l.code)">
+        <mat-icon>translate</mat-icon>
+        <span>{{ l.label }}</span>
+        @if (i18n.language() === l.code) { <span class="check material-icons" aria-hidden="true">check</span> }
+      </button>
+    }
+    <mat-divider />
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>{{ "LOG_OUT" | translate }}</span>
     </button>
-  </mat-toolbar-row>
+  </mat-menu>
 </mat-toolbar>

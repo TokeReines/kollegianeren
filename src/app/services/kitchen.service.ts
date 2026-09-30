@@ -1,24 +1,18 @@
 import {Injectable} from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
-import {AuthService} from './auth.service';
+import {collection, doc} from 'firebase/firestore';
+import {Observable, map} from 'rxjs';
 import {Kitchen} from '../interfaces/kitchen';
+import {db, watch, watchDoc} from '../firebase';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({providedIn: 'root'})
 export class KitchenService {
-  _kitchens: AngularFirestoreCollection<Kitchen>;
-
-  constructor(private afs: AngularFirestore, private auth: AuthService) {
-      this._kitchens = this.afs.collection<Kitchen>('kitchens');
+  // One kitchen's name, live (renames show up straight away). One read, not the whole list.
+  name(kitchenId: string): Observable<string> {
+    return watchDoc<Kitchen>(doc(db, 'kitchens', kitchenId)).pipe(map(k => k?.name ?? ''));
   }
 
-  set(kitchen) {
-    this._kitchens.doc(kitchen.id).set(kitchen);
-  }
-
-  list() {
-    console.log(this._kitchens);
-    return this._kitchens;
+  // All registered kitchens (id and name). Readable before sign-in, for the register page.
+  list(): Observable<Kitchen[]> {
+    return watch<Kitchen>(collection(db, 'kitchens'));
   }
 }

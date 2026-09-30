@@ -1,5 +1,49 @@
-/* You can add global styles to this file, and also import other style files */
-@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+@use '@angular/material' as mat;
+@use './theme-colors' as brand;
+
+// Material 3, with palettes generated from the original purple (#673ab7) and amber (#ffc107)
+// (ng generate @angular/material:theme-color). Light or dark follows the tablet.
+html {
+  color-scheme: light dark;
+  @include mat.theme((
+    color: (primary: brand.$primary-palette, tertiary: brand.$tertiary-palette),
+    typography: Roboto,
+    density: 0,
+  ));
+  // Material 3 app chrome: the top app bar and the navigation rail sit on surface-container, the
+  // page itself on surface. Brand colour goes on the things you act on (FAB, selected items).
+  @include mat.toolbar-overrides((
+    container-background-color: var(--mat-sys-surface-container),
+    container-text-color: var(--mat-sys-on-surface),
+  ));
+  @include mat.sidenav-overrides((
+    container-background-color: var(--mat-sys-surface-container),
+    content-background-color: var(--mat-sys-surface-container),
+    container-shape: 0,
+  ));
+  // Outlined cards (MAT_CARD_CONFIG), so they have an edge in both light and dark.
+  @include mat.card-overrides((
+    outlined-container-color: var(--mat-sys-surface),
+    outlined-outline-color: var(--mat-sys-outline-variant),
+  ));
+  @include mat.table-overrides((
+    background-color: transparent,
+  ));
+  @include mat.menu-overrides((
+    item-label-text-font: var(--mat-sys-body-large-font),
+    item-label-text-size: var(--mat-sys-body-large-size),
+    item-label-text-weight: var(--mat-sys-body-large-weight),
+    item-label-text-line-height: var(--mat-sys-body-large-line-height),
+    item-label-text-tracking: var(--mat-sys-body-large-tracking),
+  ));
+  @include mat.icon-button-overrides((
+    icon-color: inherit,
+  ));
+  @include mat.fab-overrides((
+    container-color: var(--mat-sys-tertiary-container),
+    foreground-color: var(--mat-sys-on-tertiary-container),
+  ));
+}
 
 html, body {
   height: 100%;
@@ -7,114 +51,172 @@ html, body {
 
 body {
   margin: 0;
-  font-family: 'Roboto', sans-serif;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
 }
 
-.basic-container {
-  padding: 30px;
+a {
+  color: var(--mat-sys-primary);
 }
 
-.version-info {
-  font-size: 8pt;
-  float: right;
-}
-
-
-.bottom-right {
-  top: auto;
-  right: 30px;
-  bottom: 30px;
-  left: auto;
-  position: fixed !important;
-}
-
-.table-image {
-  max-height: 46px;
-}
-
-.register-form {
-  position: absolute;
-  width: 300px;
-  height: 200px;
-  z-index: 15;
-  left: 50%;
-  margin: 100px 0 0 -150px;
-}
-
-.image-wrapper {
-  height: 75px !important;
-  width: 75px !important;
-
-  .product {
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
-    max-height: 75px !important;
-    max-width: 75px  !important;
-  }
-
-  .avatar {
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
-    max-height: 75px !important;
-    max-width: 75px  !important;
-    border-radius: 50%;
-  }
+// Page titles: M3 headline-small, the same on every page.
+h1 {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 16px;
 }
 
 .fill-space {
-  // This fills the remaining space, by using flexbox.
-  // Every toolbar row uses a flexbox row layout.
   flex: 1 1 auto;
 }
 
-.image-input-radio {
-
+// The page's floating action button.
+.bottom-right {
+  position: fixed !important;
+  right: 30px;
+  bottom: 30px;
 }
 
-.mat-dialog-content {
-  height:345px;
-}
-.user_id {
-  width: 100px;
-}
-
-.dialog-image-preview {
-    display: table;
-    margin-left: auto;
-    margin-right: auto;
-  .user-img {
-    width: 75px;
-    height: 75px;
-    border-radius: 50%;
-  }
-  .product-img {
-    width: 75px;
-    height: 75px;
-  }
-  button {
-    display: table-cell;
-    vertical-align: middle;
-  }
+// Login and register: a centred column.
+.register-form {
+  width: min(380px, calc(100vw - 32px));
+  margin: 72px auto 24px;
 }
 
-
-.sidenav-content {
-  padding: 20px;
-  height: calc(100% - 64px) !important;
-  overflow: auto;
+// Cards have no padding of their own in Material 3; the pages here assume 16px.
+.mat-mdc-card {
+  padding: 16px;
 }
 
-mat-sidenav-content {
+// ---- Shell: top app bar, navigation, page
+
+app-root {
+  display: block;
   height: 100%;
 }
 
-mat-sidenav-container {
-  height: calc(100% - 64px) !important;
+// The page: surface, with a rounded corner against the rail on tablets.
+.sidenav-content {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 24px;
+  overflow: auto;
+  background: var(--mat-sys-surface);
 }
 
-.dialog-checkbox-active {
-  display: block;
-  margin-top: auto;
+.with-rail .sidenav-content {
+  border-top-left-radius: 24px;
+}
+
+.sidenav-content:has(app-buy-page) {
+  padding: 16px 20px;
+}
+
+@media (max-width: 760px) {
+  .sidenav-content {
+    padding: 16px;
+  }
+}
+
+// App-bar icons use on-surface-variant, as in the M3 top app bar.
+.mat-toolbar .mat-mdc-icon-button {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Account menu in the top app bar (rendered in an overlay, so styled here).
+.account-menu {
+  min-width: 260px !important;
+
+  .account-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: default;
+
+    img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  .account-kitchen {
+    font: var(--mat-sys-title-small);
+    color: var(--mat-sys-on-surface);
+  }
+
+  .account-email {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .menu-label {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+    padding: 12px 16px 4px;
+  }
+
+  .mat-mdc-menu-item .mat-mdc-menu-item-text {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .mat-mdc-menu-item .check {
+    margin-left: auto;
+    padding-left: 16px;
+    font-size: 20px;
+    color: var(--mat-sys-primary);
+  }
+}
+
+// ---- Tables
+
+// Wide tables scroll sideways inside the page instead of squeezing their columns.
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.mat-mdc-table {
+  width: 100%;
+
+  .mat-mdc-header-cell {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  // Sticky columns need an opaque background.
+  .mat-mdc-table-sticky {
+    background: var(--mat-sys-surface);
+  }
+
+  // Columns that only hold a picture, an icon button or a checkbox stay narrow and centred.
+  .mat-column-image {
+    width: 72px;
+  }
+
+  .mat-column-room {
+    width: 96px;
+  }
+
+  .mat-column-active,
+  .mat-column-edit,
+  .mat-column-link,
+  .mat-column-moveOut,
+  .mat-column-delete {
+    width: 76px;
+    text-align: center;
+  }
+}
+
+// Residents and products keep readable columns on phones and scroll sideways instead; the
+// picture and name columns are sticky.
+.wide-table {
+  min-width: 760px;
+
+  .mat-column-name {
+    min-width: 160px;
+  }
 }

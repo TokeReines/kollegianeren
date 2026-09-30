@@ -1,15 +1,34 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {User} from 'firebase/auth';
+import {filter, take} from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {MatIconModule} from '@angular/material/icon';
+import {AppUpdateService} from '../../services/app-update.service';
+import {AuthService} from '../../services/auth.service';
+import {TranslatePipe} from '../../translate.pipe';
+import {NavigationComponent} from '../navigation/navigation.component';
+import {ToolbarComponent} from '../toolbar/toolbar.component';
+import {openReveal, revealWanted} from '../reveal-dialog/reveal-dialog.component';
 
+// The signed-in shell: offline banner, top app bar, navigation and the page.
 @Component({
   selector: 'app-home',
+  imports: [MatIconModule, TranslatePipe, NavigationComponent, ToolbarComponent],
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrl: './home.component.scss',
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent {
+  private readonly appUpdate = inject(AppUpdateService);
+  protected readonly online = this.appUpdate.online;
 
-  constructor() { }
-
-  ngOnInit() {
+  constructor() {
+    this.appUpdate.start();
+    const dialog = inject(MatDialog);
+    inject(AuthService).user$.pipe(filter((u): u is User => !!u && !u.isAnonymous), take(1), takeUntilDestroyed()).subscribe(user => {
+      if (revealWanted(user.uid)) {
+        openReveal(dialog, {uid: user.uid});
+      }
+    });
   }
-
 }

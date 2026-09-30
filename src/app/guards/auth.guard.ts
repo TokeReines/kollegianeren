@@ -1,26 +1,22 @@
-import {Injectable} from '@angular/core';
+import {inject} from '@angular/core';
+import {CanActivateFn, Router} from '@angular/router';
+import {map, take} from 'rxjs';
 import {AuthService} from '../services/auth.service';
-import {CanActivate, Router} from '@angular/router';
-import {take, tap, map} from 'rxjs/operators';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class AuthGuard implements CanActivate {
+// Signed in with a kitchen login (the anonymous sessions of resident links do not count).
+export const authGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  return inject(AuthService).user$.pipe(
+    take(1),
+    map(user => user && !user.isAnonymous ? true : router.createUrlTree(['/login'])),
+  );
+};
 
-  constructor(private router: Router, private authService: AuthService) {
-  }
-
-  canActivate() {
-    return this.authService.user.pipe(
-      take(1),
-      map(user => !!user),
-      tap(loggedIn => {
-        if (!loggedIn) {
-          console.log('access denied');
-          this.router.navigate(['login']);
-        }
-      })
-    );
-  }
-}
+// Management pages; a tablet login is sent to the buy page. The rules enforce it regardless.
+export const manageGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  return inject(AuthService).role$.pipe(
+    take(1),
+    map(role => role !== 'tablet' ? true : router.createUrlTree(['/'])),
+  );
+};

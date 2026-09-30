@@ -1,68 +1,70 @@
-import {Injectable} from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
-import {AuthService} from './auth.service';
-import {map} from 'rxjs/operators';
+import {Injectable, inject} from '@angular/core';
+import {deleteDoc, doc, increment, limit, orderBy, query, serverTimestamp, where, writeBatch} from 'firebase/firestore';
+import {Observable} from 'rxjs';
+import {Product, tracksStock} from '../interfaces/product';
 import {Purchase} from '../interfaces/purchase';
-import * as firebase from 'firebase';
+import {User} from '../interfaces/user';
+import {db} from '../firebase';
+import {AuthService} from './auth.service';
+import {kitchenCollection, watchInKitchen} from './kitchen-data';
 
-@Injectable({
-  providedIn: 'root'
-})
+// Units per product, for the stock and sold counters.
+type Units = {product: Pick<Product, 'id' | 'stock'>, units: number}[];
+
+@Injectable({providedIn: 'root'})
 export class PurchaseService {
-  _purchases: AngularFirestoreCollection<Purchase>;
-  _root: any;
+  private readonly auth = inject(AuthService);
 
-  constructor(private afs: AngularFirestore, private auth: AuthService) {
-    this.auth.user.subscribe(
-      (user) => {
-        if (!user) {
-          return;
-        }
-        this._root = this.afs.collection<Purchase>('kitchens').doc(user.uid);
-        this._purchases = this._root.collection('purchases');
-      }
-    );
+  private purchases() {
+    return kitchenCollection(this.auth.currentKitchenId, 'purchases');
   }
 
-  list() {
-    return this._purchases.snapshotChanges().pipe(
-      map(actions => actions.map(a => {
-        const data = a.payload.doc.data() as Purchase;
-        const id = a.payload.doc.id;
-        return {id, ...data} as Purchase;
-      }))
-    );
+  // Purchases from the start of `from` to the end of `to`.
+  between(from: Date, to: Date): Observable<Purchase[]> {
+    const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const end = new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1);
+    return watchInKitchen<Purchase>(this.auth.kitchenId$, kid =>
+      query(kitchenCollection(kid, 'purchases'), where('timestamp', '>=', start), where('timestamp', '<', end)));
   }
 
-  list_from_to(from: Date, to: Date) {
-    from.setHours(0, 0, 0, 0);
-    to.setHours(23, 59, 59, 999);
-    return this._root.collection('purchases', ref => ref.where('timestamp', '>=', from)
-      .where('timestamp', '<', to)) as AngularFirestoreCollection<Purchase>;
+  newest(count = 30): Observable<Purchase[]> {
+    return watchInKitchen<Purchase>(this.auth.kitchenId$, kid =>
+      query(kitchenCollection(kid, 'purchases'), orderBy('timestamp', 'desc'), limit(count)));
   }
 
-  list_newest(limit = 30) {
-    const collection = this._root.collection('purchases', ref => ref.orderBy('timestamp', 'desc')
-      .limit(limit)) as AngularFirestoreCollection<Purchase>;
-    return collection.snapshotChanges().pipe(
-      map(actions => actions.map(a => {
-        const data = a.payload.doc.data() as Purchase;
-        const id = a.payload.doc.id;
-        return {id, ...data} as Purchase;
-      }))
-    );
+  // Every buyer gets `amount` of the product: one purchase each, in one batch (queued while
+  // offline, like any write). The stock and sold counters go in a second one: if that fails, for
+  // a product deleted meanwhile, the purchases still count. Resolves once the server has them.
+  sell(product: Product, amount: number, buyers: User[]): Promise<void> {
+    const batch = writeBatch(db);
+    for (const buyer of buyers) {
+      batch.set(doc(this.purchases()), {
+        productId: product.id, productName: product.name, amount, price: product.price * amount,
+        userId: buyer.id, userName: buyer.name, userRoom: buyer.room, timestamp: serverTimestamp(),
+      });
+    }
+    this.moveCounters([{product, units: amount * buyers.length}], -1).catch(() => undefined);
+    return batch.commit();
   }
 
-  update(purchase: Purchase) {
-    this._purchases.doc(purchase.id).update(purchase);
+  // Takes a purchase back (a wrong tap, or a correction by the treasurer), and gives its units
+  // back to the stock and sold counters. Tablets may do this for a minute after buying.
+  async remove(purchase: Purchase, product: Pick<Product, 'id' | 'stock'> | undefined): Promise<void> {
+    await deleteDoc(doc(this.purchases(), purchase.id));
+    if (product) {
+      await this.moveCounters([{product, units: Number(purchase.amount) || 0}], 1).catch(() => undefined);
+    }
   }
 
-  delete(purchase: Purchase) {
-    this._purchases.doc(purchase.id).delete();
-  }
-
-  add(purchase: Purchase) {
-    purchase.timestamp = firebase.firestore.FieldValue.serverTimestamp();
-    this._purchases.add(purchase);
+  // direction -1 for a sale (stock down, sold up), 1 for taking it back.
+  private moveCounters(units: Units, direction: 1 | -1) {
+    const batch = writeBatch(db);
+    for (const {product, units: n} of units) {
+      batch.update(doc(kitchenCollection(this.auth.currentKitchenId, 'products'), product.id), {
+        sold: increment(-direction * n),
+        ...(tracksStock(product) ? {stock: increment(direction * n)} : {}),
+      });
+    }
+    return batch.commit();
   }
 }

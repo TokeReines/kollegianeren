@@ -1,48 +1,32 @@
-import { Injectable } from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
-import {Product} from '../interfaces/product';
+import {Injectable, inject} from '@angular/core';
+import {addDoc, deleteDoc, doc, updateDoc} from 'firebase/firestore';
+import {Observable} from 'rxjs';
+import {User, UserFields} from '../interfaces/user';
 import {AuthService} from './auth.service';
-import {User} from '../interfaces/user';
-import {map} from 'rxjs/operators';
+import {kitchenCollection, watchInKitchen} from './kitchen-data';
 
-@Injectable({
-  providedIn: 'root'
-})
+// Residents of the signed-in kitchen (the `users` collection).
+@Injectable({providedIn: 'root'})
 export class UserService {
-  _users: AngularFirestoreCollection<User>;
+  private readonly auth = inject(AuthService);
 
-  constructor(private afs: AngularFirestore, private auth: AuthService) {
-    this.auth.user.subscribe(
-      (user) => {
-        if (!user) {
-          return;
-        }
-        this._users = this.afs.collection<Product>('kitchens').doc(user.uid).collection('users');
-      }
-    );
+  private users() {
+    return kitchenCollection(this.auth.currentKitchenId, 'users');
   }
 
-  list() {
-    return this._users.snapshotChanges()
-      .pipe(
-        map(actions => actions.map(a => {
-          const data = a.payload.doc.data() as User;
-          const id = a.payload.doc.id;
-          return {id, ...data} as User;
-        }))
-      );
+  list(): Observable<User[]> {
+    return watchInKitchen<User>(this.auth.kitchenId$, kid => kitchenCollection(kid, 'users'));
   }
 
-  update(user: User) {
-    this._users.doc(user.id).update(user);
+  add(user: UserFields) {
+    return addDoc(this.users(), {...user, kitchen: this.auth.currentKitchenId});
+  }
+
+  update(user: User, fields: Partial<UserFields>) {
+    return updateDoc(doc(this.users(), user.id), fields);
   }
 
   delete(user: User) {
-    this._users.doc(user.id).delete();
+    return deleteDoc(doc(this.users(), user.id));
   }
-
-  add(user: User) {
-    this._users.add(user);
-  }
-
 }

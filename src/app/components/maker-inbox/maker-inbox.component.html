@@ -1,0 +1,37 @@
+@if (isAdmin()) {
+  <div class="inbox">
+    <mat-action-list class="threads">
+      @for (t of threads(); track t.kitchenId) {
+        <button mat-list-item [class.active]="t.kitchenId === selectedId()" [attr.aria-current]="t.kitchenId === selectedId()" (click)="open(t)">
+          <span matListItemTitle>{{ t.kitchenName }} @if (t.unread) { <b>({{ t.unread }})</b> }</span>
+          <span matListItemLine>{{ t.messages[t.messages.length - 1].text }}</span>
+        </button>
+      } @empty {
+        <p class="empty">{{ "INBOX_EMPTY" | translate }}</p>
+      }
+    </mat-action-list>
+
+    <div class="thread">
+      @if (selected(); as t) {
+        <h2>{{ t.kitchenName }}</h2>
+        @for (m of t.messages; track m.id) {
+          <div class="bubble" [class.mine]="m.from === 'maker'">
+            <div class="text">{{ m.text }}</div>
+            <div class="meta">{{ m.from === 'maker' ? 'Toke' : t.kitchenName }} · {{ m.createdAt.toDate() | date:'d/M HH:mm' }}</div>
+          </div>
+        }
+        <div class="composer">
+          <mat-form-field class="grow">
+            <mat-label>{{ "INBOX_REPLY" | translate }}</mat-label>
+            <textarea matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="reply()"></textarea>
+          </mat-form-field>
+          <button mat-flat-button [disabled]="!text().trim()" (click)="reply()">{{ "MAKER_SEND" | translate }}</button>
+        </div>
+      } @else {
+        <p class="empty">{{ "INBOX_PICK" | translate }}</p>
+      }
+    </div>
+  </div>
+} @else {
+  <p class="empty page">{{ "INBOX_NOT_ADMIN" | translate }}</p>
+}

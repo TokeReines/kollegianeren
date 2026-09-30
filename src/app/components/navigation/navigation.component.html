@@ -1,25 +1,31 @@
-<mat-sidenav-container class="nav-container">
-  <mat-sidenav #sidenav mode="side" opened role="navigation">
-    <mat-nav-list>
-      <mat-list-item [routerLink]="['']">
-        <mat-icon matListIcon>local_grocery_store</mat-icon>
-        <a>Ølsystem</a>
-      </mat-list-item>
-      <mat-list-item [routerLink]="['/products']">
-        <mat-icon matListIcon>local_bar</mat-icon>
-        <a>Produkter</a>
-      </mat-list-item>
-      <mat-list-item [routerLink]="['/users']">
-        <mat-icon matListIcon>people</mat-icon>
-        <a>Beboere</a>
-      </mat-list-item>
-      <mat-list-item [routerLink]="['/accounting']">
-        <mat-icon matListIcon>receipt</mat-icon>
-        <a>Regnskab</a>
-      </mat-list-item>
-    </mat-nav-list>
+<mat-sidenav-container class="nav-container" [class.with-rail]="sidenav.showsRail()">
+  <mat-sidenav [mode]="sidenav.narrow() ? 'over' : 'side'" [opened]="sidenav.opened()" (openedChange)="openedChange($event)" role="navigation">
+    @if (sidenav.narrow()) {
+      <!-- Phones: a slide-over list. -->
+      <mat-nav-list>
+        @for (item of items(); track item.path) {
+          <a mat-list-item (click)="sidenav.phoneMenuOpen.set(false)" [routerLink]="item.path" routerLinkActive #rla="routerLinkActive"
+             [activated]="rla.isActive" [routerLinkActiveOptions]="{exact: !!item.exact}">
+            <mat-icon matListItemIcon [matBadge]="item.badge || null" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label | translate }}</span>
+          </a>
+        }
+      </mat-nav-list>
+    } @else {
+      <!-- Tablets and up: a Material 3 navigation rail, so the buy grid keeps its width. -->
+      <nav class="rail">
+        @for (item of items(); track item.path) {
+          <a class="rail-item" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact: !!item.exact}">
+            <span class="indicator">
+              <mat-icon [matBadge]="item.badge || null" matBadgeSize="small" aria-hidden="false">{{ item.icon }}</mat-icon>
+            </span>
+            <span class="label">{{ item.label | translate }}</span>
+          </a>
+        }
+      </nav>
+    }
   </mat-sidenav>
   <mat-sidenav-content class="sidenav-content">
-    <router-outlet></router-outlet>
+    <router-outlet />
   </mat-sidenav-content>
 </mat-sidenav-container>
