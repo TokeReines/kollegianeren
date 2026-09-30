@@ -348,7 +348,7 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   const eat = Timestamp.fromDate(new Date(Date.now() + 3 * 864e5));
   const meal = (day, extra = {}) => ({
     day, date: eat, closesAt: Timestamp.fromMillis(eat.toMillis() - 864e5), cooks: ['u1'], menu: 'Lasagne', notes: '',
-    tags: ['meat', 'dairy'], askCook: false, signups: ['u1'], createdAt: serverTimestamp(), ...extra,
+    tags: ['meat', 'lactoseFree'], askCook: false, signups: ['u1'], createdAt: serverTimestamp(), ...extra,
   });
   const meals = collection(db, 'kitchens', A, 'meals');
   const ref = doc(meals, '2026-10-01');

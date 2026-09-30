@@ -245,7 +245,6 @@
   "FOOD_TAG_fish": "Fisk",
   "FOOD_TAG_vegetarian": "Vegetar",
   "FOOD_TAG_vegan": "Vegansk",
-  "FOOD_TAG_dairy": "Mælk",
   "FOOD_TAG_nuts": "Nødder",
   "FOOD_WEEK": "Uge",
   "FOOD_COOKS": "laver mad",
@@ -280,5 +279,6 @@
   "FOOD_STATS_COOKED": "lavede mad",
   "FOOD_STATS_TIME": "gang",
   "FOOD_STATS_TIMES": "gange",
-  "FOOD_STATS_IN_LAST": "de sidste"
+  "FOOD_STATS_IN_LAST": "de sidste",
+  "FOOD_TAG_lactoseFree": "Laktosefri"
 }

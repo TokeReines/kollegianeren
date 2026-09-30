@@ -245,7 +245,6 @@
   "FOOD_TAG_fish": "Fish",
   "FOOD_TAG_vegetarian": "Vegetarian",
   "FOOD_TAG_vegan": "Vegan",
-  "FOOD_TAG_dairy": "Dairy",
   "FOOD_TAG_nuts": "Nuts",
   "FOOD_WEEK": "Week",
   "FOOD_COOKS": "cooks",
@@ -280,5 +279,6 @@
   "FOOD_STATS_COOKED": "cooked",
   "FOOD_STATS_TIME": "time",
   "FOOD_STATS_TIMES": "times",
-  "FOOD_STATS_IN_LAST": "in the last"
+  "FOOD_STATS_IN_LAST": "in the last",
+  "FOOD_TAG_lactoseFree": "Lactose free"
 }
