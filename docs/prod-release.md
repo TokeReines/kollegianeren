@@ -64,7 +64,7 @@ npm run build:prod
 firebase hosting:channel:deploy release --project prod --expires 3d
 ```
 
-This serves the new build on prod data at a temporary URL (`https://ehp--release-….web.app`) without touching the live site. If the CLI warns that it could not add the channel to the authorised domains, carry on: email and password logins do not need it. There:
+This serves the new build on prod data at a temporary URL (`https://ehp--release-x3xqlmw9.web.app`) without touching the live site. Keep the channel name `release`: the prod API key only accepts that preview address (`ops/api-key.js`), so another channel name would fail to log in. If the CLI warns that it could not add the channel to the authorised domains, carry on: email and password logins do not need it. There:
 
 - Log in with the maker login: Aktuelt and the inbox load, no errors in the console.
 - If a kitchen login is at hand: buy, check Seneste køb and take one back, open Regnskab and export CSV.

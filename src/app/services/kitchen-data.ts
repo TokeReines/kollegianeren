@@ -2,7 +2,7 @@ import {CollectionReference, Query, collection} from 'firebase/firestore';
 import {Observable, switchMap} from 'rxjs';
 import {db, watch} from '../firebase';
 
-export type KitchenCollection = 'products' | 'users' | 'purchases' | 'messages' | 'members';
+export type KitchenCollection = 'products' | 'users' | 'purchases' | 'messages' | 'members' | 'meals';
 
 export function kitchenCollection(kitchenId: string, name: KitchenCollection): CollectionReference {
   return collection(db, 'kitchens', kitchenId, name);
