@@ -346,14 +346,24 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
   const db = asKitchen('tab');
   const eat = Timestamp.fromDate(new Date(Date.now() + 3 * 864e5));
-  const meal = (extra = {}) => ({
-    date: eat, closesAt: Timestamp.fromMillis(eat.toMillis() - 864e5), cookId: 'u1', menu: 'Lasagne', notes: '',
+  const meal = (day, extra = {}) => ({
+    day, date: eat, closesAt: Timestamp.fromMillis(eat.toMillis() - 864e5), cookId: 'u1', menu: 'Lasagne', notes: '',
     tags: ['meat', 'dairy'], askCook: false, signups: ['u1'], createdAt: serverTimestamp(), ...extra,
   });
   const meals = collection(db, 'kitchens', A, 'meals');
-  const ref = await assertSucceeds(addDoc(meals, meal()));
-  await assertSucceeds(addDoc(meals, meal({ menu: '', tags: [] }))); // only the cook, details later
-  await assertSucceeds(getDocs(query(meals, where('date', '>=', new Date()), orderBy('date'), limit(30))));
+  const ref = doc(meals, '2026-10-01');
+  await assertSucceeds(setDoc(ref, meal('2026-10-01')));
+  await assertSucceeds(setDoc(doc(meals, '2026-10-02'), meal('2026-10-02', { menu: '', tags: [] }))); // only the cook, details later
+  // One meal a day: booking a taken day is refused, as are ids that are not the day.
+  await assertFails(setDoc(ref, meal('2026-10-01', { cookId: 'u2' })));
+  await assertFails(setDoc(doc(meals, '2026-10-03'), meal('2026-10-04')));
+  await assertFails(addDoc(meals, meal('2026-10-05')));
+  await assertFails(updateDoc(ref, { day: '2026-10-06' }));
+  // Moving a meal: the new day in the same batch as removing the old one, refused onto a taken day.
+  const move = (to) => { const b = writeBatch(db); b.set(doc(meals, to), meal(to)); b.delete(doc(meals, '2026-10-02')); return b.commit(); };
+  await assertFails(move('2026-10-01'));
+  await assertSucceeds(move('2026-10-07'));
+  await assertSucceeds(getDocs(query(meals, where('date', '>=', new Date()), where('date', '<', new Date(Date.now() + 7 * 864e5)), orderBy('date'), limit(50))));
   await assertSucceeds(updateDoc(ref, { signups: arrayUnion('u2') }));
   await assertSucceeds(updateDoc(ref, { signups: arrayRemove('u2') }));
   await assertSucceeds(updateDoc(ref, { menu: 'Lasagne og salat', askCook: true }));
@@ -361,10 +371,10 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   await assertFails(updateDoc(ref, { extra: 1 }));
   await assertFails(updateDoc(ref, { menu: 'x'.repeat(201) }));
   await assertFails(updateDoc(ref, { closesAt: Timestamp.fromMillis(eat.toMillis() + 1) })); // closes after dinner
-  await assertFails(addDoc(meals, meal({ createdAt: Timestamp.now() })));
-  await assertFails(addDoc(meals, meal({ signups: 'u1' })));
+  await assertFails(setDoc(doc(meals, '2026-10-08'), meal('2026-10-08', { createdAt: Timestamp.now() })));
+  await assertFails(setDoc(doc(meals, '2026-10-08'), meal('2026-10-08', { signups: 'u1' })));
   await assertFails(getDocs(collection(asKitchen(B), 'kitchens', A, 'meals')));
-  await assertFails(addDoc(collection(asKitchen(B), 'kitchens', A, 'meals'), meal()));
+  await assertFails(setDoc(doc(asKitchen(B), 'kitchens', A, 'meals', '2026-10-08'), meal('2026-10-08')));
   await assertFails(getDocs(collection(anon(), 'kitchens', A, 'meals')));
   await assertSucceeds(deleteDoc(ref));
 });

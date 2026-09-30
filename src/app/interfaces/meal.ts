@@ -10,7 +10,9 @@ export const CLOSE_HOURS = [48, 24, 12, 0] as const;
 // A food club dinner (kitchens/{kid}/meals): one resident cooks, the others sign up. The sign-ups
 // live in the document, so the whole list costs one read per meal.
 export interface Meal {
+  // The day, "2026-10-01", also in `day`: one meal a day.
   id: string;
+  day: string;
   // When we eat.
   date: Timestamp;
   cookId: string;
@@ -26,6 +28,12 @@ export interface Meal {
 }
 
 export type MealFields = Pick<Meal, 'date' | 'cookId' | 'menu' | 'notes' | 'tags' | 'closesAt' | 'askCook'>;
+
+// A meal's document id: its local day.
+export function dayKey(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
 export function signupOpen(meal: Pick<Meal, 'askCook' | 'closesAt'>, now = Date.now()): boolean {
   return !meal.askCook && now < millis(meal.closesAt);

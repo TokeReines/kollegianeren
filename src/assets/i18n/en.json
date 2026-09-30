@@ -257,5 +257,6 @@
   "FOOD_THIS_WEEK": "This week",
   "FOOD_NEXT_WEEK": "Next week",
   "FOOD_PREV_WEEK": "Previous week",
-  "FOOD_TO": "to"
+  "FOOD_TO": "to",
+  "FOOD_DAY_TAKEN": "That day already has a food club. Pick another day."
 }

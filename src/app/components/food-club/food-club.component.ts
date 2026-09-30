@@ -92,7 +92,9 @@ export class FoodClubComponent {
       {width: '720px', maxWidth: '94vw', data: {day, residents: this.residents()}})
       .afterClosed().subscribe(cook => {
         if (cook) {
-          this.mealService.add(newMeal(day, cook.id)).catch(this.notify.error);
+          // Refused when another tablet took the day a moment ago.
+          this.mealService.add(newMeal(day, cook.id)).catch(e => (e as {code?: string})?.code === 'permission-denied'
+            ? this.notify.info(this.i18n.t('FOOD_DAY_TAKEN'), 5000) : this.notify.error(e));
         }
       });
   }
@@ -102,7 +104,9 @@ export class FoodClubComponent {
       {width: '520px', maxWidth: '94vw', data: {meal, residents: this.residents()}})
       .afterClosed().subscribe(fields => {
         if (fields) {
-          this.mealService.update(meal, fields).catch(this.notify.error);
+          this.mealService.update(meal, fields)
+            .then(moved => moved || this.notify.info(this.i18n.t('FOOD_DAY_TAKEN'), 5000))
+            .catch(this.notify.error);
         }
       });
   }

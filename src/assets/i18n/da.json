@@ -257,5 +257,6 @@
   "FOOD_THIS_WEEK": "Denne uge",
   "FOOD_NEXT_WEEK": "Næste uge",
   "FOOD_PREV_WEEK": "Forrige uge",
-  "FOOD_TO": "til"
+  "FOOD_TO": "til",
+  "FOOD_DAY_TAKEN": "Der er allerede madklub den dag. Vælg en anden dag."
 }

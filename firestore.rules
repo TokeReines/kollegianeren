@@ -237,10 +237,13 @@ service cloud.firestore {
 
       // Food club: residents cook for the kitchen and sign up on the tablet, so every member may
       // add, edit and remove meals. Closing the sign-up is up to the page and the cook.
+      // One meal a day: the document id is the day ("2026-10-01"), so booking a taken day is an
+      // update of that meal, which fails on createdAt. Moving a meal is a new day's document.
       match /meals/{mealId} {
         function validMeal(d) {
-          return d.keys().hasOnly(['date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
-            && d.keys().hasAll(['date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+          return d.keys().hasOnly(['day', 'date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+            && d.keys().hasAll(['day', 'date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+            && d.day == mealId && mealId.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
             && d.date is timestamp && d.closesAt is timestamp && d.closesAt <= d.date
             && d.cookId is string
             && d.menu is string && d.menu.size() <= 200

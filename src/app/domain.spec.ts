@@ -7,7 +7,7 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
-import {Meal, atTime, closeHours, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
+import {Meal, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
 import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
@@ -71,6 +71,11 @@ describe('food club', () => {
     expect(days.map(d => d.day.getDate())).toEqual([30, 1, 2, 3, 4]);
     expect(days.map(d => d.meals.length)).toEqual([0, 0, 1, 0, 0]);
     expect(weekDays([], weekStart(today, 1), today).length).toBe(7);
+  });
+
+  it('keys a meal by its local day, one meal a day', () => {
+    expect(dayKey(new Date(2026, 9, 1, 23, 30))).toBe('2026-10-01');
+    expect(dayKey(new Date(2026, 11, 31, 0, 5))).toBe('2026-12-31');
   });
 
   it('numbers weeks as Danish calendars do', () => {
