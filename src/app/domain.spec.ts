@@ -7,6 +7,7 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
+import {atTime, closeHours, signupOpen} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
 import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
@@ -33,6 +34,28 @@ describe('products', () => {
 
   it('sorts names the Danish way', () => {
     expect(['Øl', 'Cola', 'Æble'].map(name => ({name})).sort(byName).map(p => p.name)).toEqual(['Cola', 'Æble', 'Øl']);
+  });
+});
+
+describe('food club', () => {
+  const dinner = at(2026, 10, 2, 18);
+  const meal = (hoursBefore: number, askCook = false) => ({date: dinner, closesAt: Timestamp.fromMillis(dinner.toMillis() - hoursBefore * 3.6e6), askCook});
+
+  it('sign-up is open until it closes, and never when people ask the cook', () => {
+    const dayBefore = at(2026, 10, 1, 17).toMillis();
+    expect(signupOpen(meal(24), dayBefore)).toBe(true);
+    expect(signupOpen(meal(24), at(2026, 10, 1, 18).toMillis())).toBe(false);
+    expect(signupOpen(meal(24, true), dayBefore)).toBe(false);
+  });
+
+  it('finds the closing choice a meal was made with', () => {
+    expect(closeHours(meal(48))).toBe(48);
+    expect(closeHours(meal(0))).toBe(0);
+    expect(closeHours(meal(11))).toBe(12);
+  });
+
+  it('puts the dinner time on the chosen day', () => {
+    expect(atTime(new Date(2026, 9, 2, 0, 0), '18:30')).toEqual(new Date(2026, 9, 2, 18, 30));
   });
 });
 

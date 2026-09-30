@@ -235,17 +235,36 @@ service cloud.firestore {
           || (isMember(kid) && changed().hasOnly(['stock', 'sold']) && stockMoves() && soldMoves());
       }
 
+      // Food club: residents cook for the kitchen and sign up on the tablet, so every member may
+      // add, edit and remove meals. Closing the sign-up is up to the page and the cook.
+      match /meals/{mealId} {
+        function validMeal(d) {
+          return d.keys().hasOnly(['date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+            && d.keys().hasAll(['date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+            && d.date is timestamp && d.closesAt is timestamp && d.closesAt <= d.date
+            && d.cookId is string
+            && d.menu is string && d.menu.size() >= 1 && d.menu.size() <= 200
+            && d.notes is string && d.notes.size() <= 2000
+            && d.tags is list && d.tags.size() <= 12
+            && d.askCook is bool
+            && d.signups is list && d.signups.size() <= 100;
+        }
+        allow read, delete: if isMember(kid);
+        allow create: if isMember(kid) && validMeal(request.resource.data) && request.resource.data.createdAt == request.time;
+        allow update: if isMember(kid) && validMeal(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+      }
+
       // A resident's own entry, for the self-view link.
       match /users/{userId} {
         allow get: if viewsResident(kid, userId);
       }
 
-      // users (residents): every member reads, managers write. Purchases, messages and
+      // users (residents): every member reads, managers write. Purchases, messages, meals and
       // members are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products']);
-        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products']);
+        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals']);
+        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals']);
       }
     }
   }

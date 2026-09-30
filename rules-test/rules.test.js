@@ -6,7 +6,7 @@ const path = require('path');
 const {
   initializeTestEnvironment, assertSucceeds, assertFails,
 } = require('@firebase/rules-unit-testing');
-const { increment,
+const { increment, arrayUnion, arrayRemove,
   doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup, writeBatch,
 } = require('firebase/firestore');
@@ -339,4 +339,31 @@ test('resident link: the holder sees one resident and nothing else', async () =>
   // Revoking the link ends access.
   await assertSucceeds(deleteDoc(doc(asKitchen(A), 'residentLinks', TOKEN)));
   await assertFails(getDocs(query(collection(viewer, 'kitchens', A, 'purchases'), where('userId', '==', 'u1'))));
+});
+
+// Food club: every member, tablets too, adds meals and signs up; other kitchens cannot.
+test('food club: tablets add meals and sign up, other kitchens cannot see them', async () => {
+  await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
+  const db = asKitchen('tab');
+  const eat = Timestamp.fromDate(new Date(Date.now() + 3 * 864e5));
+  const meal = (extra = {}) => ({
+    date: eat, closesAt: Timestamp.fromMillis(eat.toMillis() - 864e5), cookId: 'u1', menu: 'Lasagne', notes: '',
+    tags: ['meat', 'dairy'], askCook: false, signups: ['u1'], createdAt: serverTimestamp(), ...extra,
+  });
+  const meals = collection(db, 'kitchens', A, 'meals');
+  const ref = await assertSucceeds(addDoc(meals, meal()));
+  await assertSucceeds(getDocs(query(meals, where('date', '>=', new Date()), orderBy('date'), limit(30))));
+  await assertSucceeds(updateDoc(ref, { signups: arrayUnion('u2') }));
+  await assertSucceeds(updateDoc(ref, { signups: arrayRemove('u2') }));
+  await assertSucceeds(updateDoc(ref, { menu: 'Lasagne og salat', askCook: true }));
+  await assertFails(updateDoc(ref, { createdAt: Timestamp.now() }));
+  await assertFails(updateDoc(ref, { extra: 1 }));
+  await assertFails(updateDoc(ref, { menu: '' }));
+  await assertFails(updateDoc(ref, { closesAt: Timestamp.fromMillis(eat.toMillis() + 1) })); // closes after dinner
+  await assertFails(addDoc(meals, meal({ createdAt: Timestamp.now() })));
+  await assertFails(addDoc(meals, meal({ signups: 'u1' })));
+  await assertFails(getDocs(collection(asKitchen(B), 'kitchens', A, 'meals')));
+  await assertFails(addDoc(collection(asKitchen(B), 'kitchens', A, 'meals'), meal()));
+  await assertFails(getDocs(collection(anon(), 'kitchens', A, 'meals')));
+  await assertSucceeds(deleteDoc(ref));
 });
