@@ -100,3 +100,9 @@ node auth-config.js --project dev shows email enumeration protection, the author
 ## API keys
 
 node api-key.js --project dev|prod shows which websites may use the browser API key; --referrers a,b sets them and --referrers any undoes it. Since 2026-09-30: dev allows kollegianeren.web.app, kollegianeren.firebaseapp.com and localhost; prod allows ehp.web.app, ehp.firebaseapp.com and the release preview channel. The calls are billed to dev, where the API Keys API is on (#63).
+
+## Admin overview
+
+`node admin-stats.js --project dev|prod [--dry]` counts how each kitchen uses the app (purchases today, 7 and 30 days, residents as counts, the product list, food club, messages, logins and when they were last used, old or new app) and writes it to `adminStats/latest`, which only admins can read: the Admin page in the app. No resident names and nothing per resident, as the privacy page promises. Counts are aggregation queries, so a run on prod is about 700 reads.
+
+`cron/tokeserver-admin-stats.sh` runs it once a day on tokeserver, just after the quota resets. It uses its own service account key at `~/.config/kollegianeren/stats-sa.json` (roles `datastore.user`, `firebaseauth.viewer`, `monitoring.viewer`), because it writes that one document; the backup account stays read-only. It skips until the key exists.

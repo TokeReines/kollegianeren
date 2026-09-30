@@ -1,5 +1,5 @@
 import {Routes} from '@angular/router';
-import {authGuard, manageGuard} from './guards/auth.guard';
+import {adminGuard, authGuard, manageGuard} from './guards/auth.guard';
 import {HomeComponent} from './components/home/home.component';
 import {BuyPageComponent} from './components/buy-page/buy-page.component';
 
@@ -22,6 +22,7 @@ export const routes: Routes = [
       {path: 'stats', loadComponent: () => import('./components/stats/stats.component').then(m => m.StatsComponent)},
       {path: 'aktuelt', loadComponent: () => import('./components/aktuelt/aktuelt.component').then(m => m.AktueltComponent)},
       {path: 'maker', redirectTo: 'aktuelt'},
+      {path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)},
       {path: 'inbox', loadComponent: () => import('./components/maker-inbox/maker-inbox.component').then(m => m.MakerInboxComponent)},
     ],
   },

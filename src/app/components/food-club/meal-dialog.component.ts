@@ -9,7 +9,7 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
-import {CLOSE_HOURS, MEAL_TAGS, Meal, MealFields, MealTag, atTime, closeHours} from '../../interfaces/meal';
+import {CLOSE_HOURS, MEAL_TAGS, Meal, MealFields, MealTag, atTime, closeHours, closeHoursFor} from '../../interfaces/meal';
 import {User} from '../../interfaces/user';
 import {TranslatePipe} from '../../translate.pipe';
 
@@ -120,9 +120,12 @@ export class MealDialogComponent {
       return;
     }
     const date = atTime(v.day, v.time);
+    // Editing the menu after the sign-up closed keeps it closed. A new date or closing choice
+    // never lands on a time already passed, for a dinner still to come.
+    const unchanged = this.meal && date.getTime() === this.meal.date.toMillis() && v.closeHours === closeHours(this.meal);
     this.ref.close({
       date: Timestamp.fromDate(date),
-      closesAt: Timestamp.fromMillis(date.getTime() - v.closeHours * 3.6e6),
+      closesAt: unchanged && this.meal ? this.meal.closesAt : Timestamp.fromMillis(date.getTime() - closeHoursFor(date, v.closeHours) * 3.6e6),
       cooks: v.cooks, menu: v.menu.trim(), notes: v.notes.trim(), tags: v.tags, askCook: v.askCook,
     });
   }

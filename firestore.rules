@@ -76,6 +76,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // The maker's admin overview: numbers per kitchen, no residents' names, written by the
+    // ops/admin-stats.js job (the admin SDK), never from the app.
+    match /adminStats/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // "Aktuelt": readable by every signed-in kitchen, written by admins.
     match /announcements/{id} {
       allow read: if signedIn();

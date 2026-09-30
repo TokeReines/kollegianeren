@@ -7,8 +7,9 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
+import {KitchenStats, lastActive, summarise as summariseKitchens, trend} from './interfaces/admin-stats';
 import {computeFoodStats} from './components/stats/food-stats';
-import {Meal, MealTag, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
+import {Meal, MealTag, atTime, closeHours, closeHoursFor, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
 import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
@@ -99,6 +100,16 @@ describe('food club', () => {
     expect(s.people['e']).toEqual({ate: 1, cooked: 0, guests: 0});
   });
 
+  it('never books a dinner with its sign-up already closed', () => {
+    const now = new Date(2026, 8, 30, 16, 1).getTime();
+    const hoursBefore = (m: {date: Timestamp, closesAt: Timestamp}) => (m.date.toMillis() - m.closesAt.toMillis()) / 3.6e6;
+    expect(hoursBefore(newMeal(new Date(2026, 8, 30), 'u1', now))).toBe(0); // tonight: open until we eat
+    expect(hoursBefore(newMeal(new Date(2026, 9, 1), 'u1', now))).toBe(24); // tomorrow 18:30: 24 hours still fits
+    expect(closeHoursFor(new Date(2026, 9, 1, 12), 24, now)).toBe(12); // tomorrow at noon: 24 hours has passed
+    expect(closeHoursFor(new Date(2026, 9, 5, 18), 48, now)).toBe(48);
+    expect(closeHoursFor(new Date(2026, 8, 29, 18), 24, now)).toBe(24); // history keeps its choice
+  });
+
   it('numbers weeks as Danish calendars do', () => {
     expect(isoWeek(new Date(2026, 9, 1))).toBe(40);
     expect(isoWeek(new Date(2026, 0, 1))).toBe(1);
@@ -107,6 +118,27 @@ describe('food club', () => {
 
   it('puts the dinner time on the chosen day', () => {
     expect(atTime(new Date(2026, 9, 2, 0, 0), '18:30')).toEqual(new Date(2026, 9, 2, 18, 30));
+  });
+});
+
+describe('admin overview', () => {
+  const k = (name: string, last7: number, prev7: number, app: 'new' | 'old' | null, eaten30 = 0, upcoming = 0) => ({
+    id: name, name, createdAt: null, app, logins: [{role: 'owner', created: null, lastActive: at(2026, 9, 30, 12)}],
+    residents: {total: 20, active: 18, movedOut: 2, anonymised: 0}, products: [],
+    purchases: {today: 0, last7, prev7, last30: last7 * 4, lastAt: at(2026, 9, 30, 20)},
+    meals: {eaten30, eaters30: eaten30 * 8, cooks30: eaten30, upcoming, lastBookedAt: null},
+    messages: {total: 0, lastAt: null, lastFrom: null}, invites: {open: 0, used: 0}, residentLinks: 0,
+  }) as KitchenStats;
+
+  it('sums the kitchens, and compares the week with the one before', () => {
+    const s = summariseKitchens([k('Ny2', 120, 100, 'new', 2, 1), k('Ny7', 80, 100, 'old'), k('Gl3', 0, 0, 'old')]);
+    expect(s).toEqual({kitchens: 3, inUse: 2, onNewApp: 1, purchases7: 200, purchasesTrend: 0, meals30: 2, eaters30: 16, foodClubKitchens: 1});
+    expect(trend(120, 100)).toBe(20);
+    expect(trend(5, 0)).toBeNull();
+  });
+
+  it('a kitchen was last active at its last login or purchase, whichever is later', () => {
+    expect(lastActive(k('Ny2', 1, 1, null))).toBe(at(2026, 9, 30, 20).toMillis());
   });
 });
 

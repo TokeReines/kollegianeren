@@ -49,7 +49,10 @@ export class NavigationComponent {
       {path: '/stats', icon: 'insights', label: 'MENU_STATS'},
       {path: '/aktuelt', icon: 'campaign', label: 'MENU_AKTUELT', badge: this.kitchenUnread()},
       ...(manage ? [{path: '/access', icon: 'key', label: 'MENU_ACCESS'}] : []),
-      ...(this.maker.isAdmin() ? [{path: '/inbox', icon: 'inbox', label: 'MENU_INBOX', badge: this.makerUnread()}] : []),
+      ...(this.maker.isAdmin() ? [
+        {path: '/inbox', icon: 'inbox', label: 'MENU_INBOX', badge: this.makerUnread()},
+        {path: '/admin', icon: 'admin_panel_settings', label: 'MENU_ADMIN'},
+      ] : []),
     ];
   });
 
