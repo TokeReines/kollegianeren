@@ -212,5 +212,6 @@
   "BUY_PICK": "Choose one or more residents",
   "BUY_ONE_LESS": "One less",
   "BUY_ONE_MORE": "One more",
-  "HISTORY_UNDO_CONFIRM": "Undo purchase"
+  "HISTORY_UNDO_CONFIRM": "Undo purchase",
+  "UPLOAD_OFF": "Upload is off locally (emulator), so pictures do not end up in the production account. Use a URL, or try it on dev."
 }

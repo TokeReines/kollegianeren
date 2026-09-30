@@ -33,6 +33,9 @@ import {ResidentAvatarComponent} from './resident-avatar.component';
         @if (image() || clId()) {
           <button mat-button type="button" (click)="clear()"><mat-icon>delete</mat-icon> {{ "DELETE" | translate }}</button>
         }
+        @if (!cloudinary.canUpload) {
+          <p class="hint">{{ "UPLOAD_OFF" | translate }}</p>
+        }
       </div>
       <input #file hidden type="file" accept="image/*" (change)="upload(file)">
     </div>
@@ -47,7 +50,8 @@ import {ResidentAvatarComponent} from './resident-avatar.component';
   styles: `
     :host { display: block; }
     .preview { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
-    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .hint { flex-basis: 100%; margin: 0; font: var(--mat-sys-body-small); color: var(--mat-sys-on-surface-variant); }
     .url { width: 100%; }
   `,
 })
