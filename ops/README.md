@@ -96,3 +96,7 @@ Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 ## Auth settings
 
 node auth-config.js --project dev shows email enumeration protection, the authorised domains and the sign-in methods; --email-privacy on|off and --domains a,b change them (Identity Toolkit admin API, works on prod too).
+
+## API keys
+
+node api-key.js --project dev|prod shows which websites may use the browser API key; --referrers a,b sets them and --referrers any undoes it. Since 2026-09-30: dev allows kollegianeren.web.app, kollegianeren.firebaseapp.com and localhost; prod allows ehp.web.app, ehp.firebaseapp.com and the release preview channel. The calls are billed to dev, where the API Keys API is on (#63).
