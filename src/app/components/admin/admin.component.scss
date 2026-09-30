@@ -1,0 +1,239 @@
+// Bar colours as on Statistik (validated against the M3 surfaces).
+:host {
+  --bar: light-dark(#6f43c0, #895edb);
+}
+
+.page {
+  max-width: 1200px;
+}
+
+h2 {
+  font: var(--mat-sys-title-medium);
+  margin: 28px 0 12px;
+}
+
+h3 {
+  font: var(--mat-sys-title-small);
+  margin: 0 0 6px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: -8px 0 16px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.tile {
+  padding: 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+
+  .value {
+    font: var(--mat-sys-headline-small);
+  }
+
+  .of {
+    font: var(--mat-sys-body-large);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .label {
+    margin-top: 4px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// "+12 %" next to a number; the sign carries the meaning, the colour only helps.
+.trend {
+  margin-left: 6px;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+
+  &.up {
+    color: var(--mat-sys-primary);
+  }
+
+  &.down {
+    color: var(--mat-sys-error);
+  }
+}
+
+.usage {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 72px));
+  gap: 8px;
+  height: 120px;
+}
+
+.ucol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+
+  .slot {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    width: 100%;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .bar {
+    width: 100%;
+    min-height: 2px;
+    background: var(--bar);
+    border-radius: 4px 4px 0 0;
+
+    &.high {
+      background: var(--mat-sys-error);
+    }
+  }
+
+  .n,
+  .d {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.hint,
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.hint {
+  font: var(--mat-sys-body-small);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kitchens {
+  th {
+    font: var(--mat-sys-label-large);
+    color: var(--mat-sys-on-surface-variant);
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .row {
+    cursor: pointer;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+    &:hover,
+    &.open {
+      background: var(--mat-sys-surface-container-low);
+    }
+
+    &.quiet {
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  .name {
+    font: var(--mat-sys-title-small);
+  }
+
+  .when {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .chev {
+    width: 32px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.chip {
+  padding: 2px 10px;
+  border-radius: 8px;
+  font: var(--mat-sys-label-medium);
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+
+  &.new {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+}
+
+.details > td {
+  padding: 16px 12px 20px;
+  white-space: normal;
+  background: var(--mat-sys-surface-container-low);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+
+  section {
+    padding: 12px 14px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 12px;
+    background: var(--mat-sys-surface);
+  }
+
+  p {
+    margin: 4px 0;
+  }
+}
+
+.products {
+  max-width: 640px;
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+
+  th {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  td,
+  th {
+    padding: 4px 10px;
+  }
+
+  .off {
+    margin-left: 4px;
+    font: var(--mat-sys-body-small);
+  }
+}

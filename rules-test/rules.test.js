@@ -380,3 +380,13 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   await assertFails(getDocs(collection(anon(), 'kitchens', A, 'meals')));
   await assertSucceeds(deleteDoc(ref));
 });
+
+// Admin overview (ops/admin-stats.js writes it with the admin SDK).
+test('admin stats: only admins read them, nobody writes them from the app', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'adminStats', 'latest'), { kitchens: [] }));
+  await assertSucceeds(getDoc(doc(maker(), 'adminStats', 'latest')));
+  await assertFails(getDoc(doc(asKitchen(A), 'adminStats', 'latest')));
+  await assertFails(getDoc(doc(anon(), 'adminStats', 'latest')));
+  await assertFails(setDoc(doc(maker(), 'adminStats', 'latest'), { kitchens: [] }));
+  await assertFails(setDoc(doc(asKitchen(A), 'adminStats', 'latest'), { kitchens: [] }));
+});

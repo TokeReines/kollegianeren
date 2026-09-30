@@ -7,6 +7,7 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
+import {KitchenStats, lastActive, summarise as summariseKitchens, trend} from './interfaces/admin-stats';
 import {computeFoodStats} from './components/stats/food-stats';
 import {Meal, MealTag, atTime, closeHours, closeHoursFor, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
@@ -117,6 +118,27 @@ describe('food club', () => {
 
   it('puts the dinner time on the chosen day', () => {
     expect(atTime(new Date(2026, 9, 2, 0, 0), '18:30')).toEqual(new Date(2026, 9, 2, 18, 30));
+  });
+});
+
+describe('admin overview', () => {
+  const k = (name: string, last7: number, prev7: number, app: 'new' | 'old' | null, eaten30 = 0, upcoming = 0) => ({
+    id: name, name, createdAt: null, app, logins: [{role: 'owner', created: null, lastActive: at(2026, 9, 30, 12)}],
+    residents: {total: 20, active: 18, movedOut: 2, anonymised: 0}, products: [],
+    purchases: {today: 0, last7, prev7, last30: last7 * 4, lastAt: at(2026, 9, 30, 20)},
+    meals: {eaten30, eaters30: eaten30 * 8, cooks30: eaten30, upcoming, lastBookedAt: null},
+    messages: {total: 0, lastAt: null, lastFrom: null}, invites: {open: 0, used: 0}, residentLinks: 0,
+  }) as KitchenStats;
+
+  it('sums the kitchens, and compares the week with the one before', () => {
+    const s = summariseKitchens([k('Ny2', 120, 100, 'new', 2, 1), k('Ny7', 80, 100, 'old'), k('Gl3', 0, 0, 'old')]);
+    expect(s).toEqual({kitchens: 3, inUse: 2, onNewApp: 1, purchases7: 200, purchasesTrend: 0, meals30: 2, eaters30: 16, foodClubKitchens: 1});
+    expect(trend(120, 100)).toBe(20);
+    expect(trend(5, 0)).toBeNull();
+  });
+
+  it('a kitchen was last active at its last login or purchase, whichever is later', () => {
+    expect(lastActive(k('Ny2', 1, 1, null))).toBe(at(2026, 9, 30, 20).toMillis());
   });
 });
 
