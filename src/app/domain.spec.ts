@@ -62,16 +62,17 @@ describe('food club', () => {
     expect(m.menu).toBe('');
   });
 
-  it('pages by week, Monday to Sunday, from today on', () => {
+  it('pages by week, Monday to Sunday, days before today as history', () => {
     const today = new Date(2026, 8, 30, 11); // a Wednesday
     expect(weekStart(today)).toEqual(new Date(2026, 8, 28));
     expect(weekStart(today, 1)).toEqual(new Date(2026, 9, 5));
     expect(weekStart(new Date(2026, 9, 4))).toEqual(new Date(2026, 8, 28)); // Sunday
     const friday = {date: at(2026, 10, 2, 18), menu: 'y'} as Meal;
     const days = weekDays([friday], weekStart(today), today);
-    expect(days.map(d => d.day.getDate())).toEqual([30, 1, 2, 3, 4]);
-    expect(days.map(d => d.meals.length)).toEqual([0, 0, 1, 0, 0]);
-    expect(weekDays([], weekStart(today, 1), today).length).toBe(7);
+    expect(days.map(d => d.day.getDate())).toEqual([28, 29, 30, 1, 2, 3, 4]);
+    expect(days.map(d => d.meals.length)).toEqual([0, 0, 0, 0, 1, 0, 0]);
+    expect(days.map(d => d.past)).toEqual([true, true, false, false, false, false, false]);
+    expect(weekDays([], weekStart(today, -1), today).every(d => d.past)).toBe(true);
   });
 
   it('keys a meal by its local day, one meal a day', () => {
@@ -79,7 +80,7 @@ describe('food club', () => {
     expect(dayKey(new Date(2026, 11, 31, 0, 5))).toBe('2026-12-31');
   });
 
-  it('counts eaten meals per day, weekday and tag, without ranking cooks', () => {
+  it('counts eaten meals per day, weekday, tag and resident', () => {
     const m = (d: number, cooks: string[], signups: string[], tags: MealTag[] = []) => ({date: at(2026, 9, d, 18), cooks, signups, tags});
     const from = new Date(2026, 8, 21);
     const s = computeFoodStats([
@@ -89,8 +90,13 @@ describe('food club', () => {
     ], from, 7, at(2026, 9, 27, 12).toMillis());
     expect(s.totals).toEqual({meals: 2, eaters: 8, perMeal: 4, cooks: 2, dayShare: 2 / 7});
     expect(s.daily.map(d => d.eaters)).toEqual([0, 3, 0, 5, 0, 0, 0]);
+    expect(s.daily[3].cooks).toEqual(['a', 'b']);
     expect(s.weekdays[1]).toEqual({weekday: 1, meals: 1, eaters: 3}); // Tuesday
     expect(s.tags).toEqual([{tag: 'vegan', meals: 2}, {tag: 'glutenFree', meals: 1}]);
+    expect(s.people['a']).toEqual({ate: 2, cooked: 2, guests: 8});
+    expect(s.people['b']).toEqual({ate: 2, cooked: 1, guests: 5}); // shared the second one
+    expect(s.people['c']).toEqual({ate: 2, cooked: 0, guests: 0}); // their own food club is still to come
+    expect(s.people['e']).toEqual({ate: 1, cooked: 0, guests: 0});
   });
 
   it('numbers weeks as Danish calendars do', () => {
