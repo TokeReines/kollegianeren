@@ -25,14 +25,15 @@ export class MealService {
   // by the rules (it would be an update of that meal).
   add(fields: MealFields) {
     const day = dayKey(fields.date.toDate());
-    return setDoc(doc(this.meals(), day), {...fields, day, signups: [fields.cookId], createdAt: serverTimestamp()});
+    return setDoc(doc(this.meals(), day), {...fields, day, signups: [...fields.cooks], createdAt: serverTimestamp()});
   }
 
   // Resolves false, and changes nothing, when the meal would move onto a day that is taken.
   async update(meal: Meal, fields: MealFields): Promise<boolean> {
     const day = dayKey(fields.date.toDate());
     if (day === meal.id) {
-      await updateDoc(doc(this.meals(), meal.id), fields);
+      // A cook added here eats too.
+      await updateDoc(doc(this.meals(), meal.id), {...fields, signups: arrayUnion(...fields.cooks)});
       return true;
     }
     const target = doc(this.meals(), day);
@@ -40,10 +41,15 @@ export class MealService {
       return false;
     }
     const batch = writeBatch(db);
-    batch.set(target, {...fields, day, signups: meal.signups, createdAt: serverTimestamp()});
+    batch.set(target, {...fields, day, signups: [...new Set([...meal.signups, ...fields.cooks])], createdAt: serverTimestamp()});
     batch.delete(doc(this.meals(), meal.id));
     await batch.commit();
     return true;
+  }
+
+  // Another cook on the same day; cooks eat too.
+  addCook(meal: Meal, residentId: string) {
+    return updateDoc(doc(this.meals(), meal.id), {cooks: arrayUnion(residentId), signups: arrayUnion(residentId)});
   }
 
   // One resident in or out. arrayUnion/arrayRemove, so two tablets signing up at once both count.

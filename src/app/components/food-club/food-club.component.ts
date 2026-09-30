@@ -15,6 +15,7 @@ import {UserService} from '../../services/user.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {joinNames} from '../buy-page/basket';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {CookDialogComponent, CookDialogData} from './cook-dialog.component';
@@ -83,6 +84,14 @@ export class FoodClubComponent {
     return this.byId().get(id);
   }
 
+  protected cooks(meal: Meal): User[] {
+    return meal.cooks.map(id => this.resident(id)).filter((u): u is User => !!u);
+  }
+
+  protected cookNames(meal: Meal): string {
+    return joinNames(this.cooks(meal).map(u => u.name), this.i18n.t('BEERSYSTEM_AND'));
+  }
+
   protected eaters(meal: Meal): User[] {
     return meal.signups.map(id => this.resident(id)).filter((u): u is User => !!u);
   }
@@ -111,17 +120,33 @@ export class FoodClubComponent {
       });
   }
 
+  // A second (or third) cook joins the day.
+  protected addCook(meal: Meal) {
+    this.dialog.open<CookDialogComponent, CookDialogData, User>(CookDialogComponent, {
+      width: '720px', maxWidth: '94vw',
+      data: {day: meal.date.toDate(), residents: this.residents().filter(u => !meal.cooks.includes(u.id))},
+    }).afterClosed().subscribe(cook => {
+      if (cook) {
+        this.mealService.addCook(meal, cook.id).catch(this.notify.error);
+      }
+    });
+  }
+
   protected signups(meal: Meal) {
-    const cook = this.resident(meal.cookId)?.name ?? '';
     this.dialog.open<SignupDialogComponent, SignupDialogData>(SignupDialogComponent, {
       width: '720px', maxWidth: '94vw',
-      data: {meal: () => this.meals().find(m => m.id === meal.id), title: meal.menu || `${cook} ${this.i18n.t('FOOD_COOKS')}`, residents: this.residents()},
+      data: {meal: () => this.meals().find(m => m.id === meal.id), title: this.title(meal), residents: this.residents()},
     });
+  }
+
+  // The menu, or "Anna og Bo laver mad" while there is none.
+  private title(meal: Meal) {
+    return meal.menu || `${this.cookNames(meal)} ${this.i18n.t(meal.cooks.length > 1 ? 'FOOD_COOK_MANY' : 'FOOD_COOKS')}`;
   }
 
   protected async remove(meal: Meal) {
     const t = (k: string) => this.i18n.t(k);
-    const what = meal.menu || `${this.resident(meal.cookId)?.name ?? ''} ${t('FOOD_COOKS')}`;
+    const what = this.title(meal);
     if (await this.confirm.ask({title: `${t('DELETE')}: ${what}?`, message: t('FOOD_DELETE_CONFIRM'), confirm: t('DELETE'), danger: true})) {
       this.mealService.delete(meal).catch(this.notify.error);
     }

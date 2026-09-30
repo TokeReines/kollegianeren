@@ -347,7 +347,7 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   const db = asKitchen('tab');
   const eat = Timestamp.fromDate(new Date(Date.now() + 3 * 864e5));
   const meal = (day, extra = {}) => ({
-    day, date: eat, closesAt: Timestamp.fromMillis(eat.toMillis() - 864e5), cookId: 'u1', menu: 'Lasagne', notes: '',
+    day, date: eat, closesAt: Timestamp.fromMillis(eat.toMillis() - 864e5), cooks: ['u1'], menu: 'Lasagne', notes: '',
     tags: ['meat', 'dairy'], askCook: false, signups: ['u1'], createdAt: serverTimestamp(), ...extra,
   });
   const meals = collection(db, 'kitchens', A, 'meals');
@@ -355,7 +355,7 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   await assertSucceeds(setDoc(ref, meal('2026-10-01')));
   await assertSucceeds(setDoc(doc(meals, '2026-10-02'), meal('2026-10-02', { menu: '', tags: [] }))); // only the cook, details later
   // One meal a day: booking a taken day is refused, as are ids that are not the day.
-  await assertFails(setDoc(ref, meal('2026-10-01', { cookId: 'u2' })));
+  await assertFails(setDoc(ref, meal('2026-10-01', { cooks: ['u2'] })));
   await assertFails(setDoc(doc(meals, '2026-10-03'), meal('2026-10-04')));
   await assertFails(addDoc(meals, meal('2026-10-05')));
   await assertFails(updateDoc(ref, { day: '2026-10-06' }));
@@ -366,6 +366,8 @@ test('food club: tablets add meals and sign up, other kitchens cannot see them',
   await assertSucceeds(getDocs(query(meals, where('date', '>=', new Date()), where('date', '<', new Date(Date.now() + 7 * 864e5)), orderBy('date'), limit(50))));
   await assertSucceeds(updateDoc(ref, { signups: arrayUnion('u2') }));
   await assertSucceeds(updateDoc(ref, { signups: arrayRemove('u2') }));
+  await assertSucceeds(updateDoc(ref, { cooks: arrayUnion('u2'), signups: arrayUnion('u2') })); // a second cook
+  await assertFails(updateDoc(ref, { cooks: [] }));
   await assertSucceeds(updateDoc(ref, { menu: 'Lasagne og salat', askCook: true }));
   await assertFails(updateDoc(ref, { createdAt: Timestamp.now() }));
   await assertFails(updateDoc(ref, { extra: 1 }));

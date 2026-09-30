@@ -219,7 +219,6 @@
   "FOOD_DATE": "Date",
   "FOOD_TIME": "Dinner time",
   "FOOD_AT": "at",
-  "FOOD_COOK": "Cook",
   "FOOD_MENU": "Menu",
   "FOOD_NOTES": "Notes",
   "FOOD_NOTES_HINT": "For example ingredients, price per person or what to bring",
@@ -258,5 +257,8 @@
   "FOOD_NEXT_WEEK": "Next week",
   "FOOD_PREV_WEEK": "Previous week",
   "FOOD_TO": "to",
-  "FOOD_DAY_TAKEN": "That day already has a food club. Pick another day."
+  "FOOD_DAY_TAKEN": "That day already has a food club. Pick another day.",
+  "FOOD_COOK_MANY": "cook",
+  "FOOD_I_COOK_TOO": "I will cook too",
+  "FOOD_COOKS_LABEL": "Cooks"
 }

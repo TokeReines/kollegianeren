@@ -96,6 +96,15 @@
   margin: -4px -8px -4px 0;
 }
 
+.chefs {
+  display: flex;
+
+  app-resident-avatar + app-resident-avatar {
+    margin-left: -8px;
+    box-shadow: 0 0 0 2px var(--mat-sys-surface-container-low);
+  }
+}
+
 .cook {
   flex: 1;
   min-width: 0;

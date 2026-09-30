@@ -45,8 +45,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
         </mat-form-field>
       </div>
       <mat-form-field>
-        <mat-label>{{ "FOOD_COOK" | translate }}</mat-label>
-        <mat-select formControlName="cookId">
+        <mat-label>{{ "FOOD_COOKS_LABEL" | translate }}</mat-label>
+        <mat-select formControlName="cooks" multiple>
           @for (u of residents; track u.id) {
             <mat-option [value]="u.id">{{ u.name }} ({{ u.room }})</mat-option>
           }
@@ -104,7 +104,7 @@ export class MealDialogComponent {
   protected readonly form = inject(NonNullableFormBuilder).group({
     day: [this.date as Date | null, Validators.required],
     time: [this.date ? `${pad(this.date.getHours())}:${pad(this.date.getMinutes())}` : '18:30', Validators.required],
-    cookId: [this.meal?.cookId ?? '', Validators.required],
+    cooks: [[...(this.meal?.cooks ?? [])], [Validators.required, Validators.maxLength(6)]],
     menu: [this.meal?.menu ?? '', Validators.maxLength(200)],
     notes: [this.meal?.notes ?? '', Validators.maxLength(2000)],
     tags: [[...(this.meal?.tags ?? [])] as MealTag[]],
@@ -121,7 +121,7 @@ export class MealDialogComponent {
     this.ref.close({
       date: Timestamp.fromDate(date),
       closesAt: Timestamp.fromMillis(date.getTime() - v.closeHours * 3.6e6),
-      cookId: v.cookId, menu: v.menu.trim(), notes: v.notes.trim(), tags: v.tags, askCook: v.askCook,
+      cooks: v.cooks, menu: v.menu.trim(), notes: v.notes.trim(), tags: v.tags, askCook: v.askCook,
     });
   }
 }

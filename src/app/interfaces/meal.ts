@@ -7,7 +7,7 @@ export type MealTag = typeof MEAL_TAGS[number];
 // How many hours before the meal the sign-up closes; 0 is when we eat.
 export const CLOSE_HOURS = [48, 24, 12, 0] as const;
 
-// A food club dinner (kitchens/{kid}/meals): one resident cooks, the others sign up. The sign-ups
+// A food club dinner (kitchens/{kid}/meals): one or more residents cook, the others sign up. The sign-ups
 // live in the document, so the whole list costs one read per meal.
 export interface Meal {
   // The day, "2026-10-01", also in `day`: one meal a day.
@@ -15,19 +15,20 @@ export interface Meal {
   day: string;
   // When we eat.
   date: Timestamp;
-  cookId: string;
+  // One or more residents; the first booked the day.
+  cooks: string[];
   menu: string;
   notes: string;
   tags: MealTag[];
   closesAt: Timestamp;
-  // No sign-up button: people ask the cook, who adds them.
+  // No sign-up button: people ask a cook, who adds them.
   askCook: boolean;
-  // Resident ids, the cook included.
+  // Resident ids, the cooks included.
   signups: string[];
   createdAt: Timestamp;
 }
 
-export type MealFields = Pick<Meal, 'date' | 'cookId' | 'menu' | 'notes' | 'tags' | 'closesAt' | 'askCook'>;
+export type MealFields = Pick<Meal, 'date' | 'cooks' | 'menu' | 'notes' | 'tags' | 'closesAt' | 'askCook'>;
 
 // A meal's document id: its local day.
 export function dayKey(date: Date): string {
@@ -53,7 +54,7 @@ export function newMeal(day: Date, cookId: string): MealFields {
   const date = atTime(day, DEFAULT_TIME);
   return {
     date: Timestamp.fromDate(date), closesAt: Timestamp.fromMillis(date.getTime() - DEFAULT_CLOSE_HOURS * 3.6e6),
-    cookId, menu: '', notes: '', tags: [], askCook: false,
+    cooks: [cookId], menu: '', notes: '', tags: [], askCook: false,
   };
 }
 

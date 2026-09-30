@@ -23,18 +23,21 @@
 
         <div class="body">
           @for (m of d.meals; track m.id) {
-            @let cook = resident(m.cookId);
+            @let chefs = cooks(m);
             @let people = eaters(m);
             <div class="meal">
               <div class="head">
-                @if (cook) {
-                  <app-resident-avatar [resident]="cook" [size]="32" />
-                }
-                <span class="cook"><b>{{ cook?.name }}</b> {{ "FOOD_COOKS" | translate }}</span>
+                <span class="chefs">
+                  @for (u of chefs; track u.id) {
+                    <app-resident-avatar [resident]="u" [size]="32" />
+                  }
+                </span>
+                <span class="cook"><b>{{ cookNames(m) }}</b> {{ (chefs.length > 1 ? "FOOD_COOK_MANY" : "FOOD_COOKS") | translate }}</span>
                 <span class="time">{{ "FOOD_AT" | translate }} {{ m.date.toDate() | date:'HH:mm' }}</span>
                 <button mat-icon-button [matMenuTriggerFor]="more" [attr.aria-label]="'FOOD_MORE' | translate"><mat-icon>more_vert</mat-icon></button>
                 <mat-menu #more="matMenu">
                   <button mat-menu-item (click)="details(m)"><mat-icon>edit</mat-icon><span>{{ "FOOD_EDIT" | translate }}</span></button>
+                  <button mat-menu-item (click)="addCook(m)"><mat-icon>soup_kitchen</mat-icon><span>{{ "FOOD_I_COOK_TOO" | translate }}</span></button>
                   @if (!open(m)) {
                     <button mat-menu-item (click)="signups(m)"><mat-icon>group_add</mat-icon><span>{{ "FOOD_EDIT_SIGNUPS" | translate }}</span></button>
                   }

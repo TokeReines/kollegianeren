@@ -241,11 +241,11 @@ service cloud.firestore {
       // update of that meal, which fails on createdAt. Moving a meal is a new day's document.
       match /meals/{mealId} {
         function validMeal(d) {
-          return d.keys().hasOnly(['day', 'date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
-            && d.keys().hasAll(['day', 'date', 'cookId', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+          return d.keys().hasOnly(['day', 'date', 'cooks', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+            && d.keys().hasAll(['day', 'date', 'cooks', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
             && d.day == mealId && mealId.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
             && d.date is timestamp && d.closesAt is timestamp && d.closesAt <= d.date
-            && d.cookId is string
+            && d.cooks is list && d.cooks.size() >= 1 && d.cooks.size() <= 6
             && d.menu is string && d.menu.size() <= 200
             && d.notes is string && d.notes.size() <= 2000
             && d.tags is list && d.tags.size() <= 12

@@ -219,7 +219,6 @@
   "FOOD_DATE": "Dato",
   "FOOD_TIME": "Spisetid",
   "FOOD_AT": "kl.",
-  "FOOD_COOK": "Kok",
   "FOOD_MENU": "Menu",
   "FOOD_NOTES": "Noter",
   "FOOD_NOTES_HINT": "Fx ingredienser, pris pr. person eller hvad man skal have med",
@@ -258,5 +257,8 @@
   "FOOD_NEXT_WEEK": "Næste uge",
   "FOOD_PREV_WEEK": "Forrige uge",
   "FOOD_TO": "til",
-  "FOOD_DAY_TAKEN": "Der er allerede madklub den dag. Vælg en anden dag."
+  "FOOD_DAY_TAKEN": "Der er allerede madklub den dag. Vælg en anden dag.",
+  "FOOD_COOK_MANY": "laver mad",
+  "FOOD_I_COOK_TOO": "Jeg laver også mad",
+  "FOOD_COOKS_LABEL": "Kokke"
 }
