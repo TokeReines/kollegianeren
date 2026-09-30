@@ -1,7 +1,13 @@
 import {Component, computed, inject, linkedSignal, resource, signal} from '@angular/core';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {map, of, switchMap} from 'rxjs';
 import {DatePipe, DecimalPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
+import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
+import {MatSelectModule} from '@angular/material/select';
+import {byRoom} from '../../interfaces/user';
+import {UserService} from '../../services/user.service';
 import {kr} from '../../format';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
@@ -14,21 +20,32 @@ const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: [
 // What the kitchen drinks and eats, and when, over a chosen period. No per-resident ranking, on purpose.
 @Component({
   selector: 'app-stats',
-  imports: [DatePipe, DecimalPipe, MatButtonModule, MatIconModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatSelectModule, TranslatePipe],
   templateUrl: './stats.component.html',
   styleUrl: './stats.component.scss',
 })
 export class StatsComponent {
   private readonly statsService = inject(StatsService);
   private readonly i18n = inject(TranslateService);
+  private readonly users = inject(UserService);
 
-  protected readonly periods = [7, 30, 90];
   protected readonly hours = Array.from({length: 24}, (_, h) => h);
   protected readonly days = signal(30);
   protected readonly showTable = signal(false);
   protected readonly tip = signal<{text: string, x: number, y: number} | null>(null);
   // Ølsystem or Madklub; only the one shown is read.
   protected readonly view = signal<'beer' | 'food'>('beer');
+  // A year of food club is a few hundred reads; a year of purchases would be thousands.
+  protected readonly periods = computed(() => this.view() === 'food' ? [30, 90, 365] : [7, 30, 90]);
+  // One resident's own food club count, picked on the page. The residents are read only here.
+  protected readonly personId = signal('');
+  protected readonly residents = toSignal(toObservable(this.view).pipe(
+    switchMap(v => v === 'food' ? this.users.list() : of([])),
+    map(list => list.filter(u => !u.movedOutAt).sort(byRoom))), {initialValue: []});
+  protected readonly person = computed(() => {
+    const id = this.personId(), f = this.food();
+    return id && f ? f.people[id] ?? {ate: 0, cooked: 0} : null;
+  });
   private readonly result = resource({
     params: () => this.view() === 'beer' ? this.days() : undefined,
     loader: ({params}) => this.statsService.load(params),
@@ -53,6 +70,13 @@ export class StatsComponent {
   protected readonly maxProductKr = computed(() => Math.max(1, ...(this.stats()?.products ?? []).map(p => p.kr)));
   protected readonly maxDayKr = computed(() => Math.max(1, ...(this.stats()?.daily ?? []).map(d => d.kr)));
   protected readonly weekdays = computed(() => WEEKDAYS[this.i18n.language()]);
+
+  protected setView(view: 'beer' | 'food') {
+    this.view.set(view);
+    if (!this.periods().includes(this.days())) {
+      this.days.set(30);
+    }
+  }
 
   protected level(count: number): number {
     return heatLevel(count, this.stats()?.heatSteps ?? []);

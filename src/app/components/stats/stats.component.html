@@ -2,16 +2,16 @@
   <h1>{{ "STATS_TITLE" | translate }}</h1>
 
   <div class="filters views">
-    <button mat-stroked-button [attr.aria-pressed]="view() === 'beer'" [class.on]="view() === 'beer'" (click)="view.set('beer')">
+    <button mat-stroked-button [attr.aria-pressed]="view() === 'beer'" [class.on]="view() === 'beer'" (click)="setView('beer')">
       <mat-icon>sports_bar</mat-icon> {{ "MENU_BEERSYSTEM" | translate }}
     </button>
-    <button mat-stroked-button [attr.aria-pressed]="view() === 'food'" [class.on]="view() === 'food'" (click)="view.set('food')">
+    <button mat-stroked-button [attr.aria-pressed]="view() === 'food'" [class.on]="view() === 'food'" (click)="setView('food')">
       <mat-icon>restaurant</mat-icon> {{ "MENU_FOOD_CLUB" | translate }}
     </button>
   </div>
 
   <div class="filters">
-    @for (d of periods; track d) {
+    @for (d of periods(); track d) {
       <button mat-stroked-button [attr.aria-pressed]="days() === d" [class.on]="days() === d" (click)="days.set(d)">
         {{ d }} {{ "STATS_DAYS" | translate }}
       </button>
@@ -31,6 +31,26 @@
         <div class="tile"><div class="value">{{ f.totals.perMeal | number:'1.0-1' }}</div><div class="label">{{ "FOOD_STATS_PER_MEAL" | translate }}</div></div>
         <div class="tile"><div class="value">{{ f.totals.cooks }}</div><div class="label">{{ "FOOD_STATS_COOKS" | translate }}</div></div>
         <div class="tile"><div class="value">{{ f.totals.dayShare * 100 | number:'1.0-0' }} %</div><div class="label">{{ "FOOD_STATS_DAY_SHARE" | translate }}</div></div>
+      </div>
+
+      <!-- One resident at a time, never a list: how often did I eat and cook? -->
+      <div class="person">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>{{ "FOOD_STATS_PERSON" | translate }}</mat-label>
+          <mat-select [value]="personId()" (valueChange)="personId.set($event)">
+            <mat-option value="">{{ "FOOD_STATS_PERSON_NONE" | translate }}</mat-option>
+            @for (u of residents(); track u.id) {
+              <mat-option [value]="u.id">{{ u.name }} ({{ u.room }})</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (person(); as p) {
+          <p class="person-result" role="status">
+            {{ "FOOD_STATS_ATE" | translate }} <b>{{ p.ate }}</b> {{ (p.ate === 1 ? "FOOD_STATS_TIME" : "FOOD_STATS_TIMES") | translate }},
+            {{ "FOOD_STATS_COOKED" | translate }} <b>{{ p.cooked }}</b> {{ (p.cooked === 1 ? "FOOD_STATS_TIME" : "FOOD_STATS_TIMES") | translate }}
+            {{ "FOOD_STATS_IN_LAST" | translate }} {{ days() }} {{ "STATS_DAYS" | translate }}.
+          </p>
+        }
       </div>
 
       @if (!f.totals.meals) {

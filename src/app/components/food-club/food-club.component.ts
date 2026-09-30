@@ -8,7 +8,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {Meal, MealFields, isoWeek, newMeal, signupOpen, weekDays, weekStart} from '../../interfaces/meal';
+import {Meal, MealFields, WEEKS_AHEAD, WEEKS_BACK, isoWeek, newMeal, signupOpen, weekDays, weekStart} from '../../interfaces/meal';
 import {User, byRoom} from '../../interfaces/user';
 import {MealService} from '../../services/meal.service';
 import {UserService} from '../../services/user.service';
@@ -67,9 +67,19 @@ export class FoodClubComponent {
     return new Date(m.getFullYear(), m.getMonth(), m.getDate() + 6);
   }
 
-  // No going back before this week: past dinners are not planned any more.
+  protected readonly weeksBack = -WEEKS_BACK;
+  protected readonly weeksAhead = WEEKS_AHEAD;
+
+  // Back is history to look at; ahead stops at half a year, so nobody books 2028 by mistake.
   protected turn(weeks: number) {
-    this.page.update(p => Math.max(0, p + weeks));
+    this.page.update(p => Math.min(WEEKS_AHEAD, Math.max(-WEEKS_BACK, p + weeks)));
+  }
+
+  // "Denne uge", "Næste uge", "Sidste uge", or "Uge 43".
+  protected weekLabel(): string {
+    const labels: Record<number, string> = {0: 'FOOD_THIS_WEEK', 1: 'FOOD_NEXT_WEEK', [-1]: 'FOOD_LAST_WEEK'};
+    const key = labels[this.page()];
+    return key ? this.i18n.t(key) : `${this.i18n.t('FOOD_WEEK')} ${this.weekNumber()}`;
   }
 
   protected isToday(day: Date) {

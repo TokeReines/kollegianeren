@@ -234,3 +234,20 @@ h2 {
 .muted {
   color: var(--mat-sys-on-surface-variant);
 }
+
+// Madklub: one resident looked up at a time.
+.person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 4px 0 8px;
+
+  mat-form-field {
+    width: min(100%, 280px);
+  }
+}
+
+.person-result {
+  margin: 0;
+}

@@ -61,7 +61,13 @@ export function newMeal(day: Date, cookId: string): MealFields {
 export interface FoodDay {
   day: Date;
   meals: Meal[];
+  // Before today: history, nothing to book.
+  past: boolean;
 }
+
+// How far the week pages go: a year back (as long as backups keep purchases), half a year ahead.
+export const WEEKS_BACK = 52;
+export const WEEKS_AHEAD = 26;
 
 // Monday of the week `weeks` after the one `today` is in.
 export function weekStart(today: Date, weeks = 0): Date {
@@ -69,18 +75,16 @@ export function weekStart(today: Date, weeks = 0): Date {
   return new Date(today.getFullYear(), today.getMonth(), today.getDate() - back + 7 * weeks);
 }
 
-// The days of the week starting `monday`, free or not, from `today` on.
+// The seven days of the week starting `monday`, free or not; days before `today` are past.
 export function weekDays(meals: Meal[], monday: Date, today: Date): FoodDay[] {
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const days: FoodDay[] = [];
-  for (let i = 0; i < 7; i++) {
+  return Array.from({length: 7}, (_, i) => {
     const day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
-    if (day.getTime() >= start) {
-      days.push({day, meals: meals.filter(m => m.date.toDate().toDateString() === day.toDateString())
-        .sort((a, b) => millis(a.date) - millis(b.date))});
-    }
-  }
-  return days;
+    return {
+      day, past: day.getTime() < start,
+      meals: meals.filter(m => m.date.toDate().toDateString() === day.toDateString()).sort((a, b) => millis(a.date) - millis(b.date)),
+    };
+  });
 }
 
 // ISO week number, as on Danish calendars ("uge 41").

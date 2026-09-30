@@ -269,5 +269,16 @@
   "FOOD_STATS_PER_DAY": "Eaters per day",
   "FOOD_STATS_WEEKDAYS": "Food clubs per weekday",
   "FOOD_STATS_EMPTY": "No food club in this period yet.",
-  "FOOD_STATS_NONE": "no food club"
+  "FOOD_STATS_NONE": "no food club",
+  "FOOD_LAST_WEEK": "Last week",
+  "FOOD_BACK_TO_NOW": "Back to this week",
+  "FOOD_ATE": "ate",
+  "FOOD_NONE": "No food club",
+  "FOOD_STATS_PERSON": "Show for a resident",
+  "FOOD_STATS_PERSON_NONE": "Nobody",
+  "FOOD_STATS_ATE": "Ate",
+  "FOOD_STATS_COOKED": "cooked",
+  "FOOD_STATS_TIME": "time",
+  "FOOD_STATS_TIMES": "times",
+  "FOOD_STATS_IN_LAST": "in the last"
 }
