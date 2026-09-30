@@ -7,6 +7,7 @@ import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
+import {Meal, atTime, closeHours, dayKey, isoWeek, newMeal, signupOpen, weekDays, weekStart} from './interfaces/meal';
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
 import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
@@ -33,6 +34,58 @@ describe('products', () => {
 
   it('sorts names the Danish way', () => {
     expect(['Øl', 'Cola', 'Æble'].map(name => ({name})).sort(byName).map(p => p.name)).toEqual(['Cola', 'Æble', 'Øl']);
+  });
+});
+
+describe('food club', () => {
+  const dinner = at(2026, 10, 2, 18);
+  const meal = (hoursBefore: number, askCook = false) => ({date: dinner, closesAt: Timestamp.fromMillis(dinner.toMillis() - hoursBefore * 3.6e6), askCook});
+
+  it('sign-up is open until it closes, and never when people ask the cook', () => {
+    const dayBefore = at(2026, 10, 1, 17).toMillis();
+    expect(signupOpen(meal(24), dayBefore)).toBe(true);
+    expect(signupOpen(meal(24), at(2026, 10, 1, 18).toMillis())).toBe(false);
+    expect(signupOpen(meal(24, true), dayBefore)).toBe(false);
+  });
+
+  it('finds the closing choice a meal was made with', () => {
+    expect(closeHours(meal(48))).toBe(48);
+    expect(closeHours(meal(0))).toBe(0);
+    expect(closeHours(meal(11))).toBe(12);
+  });
+
+  it('books a day with only the cook, closing 24 hours before 18:30', () => {
+    const m = newMeal(new Date(2026, 9, 2, 11), 'u1');
+    expect(m.date.toDate()).toEqual(new Date(2026, 9, 2, 18, 30));
+    expect(closeHours(m)).toBe(24);
+    expect(m.menu).toBe('');
+  });
+
+  it('pages by week, Monday to Sunday, from today on', () => {
+    const today = new Date(2026, 8, 30, 11); // a Wednesday
+    expect(weekStart(today)).toEqual(new Date(2026, 8, 28));
+    expect(weekStart(today, 1)).toEqual(new Date(2026, 9, 5));
+    expect(weekStart(new Date(2026, 9, 4))).toEqual(new Date(2026, 8, 28)); // Sunday
+    const friday = {date: at(2026, 10, 2, 18), menu: 'y'} as Meal;
+    const days = weekDays([friday], weekStart(today), today);
+    expect(days.map(d => d.day.getDate())).toEqual([30, 1, 2, 3, 4]);
+    expect(days.map(d => d.meals.length)).toEqual([0, 0, 1, 0, 0]);
+    expect(weekDays([], weekStart(today, 1), today).length).toBe(7);
+  });
+
+  it('keys a meal by its local day, one meal a day', () => {
+    expect(dayKey(new Date(2026, 9, 1, 23, 30))).toBe('2026-10-01');
+    expect(dayKey(new Date(2026, 11, 31, 0, 5))).toBe('2026-12-31');
+  });
+
+  it('numbers weeks as Danish calendars do', () => {
+    expect(isoWeek(new Date(2026, 9, 1))).toBe(40);
+    expect(isoWeek(new Date(2026, 0, 1))).toBe(1);
+    expect(isoWeek(new Date(2027, 0, 1))).toBe(53);
+  });
+
+  it('puts the dinner time on the chosen day', () => {
+    expect(atTime(new Date(2026, 9, 2, 0, 0), '18:30')).toEqual(new Date(2026, 9, 2, 18, 30));
   });
 });
 

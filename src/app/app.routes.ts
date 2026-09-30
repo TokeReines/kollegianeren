@@ -18,6 +18,7 @@ export const routes: Routes = [
       {path: 'users', canActivate: [manageGuard], loadComponent: () => import('./components/users/users.component').then(m => m.UsersComponent)},
       {path: 'accounting', canActivate: [manageGuard], loadComponent: () => import('./components/accounting/accounting.component').then(m => m.AccountingComponent)},
       {path: 'access', canActivate: [manageGuard], loadComponent: () => import('./components/access/access.component').then(m => m.AccessComponent)},
+      {path: 'food-club', loadComponent: () => import('./components/food-club/food-club.component').then(m => m.FoodClubComponent)},
       {path: 'stats', loadComponent: () => import('./components/stats/stats.component').then(m => m.StatsComponent)},
       {path: 'aktuelt', loadComponent: () => import('./components/aktuelt/aktuelt.component').then(m => m.AktueltComponent)},
       {path: 'maker', redirectTo: 'aktuelt'},

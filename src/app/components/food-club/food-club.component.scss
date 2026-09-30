@@ -1,0 +1,182 @@
+.page {
+  max-width: 820px;
+  padding-bottom: 32px;
+}
+
+// ‹ This week / 28 Sep to 4 Oct ›
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.range {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+
+  .week {
+    font: var(--mat-sys-title-medium);
+  }
+
+  .dates {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// One row per day, like a line in the shared sheet.
+.day {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  &.free {
+    align-items: center;
+    padding: 6px 0;
+  }
+}
+
+.date {
+  display: flex;
+  flex: 0 0 48px;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  color: var(--mat-sys-on-surface-variant);
+
+  .weekday,
+  .month {
+    font: var(--mat-sys-label-medium);
+  }
+
+  .num {
+    font: var(--mat-sys-headline-small);
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.today .date {
+  color: var(--mat-sys-primary);
+
+  .num {
+    color: var(--mat-sys-primary);
+  }
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.book {
+  align-self: flex-start;
+}
+
+.meal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px -8px -4px 0;
+}
+
+.chefs {
+  display: flex;
+
+  app-resident-avatar + app-resident-avatar {
+    margin-left: -8px;
+    box-shadow: 0 0 0 2px var(--mat-sys-surface-container-low);
+  }
+}
+
+.cook {
+  flex: 1;
+  min-width: 0;
+}
+
+.time,
+.count,
+.closes {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.menu {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+  overflow-wrap: anywhere;
+}
+
+.add-details {
+  align-self: flex-start;
+  margin-left: -12px;
+}
+
+.notes {
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eaters {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.faces {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+
+  app-resident-avatar {
+    margin-right: -6px;
+    box-shadow: 0 0 0 2px var(--mat-sys-surface-container-low);
+    font: var(--mat-sys-label-small);
+  }
+}
+
+.more {
+  margin-left: 12px;
+  font: var(--mat-sys-label-medium);
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mat-sys-on-surface-variant);
+}
+

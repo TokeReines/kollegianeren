@@ -40,6 +40,7 @@ export class NavigationComponent {
     const manage = this.auth.canManage();
     return [
       {path: '/', icon: 'sports_bar', label: 'MENU_BEERSYSTEM', exact: true},
+      {path: '/food-club', icon: 'restaurant', label: 'MENU_FOOD_CLUB'},
       ...(manage ? [
         {path: '/products', icon: 'inventory_2', label: 'MENU_PRODUCTS'},
         {path: '/users', icon: 'people', label: 'MENU_RESIDENTS'},
