@@ -1,5 +1,5 @@
 import {Component, inject, signal} from '@angular/core';
-import {FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MAT_DIALOG_DATA, MatDialogModule} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -14,10 +14,10 @@ import {TranslatePipe} from '../../../translate.pipe';
   template: `
     @if (!sent()) {
       <h2 mat-dialog-title>{{ "RESET_ENTER_EMAIL" | translate }}</h2>
-      <form mat-dialog-content id="reset-form" (ngSubmit)="send()">
+      <form mat-dialog-content id="reset-form" [formGroup]="form" (ngSubmit)="send()">
         <mat-form-field class="full">
           <mat-label>{{ "EMAIL" | translate }}</mat-label>
-          <input matInput type="email" [formControl]="email" autocomplete="email">
+          <input matInput type="email" formControlName="email" autocomplete="email">
         </mat-form-field>
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
@@ -44,6 +44,8 @@ import {TranslatePipe} from '../../../translate.pipe';
 export class ResetPasswordDialogComponent {
   private readonly auth = inject(AuthService);
   protected readonly email = new FormControl(inject<string>(MAT_DIALOG_DATA) ?? '', {nonNullable: true, validators: [Validators.required, Validators.email]});
+  // A <form> needs a form directive, or submitting it reloads the page.
+  protected readonly form = new FormGroup({email: this.email});
   protected readonly sent = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
