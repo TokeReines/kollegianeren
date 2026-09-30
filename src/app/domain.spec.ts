@@ -80,7 +80,7 @@ describe('food club', () => {
     expect(dayKey(new Date(2026, 11, 31, 0, 5))).toBe('2026-12-31');
   });
 
-  it('counts eaten meals per day, weekday and tag, without ranking cooks', () => {
+  it('counts eaten meals per day, weekday, tag and resident', () => {
     const m = (d: number, cooks: string[], signups: string[], tags: MealTag[] = []) => ({date: at(2026, 9, d, 18), cooks, signups, tags});
     const from = new Date(2026, 8, 21);
     const s = computeFoodStats([
@@ -92,9 +92,10 @@ describe('food club', () => {
     expect(s.daily.map(d => d.eaters)).toEqual([0, 3, 0, 5, 0, 0, 0]);
     expect(s.weekdays[1]).toEqual({weekday: 1, meals: 1, eaters: 3}); // Tuesday
     expect(s.tags).toEqual([{tag: 'vegan', meals: 2}, {tag: 'glutenFree', meals: 1}]);
-    expect(s.people['a']).toEqual({ate: 2, cooked: 2});
-    expect(s.people['c']).toEqual({ate: 2, cooked: 0}); // their own food club is still to come
-    expect(s.people['e']).toEqual({ate: 1, cooked: 0});
+    expect(s.people['a']).toEqual({ate: 2, cooked: 2, guests: 8});
+    expect(s.people['b']).toEqual({ate: 2, cooked: 1, guests: 5}); // shared the second one
+    expect(s.people['c']).toEqual({ate: 2, cooked: 0, guests: 0}); // their own food club is still to come
+    expect(s.people['e']).toEqual({ate: 1, cooked: 0, guests: 0});
   });
 
   it('numbers weeks as Danish calendars do', () => {

@@ -1,6 +1,6 @@
 import {Component, computed, inject, linkedSignal, resource, signal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {map, of, switchMap} from 'rxjs';
+import {of, switchMap} from 'rxjs';
 import {DatePipe, DecimalPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -17,7 +17,8 @@ import {FoodDayRow, FoodStats, TagRow, WeekdayRow} from './food-stats';
 
 const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']};
 
-// What the kitchen drinks and eats, and when, over a chosen period. No per-resident ranking, on purpose.
+// What the kitchen drinks and eats, and when, over a chosen period. No per-resident ranking of what
+// people drink, on purpose; the food club does show who cooks, since cooking is what it is about.
 @Component({
   selector: 'app-stats',
   imports: [DatePipe, DecimalPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatSelectModule, TranslatePipe],
@@ -37,15 +38,26 @@ export class StatsComponent {
   protected readonly view = signal<'beer' | 'food'>('beer');
   // A year of food club is a few hundred reads; a year of purchases would be thousands.
   protected readonly periods = computed(() => this.view() === 'food' ? [30, 90, 365] : [7, 30, 90]);
-  // One resident's own food club count, picked on the page. The residents are read only here.
+  // The residents are read only for the Madklub view: names for the per-cook charts, and the
+  // one-resident lookup.
+  private readonly allResidents = toSignal(toObservable(this.view).pipe(
+    switchMap(v => v === 'food' ? this.users.list() : of([]))), {initialValue: []});
+  protected readonly residents = computed(() => this.allResidents().filter(u => !u.movedOutAt).sort(byRoom));
   protected readonly personId = signal('');
-  protected readonly residents = toSignal(toObservable(this.view).pipe(
-    switchMap(v => v === 'food' ? this.users.list() : of([])),
-    map(list => list.filter(u => !u.movedOutAt).sort(byRoom))), {initialValue: []});
   protected readonly person = computed(() => {
     const id = this.personId(), f = this.food();
-    return id && f ? f.people[id] ?? {ate: 0, cooked: 0} : null;
+    return id && f ? f.people[id] ?? {ate: 0, cooked: 0, guests: 0} : null;
   });
+  // Everyone who cooked in the period, most food clubs first, and most guests first.
+  private readonly cookRows = computed(() => {
+    const names = new Map(this.allResidents().map(u => [u.id, u.name]));
+    return Object.entries(this.food()?.people ?? {}).filter(([, p]) => p.cooked > 0)
+      .map(([id, p]) => ({id, name: names.get(id) ?? '?', ...p}));
+  });
+  protected readonly byCooked = computed(() => [...this.cookRows()].sort((a, b) => b.cooked - a.cooked || b.guests - a.guests));
+  protected readonly byGuests = computed(() => [...this.cookRows()].sort((a, b) => b.guests - a.guests || b.cooked - a.cooked));
+  protected readonly maxCooked = computed(() => Math.max(1, ...this.cookRows().map(r => r.cooked)));
+  protected readonly maxGuests = computed(() => Math.max(1, ...this.cookRows().map(r => r.guests)));
   private readonly result = resource({
     params: () => this.view() === 'beer' ? this.days() : undefined,
     loader: ({params}) => this.statsService.load(params),
@@ -103,6 +115,12 @@ export class StatsComponent {
   protected tipWeekday(w: WeekdayRow) {
     const avg = w.meals ? Math.round(w.eaters / w.meals * 10) / 10 : 0;
     return `${this.weekdays()[w.weekday]}: ${w.meals} ${this.i18n.t('FOOD_STATS_MEALS').toLowerCase()}, ${avg} ${this.i18n.t('FOOD_STATS_PER_MEAL').toLowerCase()}`;
+  }
+
+  // "Anna: 3 madklubber, 27 spisende (9 pr. madklub)".
+  protected tipCook(r: {name: string, cooked: number, guests: number}) {
+    const t = (k: string) => this.i18n.t(k).toLowerCase();
+    return `${r.name}: ${r.cooked} ${t('FOOD_STATS_MEALS')}, ${r.guests} ${t('FOOD_EATERS')} (${Math.round(r.guests / r.cooked * 10) / 10} ${t('FOOD_STATS_PER_MEAL_SHORT')})`;
   }
 
   protected tipTag(t: TagRow) {

@@ -280,5 +280,11 @@
   "FOOD_STATS_TIME": "time",
   "FOOD_STATS_TIMES": "times",
   "FOOD_STATS_IN_LAST": "in the last",
-  "FOOD_TAG_lactoseFree": "Lactose free"
+  "FOOD_TAG_lactoseFree": "Lactose free",
+  "FOOD_STATS_BY_COOK": "Food clubs per cook",
+  "FOOD_STATS_GUESTS_BY_COOK": "Eaters at each cook's food clubs",
+  "FOOD_STATS_COOKS_TABLE": "Cooks",
+  "FOOD_STATS_GUESTS": "Eaters",
+  "FOOD_STATS_PER_MEAL_SHORT": "per food club",
+  "FOOD_STATS_FOR": "for"
 }

@@ -48,6 +48,9 @@
           <p class="person-result" role="status">
             {{ "FOOD_STATS_ATE" | translate }} <b>{{ p.ate }}</b> {{ (p.ate === 1 ? "FOOD_STATS_TIME" : "FOOD_STATS_TIMES") | translate }},
             {{ "FOOD_STATS_COOKED" | translate }} <b>{{ p.cooked }}</b> {{ (p.cooked === 1 ? "FOOD_STATS_TIME" : "FOOD_STATS_TIMES") | translate }}
+            @if (p.cooked) {
+              {{ "FOOD_STATS_FOR" | translate }} <b>{{ p.guests }}</b> {{ "FOOD_EATERS" | translate }}
+            }
             {{ "FOOD_STATS_IN_LAST" | translate }} {{ days() }} {{ "STATS_DAYS" | translate }}.
           </p>
         }
@@ -63,6 +66,13 @@
             @if (d.meals) {
               <tr><td>{{ d.date | date:'EEE d. MMM' }}</td><td class="num">{{ d.eaters }}</td></tr>
             }
+          }
+        </table>
+        <h2>{{ "FOOD_STATS_COOKS_TABLE" | translate }}</h2>
+        <table class="data">
+          <tr><th>{{ "FOOD_COOKS_LABEL" | translate }}</th><th class="num">{{ "FOOD_STATS_MEALS" | translate }}</th><th class="num">{{ "FOOD_STATS_GUESTS" | translate }}</th></tr>
+          @for (r of byCooked(); track r.id) {
+            <tr><td>{{ r.name }}</td><td class="num">{{ r.cooked }}</td><td class="num">{{ r.guests }}</td></tr>
           }
         </table>
         <h2>{{ "FOOD_STATS_WEEKDAYS" | translate }}</h2>
@@ -94,6 +104,28 @@
         <div class="xaxis">
           <span>{{ f.daily[0]?.date | date:'d. MMM' }}</span>
           <span>{{ f.daily[f.daily.length - 1]?.date | date:'d. MMM' }}</span>
+        </div>
+
+        <h2>{{ "FOOD_STATS_BY_COOK" | translate }}</h2>
+        <div class="hbars" [class.dim]="loading()">
+          @for (r of byCooked(); track r.id) {
+            <div class="hbar" (mousemove)="show($event, tipCook(r))" (mouseleave)="tip.set(null)">
+              <span class="name">{{ r.name }}</span>
+              <span class="track"><span class="fill" [style.width.%]="r.cooked / maxCooked() * 100"></span></span>
+              <span class="val">{{ r.cooked }}</span>
+            </div>
+          }
+        </div>
+
+        <h2>{{ "FOOD_STATS_GUESTS_BY_COOK" | translate }}</h2>
+        <div class="hbars" [class.dim]="loading()">
+          @for (r of byGuests(); track r.id) {
+            <div class="hbar" (mousemove)="show($event, tipCook(r))" (mouseleave)="tip.set(null)">
+              <span class="name">{{ r.name }}</span>
+              <span class="track"><span class="fill" [style.width.%]="r.guests / maxGuests() * 100"></span></span>
+              <span class="val">{{ r.guests }}</span>
+            </div>
+          }
         </div>
 
         <h2>{{ "FOOD_STATS_WEEKDAYS" | translate }}</h2>

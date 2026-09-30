@@ -280,5 +280,11 @@
   "FOOD_STATS_TIME": "gang",
   "FOOD_STATS_TIMES": "gange",
   "FOOD_STATS_IN_LAST": "de sidste",
-  "FOOD_TAG_lactoseFree": "Laktosefri"
+  "FOOD_TAG_lactoseFree": "Laktosefri",
+  "FOOD_STATS_BY_COOK": "Madklubber pr. kok",
+  "FOOD_STATS_GUESTS_BY_COOK": "Spisende hos hver kok",
+  "FOOD_STATS_COOKS_TABLE": "Kokke",
+  "FOOD_STATS_GUESTS": "Spisende",
+  "FOOD_STATS_PER_MEAL_SHORT": "pr. madklub",
+  "FOOD_STATS_FOR": "for i alt"
 }
