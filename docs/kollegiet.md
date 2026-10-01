@@ -135,10 +135,12 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
 - **Scoreboard screen.** `/kollegiet/battle/{id}` full screen for a TV or projector at a party:
   big counters per kitchen, the burst of the last 20 minutes ("+20 på 20 min"), the lead
   changing hands, and confetti when the battle ends.
-  - **Køkkener:** every kitchen as a card with emoji, colour, bio, badges and trophies, plus
-    buttons for high-five, give a badge and challenge.
-- **Kitchen profile:** opened from a card. Its badges with reasons, achievements, battle wins,
-  upcoming events.
+  - **Køkkener:** every kitchen as a card with emoji, colour and bio, and its wins, high-fives
+    and badges as big pins (gold for wins). The kitchens with the most on their shelf come
+    first: it is fine to brag.
+- **Kitchen profile:** opened from a card. A trophy shelf of big tiles (wins and poll titles in
+  gold, high-fives, badges, achievements), the buttons for high-five, badge and challenge, and
+  why it got its badges.
 - **Worn badges.** The top bar shows the badges and high-fives the kitchen has been given, as
   pins after its name, so everyone at the tablet sees them. One given in the last day wiggles.
   Tapping them opens the kitchen's profile. It costs one listener on `standings/{kid}`, plus the

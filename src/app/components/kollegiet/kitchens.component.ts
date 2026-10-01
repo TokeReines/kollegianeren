@@ -43,7 +43,15 @@ export class KitchensComponent {
   protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
   // Kitchens with a profile (and your own) as cards; the rest as a row of names, so a list of
   // kitchens nobody has set up yet does not fill the page.
-  protected readonly withProfile = computed(() => this.kollegiet.cards().filter(k => k.profiled || k.id === this.me()));
+  // The ones with the most on their shelf first: it is fine to brag.
+  protected readonly withProfile = computed(() => {
+    const score = (id: string) => {
+      const s = this.summary().get(id);
+      return s ? 3 * s.wins + s.highfives + Object.values(s.badges).reduce((a, n) => a + (n ?? 0), 0) : 0;
+    };
+    return this.kollegiet.cards().filter(k => k.profiled || k.id === this.me())
+      .map(k => ({k, score: score(k.id)})).sort((a, b) => b.score - a.score).map(x => x.k);
+  });
   protected readonly withoutProfile = computed(() => this.kollegiet.cards().filter(k => !k.profiled && k.id !== this.me()));
   protected readonly canManage = this.auth.canManage;
 

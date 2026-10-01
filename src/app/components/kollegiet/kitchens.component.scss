@@ -20,11 +20,19 @@
   border-radius: 12px;
   cursor: pointer;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding: 12px;
   text-align: left;
   min-width: 0;
+
+  .top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
 
   &:hover {
     background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, var(--mat-sys-surface));
@@ -54,9 +62,18 @@
     text-overflow: ellipsis;
   }
 
-  .counts {
+  // What the kitchen has won and been given, as pins: big enough to see across the room.
+  .pins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 40px;
+    align-items: center;
+  }
+
+  .none {
     font: var(--mat-sys-body-small);
-    min-height: 1.4em;
+    color: var(--mat-sys-on-surface-variant);
   }
 
   .you {
@@ -99,11 +116,6 @@
     margin: 4px 0 0;
   }
 
-  .stats {
-    display: flex;
-    gap: 24px;
-    font: var(--mat-sys-body-large);
-  }
 
   .actions {
     display: flex;
@@ -111,23 +123,6 @@
     gap: 8px;
   }
 
-  .badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .badge {
-    padding: 6px 12px;
-    border-radius: 16px;
-    background: var(--mat-sys-tertiary-container);
-    color: var(--mat-sys-on-tertiary-container);
-
-    &.achievement {
-      background: var(--mat-sys-secondary-container);
-      color: var(--mat-sys-on-secondary-container);
-    }
-  }
 
   .why {
     margin: 0;
@@ -141,6 +136,89 @@
   .when {
     color: var(--mat-sys-on-surface-variant);
     font: var(--mat-sys-body-small);
+  }
+}
+
+.pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 10px 2px 6px;
+  border-radius: 20px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font-size: 24px;
+  line-height: 36px;
+
+  b {
+    font: var(--mat-sys-label-large);
+    font-weight: 700;
+    margin-left: 2px;
+  }
+}
+
+// Gold is for what was won, the same in light and dark.
+.gold {
+  background: linear-gradient(135deg, #ffe082, #ffb300);
+  color: #3b2600;
+}
+
+// The profile's trophy shelf: a tile for each thing, big.
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: 10px;
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 116px;
+    padding: 10px 8px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    background: var(--mat-sys-surface-container-high);
+    color: var(--mat-sys-on-surface);
+    text-align: center;
+
+    &.badge {
+      background: var(--mat-sys-tertiary-container);
+      color: var(--mat-sys-on-tertiary-container);
+    }
+
+    &.achievement {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+
+    &.gold {
+      background: linear-gradient(135deg, #ffe082, #ffb300);
+      color: #3b2600;
+    }
+  }
+
+  .icon {
+    font-size: 40px;
+    line-height: 1.1;
+  }
+
+  .n {
+    font: var(--mat-sys-headline-small);
+    font-weight: 700;
+  }
+
+  .label {
+    font: var(--mat-sys-label-large);
+    overflow-wrap: anywhere;
+  }
+
+  .title {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
