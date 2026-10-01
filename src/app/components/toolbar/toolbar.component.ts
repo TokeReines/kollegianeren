@@ -10,7 +10,7 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {AuthService} from '../../services/auth.service';
-import {MakerService} from '../../services/maker.service';
+import {NoticeService} from '../../services/notice.service';
 import {KitchenService} from '../../services/kitchen.service';
 import {SidenavService} from '../../services/sidenav.service';
 import {ThemeMode, ThemeService} from '../../services/theme.service';
@@ -18,8 +18,8 @@ import {Language, TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 
 // M3 top app bar: navigation icon, the kitchen as the title, and one account button on the right
-// that holds the kitchen, the login, theme, language and log out. A bell next to it while a
-// message from Toke is unread.
+// that holds the kitchen, the login, theme, language and log out. A bell next to it while
+// something is waiting: a message from Toke, or an invitation, challenge or high-five on Kollegiet.
 @Component({
   selector: 'app-toolbar',
   imports: [MatBadgeModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatToolbarModule, MatTooltipModule, RouterLink, TranslatePipe],
@@ -34,7 +34,7 @@ export class ToolbarComponent {
   protected readonly theme = inject(ThemeService);
   protected readonly i18n = inject(TranslateService);
 
-  protected readonly unread = toSignal(inject(MakerService).unreadForKitchen(), {initialValue: 0});
+  protected readonly notices = inject(NoticeService).notices;
   protected readonly email = toSignal(this.auth.user$.pipe(map(u => u?.email || '')), {initialValue: ''});
   protected readonly kitchenName = toSignal(this.auth.membership$.pipe(
     map(m => m?.kitchenId || null),

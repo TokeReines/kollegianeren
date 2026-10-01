@@ -1,4 +1,4 @@
-import {Component, DestroyRef, computed, inject, signal, untracked} from '@angular/core';
+import {Component, DestroyRef, computed, effect, inject, signal, untracked} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DecimalPipe} from '@angular/common';
 import {map} from 'rxjs';
@@ -18,6 +18,8 @@ import {ProductPictureComponent} from '../shared/product-picture.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 import {describeSale, productOrder} from './basket';
+import {LeagueService} from '../../services/league.service';
+import {BattleTickerComponent} from '../kollegiet/battle-ticker.component';
 
 // How long the confirmation of a purchase stays in the bar.
 const CONFIRM_MS = 4000;
@@ -27,7 +29,8 @@ const CONFIRM_MS = 4000;
 // long-press takes one off. A wrong purchase is taken back under "Seneste køb".
 @Component({
   selector: 'app-buy-page',
-  imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent],
+  imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent,
+    BattleTickerComponent],
   templateUrl: './buy-page.component.html',
   styleUrl: './buy-page.component.scss',
 })
@@ -64,8 +67,19 @@ export class BuyPageComponent {
   protected readonly confirmation = signal('');
   private timer: ReturnType<typeof setTimeout> | undefined;
 
+  // Battles the kitchen is in right now (Kollegiet): a ticker each above the grid.
+  private readonly league = inject(LeagueService);
+  protected readonly liveBattles = this.league.myLive;
+
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    // A live achievement claimed by this tablet: say it.
+    effect(() => {
+      const earned = this.league.justEarned();
+      if (earned) {
+        untracked(() => this.notify.info(`${this.i18n.t('KOL_ACH_ICON_' + earned.code)} ${this.i18n.t('KOL_ACH_UNLOCKED')}: ${this.i18n.t('KOL_ACH_' + earned.code)}`, 6000));
+      }
+    });
   }
 
   protected amountOf(product: Product): number {

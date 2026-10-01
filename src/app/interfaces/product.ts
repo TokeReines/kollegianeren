@@ -14,11 +14,16 @@ export interface Product {
   lowStock?: number;
   // Units sold, counted up with every sale; orders the buy page (most bought first).
   sold?: number;
+  // What it is, for battles between the kitchens ("most beers"). Absent until a manager sets it.
+  category?: ProductCategory | null;
 }
+
+export const PRODUCT_CATEGORIES = ['beer', 'cider', 'soda', 'water', 'wine', 'spirits', 'snack', 'other'] as const;
+export type ProductCategory = typeof PRODUCT_CATEGORIES[number];
 
 export type ProductFields = Omit<Product, 'id'>;
 // What the product dialog edits.
-export type EditableProduct = Pick<Product, 'name' | 'price' | 'retailPrice' | 'image' | 'clId' | 'active'>;
+export type EditableProduct = Pick<Product, 'name' | 'price' | 'retailPrice' | 'image' | 'clId' | 'active' | 'category'>;
 
 export const LOW_STOCK_DEFAULT = 5;
 

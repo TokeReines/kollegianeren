@@ -220,3 +220,13 @@ app-root {
     min-width: 160px;
   }
 }
+
+// Kollegiet: the battle or event a notification pointed at, for a moment.
+.flash {
+  animation: flash 2.4s ease-out;
+}
+
+@keyframes flash {
+  0%, 30% { box-shadow: 0 0 0 3px var(--mat-sys-tertiary); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}

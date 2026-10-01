@@ -8,6 +8,7 @@ import {MatListModule} from '@angular/material/list';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {AuthService} from '../../services/auth.service';
 import {MakerService} from '../../services/maker.service';
+import {NoticeService} from '../../services/notice.service';
 import {SidenavService} from '../../services/sidenav.service';
 import {TranslatePipe} from '../../translate.pipe';
 
@@ -29,6 +30,7 @@ interface NavItem {
 export class NavigationComponent {
   private readonly auth = inject(AuthService);
   private readonly maker = inject(MakerService);
+  private readonly notices = inject(NoticeService);
   protected readonly sidenav = inject(SidenavService);
 
   private readonly kitchenUnread = toSignal(this.maker.unreadForKitchen(), {initialValue: 0});
@@ -47,6 +49,7 @@ export class NavigationComponent {
         {path: '/accounting', icon: 'receipt_long', label: 'MENU_ACCOUNTING'},
       ] : []),
       {path: '/stats', icon: 'insights', label: 'MENU_STATS'},
+      {path: '/kollegiet', icon: 'groups', label: 'MENU_KOLLEGIET', badge: this.notices.kollegietBadge()},
       {path: '/aktuelt', icon: 'campaign', label: 'MENU_AKTUELT', badge: this.kitchenUnread()},
       ...(manage ? [{path: '/access', icon: 'key', label: 'MENU_ACCESS'}] : []),
       ...(this.maker.isAdmin() ? [

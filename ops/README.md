@@ -84,10 +84,19 @@ On top of the anonymised prod copy (`restore.js --anonymise` into the emulator):
 - `node seed-emulator.js`: the maker login and the launch post.
 - `node seed-demo.js`: extra logins with roles, invites, stock, moved-out residents, a week of purchases, maker threads, a small referred kitchen.
 - `node seed-avatars.js`: illustrated avatars (DiceBear Notionists, CC0, generated locally) for every other resident.
+- `node seed-kollegiet.js`: Kollegiet (docs/kollegiet.md): profiles, product categories, posts, events, a live beer battle, a challenge for Ny2, kudos and polls. Then `node league.js --emulator --daily` settles the ended battle and the closed poll.
 
 Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 
 - `node seed-test-kitchen.js --project dev --catalogue <file>`: a test kitchen on dev (products with pictures, 23 residents, two weeks of purchases) and two 14-day invite links, owner and tablet. The tester registers with their own email and password. Refuses prod.
+
+## Kollegiet
+
+Live battle tallies are moved by the kitchens' own tablets; these settle and check (docs/kollegiet.md).
+
+- `node league.js --project dev [--daily] [--dry]`: settles battles that ended (recomputed from the real purchases, meals and taps; a tally that is off is reported to the maker's inbox) and polls that closed (the secret ballots counted), and posts the results. `--daily` also writes standings and the achievements that need history. An idle run is 2 reads. `--emulator --loop 60` runs it locally every minute.
+- `cron/tokeserver-league.sh`: the same on prod, every 15 minutes, with `--daily` at 08:15 UTC. Not scheduled yet.
+- `node suggest-categories.js --project dev [--write]`: proposes beer, soda, water and so on from product names, for products without a category. Writing to prod needs `--i-really-mean-prod`.
 
 ## Removing kitchens and logins
 

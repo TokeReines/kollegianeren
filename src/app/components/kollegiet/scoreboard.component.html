@@ -1,0 +1,56 @@
+<div class="screen">
+  <a mat-icon-button class="back" routerLink="/kollegiet" [queryParams]="{tab: 'battles'}" [attr.aria-label]="'BACK' | translate"><mat-icon>arrow_back</mat-icon></a>
+  @if (battle(); as b) {
+    <header>
+      <mat-icon class="metric">{{ icon() }}</mat-icon>
+      <div>
+        <h1>{{ b.title }}</h1>
+        <p class="sub">{{ "KOL_METRIC_" + b.metric | translate }}</p>
+      </div>
+      <div class="clock">
+        <span class="label">{{ "KOL_CLOCK_" + state() | translate }}</span>
+        @if (state() !== 'ended') {
+          <span class="time">{{ countdown() }}</span>
+        }
+      </div>
+    </header>
+
+    @if (live.leadChange(); as k) {
+      <div class="lead">{{ kollegiet.card(k).emoji }} {{ kollegiet.card(k).name }} {{ "KOL_TAKES_LEAD" | translate }}</div>
+    }
+
+    <ol class="rows">
+      @for (r of rows(); track r.kitchenId) {
+        <li [class.bump]="live.bumped().has(r.kitchenId)" [class.winner]="state() === 'ended' && r.rank === 1 && r.score > 0">
+          <span class="rank">{{ r.rank === 1 && r.score > 0 ? '🏆' : r.rank }}</span>
+          <span class="who" style="--chip-size: 56px"><app-kitchen-chip [kitchenId]="r.kitchenId" /></span>
+          <span class="bar"><span class="fill" [style.width]="width(r.score)"></span></span>
+          <span class="burst">
+            @if (r.burst > 0 && state() === 'live') {
+              +{{ r.burst }} {{ "KOL_ON" | translate }} {{ burstMinutes }} min
+            }
+          </span>
+          <span class="score">{{ r.score }}{{ b.metric === 'plantMeals' ? ' %' : '' }}</span>
+        </li>
+      } @empty {
+        <p class="empty">{{ "KOL_NO_PARTICIPANTS" | translate }}</p>
+      }
+    </ol>
+
+    <div class="toasts" aria-live="polite">
+      @for (x of live.bumps(); track x.at + x.kitchenId) {
+        <span class="toast">{{ kollegiet.card(x.kitchenId).emoji }} {{ kollegiet.card(x.kitchenId).name }} +{{ x.n }}</span>
+      }
+    </div>
+  } @else {
+    <p class="empty">{{ "KOL_BATTLE_GONE" | translate }}</p>
+  }
+
+  @if (confetti()) {
+    <div class="confetti" aria-hidden="true">
+      @for (p of pieces; track $index) {
+        <i [style.left.%]="p.left" [style.animation-delay.s]="p.delay" [style.background]="'hsl(' + p.hue + ' 80% 60%)'"></i>
+      }
+    </div>
+  }
+</div>
