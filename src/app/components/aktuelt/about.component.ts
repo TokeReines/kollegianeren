@@ -13,8 +13,8 @@ const REPO = 'https://github.com/TokeReines/kollegianeren';
 
 // What it says has to stay true: where the data is (Firebase, location nam5 in the USA; pictures
 // at Cloudinary), the nightly backup (ops/backup.js), the free plan's limits, who can see what
-// (firestore.rules), and what happens if the maker stops or cannot be trusted. Change it with them.
-const SECTIONS = ['WHO', 'OPEN', 'DATA', 'SEES', 'COST', 'MAINTAIN', 'STOP', 'HACKED', 'EVIL', 'FUTURE'] as const;
+// (firestore.rules), and what happens if the maker stops. Change it with them.
+const SECTIONS = ['WHO', 'OPEN', 'DATA', 'SEES', 'COST', 'MAINTAIN', 'STOP', 'HACKED', 'FUTURE'] as const;
 
 // "Om": the questions a kitchen should be able to ask about the app it keeps its money in.
 @Component({
@@ -26,20 +26,23 @@ const SECTIONS = ['WHO', 'OPEN', 'DATA', 'SEES', 'COST', 'MAINTAIN', 'STOP', 'HA
         <section [id]="'about-' + s.toLowerCase()">
           <h2>{{ "ABOUT_" + s + "_TITLE" | translate }}</h2>
           <p>{{ "ABOUT_" + s + "_BODY" | translate }}</p>
-          @if (s === 'OPEN') {
+          <!-- Each link sits with the question it answers: coffee and the welcome with who made it. -->
+          @if (s === 'WHO') {
+            <div class="links">
+              <a mat-flat-button [href]="mobilePay.url" target="_blank" rel="noopener">
+                <mat-icon>local_cafe</mat-icon> {{ "AKTUELT_COFFEE" | translate }} (MobilePay Box {{ mobilePay.box }})
+              </a>
+              <button mat-stroked-button (click)="showReveal()"><mat-icon>auto_awesome</mat-icon> {{ "AKTUELT_SHOW_REVEAL" | translate }}</button>
+            </div>
+          } @else if (s === 'OPEN') {
             <a mat-stroked-button [href]="repo" target="_blank" rel="noopener"><mat-icon>code</mat-icon> {{ "ABOUT_GITHUB" | translate }}</a>
+          } @else if (s === 'DATA') {
+            <a mat-stroked-button routerLink="/privacy"><mat-icon>privacy_tip</mat-icon> {{ "PRIVACY" | translate }}</a>
           } @else if (s === 'FUTURE') {
             <a mat-stroked-button routerLink="/aktuelt" [queryParams]="{tab: 'forslag'}"><mat-icon>lightbulb</mat-icon> {{ "AKTUELT_TAB_FORSLAG" | translate }}</a>
           }
         </section>
       }
-      <div class="links">
-        <button mat-button (click)="showReveal()"><mat-icon>auto_awesome</mat-icon> {{ "AKTUELT_SHOW_REVEAL" | translate }}</button>
-        <a mat-button routerLink="/privacy"><mat-icon>privacy_tip</mat-icon> {{ "PRIVACY" | translate }}</a>
-        <a mat-stroked-button [href]="mobilePay.url" target="_blank" rel="noopener">
-          <mat-icon>local_cafe</mat-icon> {{ "AKTUELT_COFFEE" | translate }} (MobilePay Box {{ mobilePay.box }})
-        </a>
-      </div>
     </div>
   `,
   styles: `
@@ -48,7 +51,7 @@ const SECTIONS = ['WHO', 'OPEN', 'DATA', 'SEES', 'COST', 'MAINTAIN', 'STOP', 'HA
     section { padding: 12px 0 16px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
     h2 { margin: 0 0 6px; font: var(--mat-sys-title-medium); }
     p { margin: 0 0 8px; white-space: pre-line; line-height: 1.55; }
-    .links { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 16px; }
+    .links { display: flex; flex-wrap: wrap; gap: 12px; }
   `,
 })
 export class AboutComponent {
