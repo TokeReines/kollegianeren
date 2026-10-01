@@ -113,7 +113,7 @@
         }
         @if (e.kitchenId === me()) {
           <div class="answers">
-            <span class="hint">{{ counts.yes }} {{ "KOL_RSVP_COMING" | translate }} · {{ counts.maybe }} {{ "KOL_RSVP_MAYBE_COUNT" | translate }}</span>
+            <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }} · {{ counts.maybe }} {{ "KOL_RSVP_MAYBE_COUNT" | translate }}</span>
             <button mat-button (click)="newEvent(e)"><mat-icon>edit</mat-icon> {{ "EDIT" | translate }}</button>
           </div>
         } @else {
@@ -122,7 +122,7 @@
             <mat-button-toggle value="maybe" (click)="answer(e, 'maybe')">{{ "KOL_RSVP_maybe" | translate }}</mat-button-toggle>
             <mat-button-toggle value="no" (click)="answer(e, 'no')">{{ "KOL_RSVP_no" | translate }}</mat-button-toggle>
           </mat-button-toggle-group>
-          <span class="hint">{{ counts.yes }} {{ "KOL_RSVP_COMING" | translate }}</span>
+          <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}</span>
         }
       </mat-card>
     } @empty {

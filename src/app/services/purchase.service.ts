@@ -46,10 +46,11 @@ export class PurchaseService {
         userId: buyer.id, userName: buyer.name, userRoom: buyer.room, timestamp: serverTimestamp(),
       });
     }
+    const sale = batch.commit();
     this.moveCounters([{product, units: amount * buyers.length}], -1).catch(() => undefined);
-    // Live battles the kitchen is in: its own, separate write (docs/kollegiet.md, Battles).
+    // Live battles the kitchen is in: its own, separate write after the sale (docs/kollegiet.md, Battles).
     this.league.onSale(product, amount * buyers.length);
-    return batch.commit();
+    return sale;
   }
 
   // Takes a purchase back (a wrong tap, or a correction by the treasurer), and gives its units
