@@ -94,6 +94,53 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Forslag on Aktuelt (docs/aktuelt.md): the maker's feature proposals. Only the maker writes
+    // them; every kitchen reads them, gives its own thumbs up and comments (text, 30 seconds apart,
+    // like posts); the maker answers, with pictures.
+    match /proposals/{id} {
+      function validProposal(d) {
+        return d.keys().hasOnly(['title', 'body', 'images', 'status', 'votes', 'createdAt', 'updatedAt', 'statusAt'])
+          && d.keys().hasAll(['title', 'body', 'images', 'status', 'votes', 'createdAt', 'updatedAt', 'statusAt'])
+          && d.title is string && d.title.size() >= 1 && d.title.size() <= 120
+          && d.body is string && d.body.size() <= 5000
+          && d.images is list && d.images.size() <= 6
+          && d.status in ['open', 'planned', 'done', 'dropped']
+          && d.votes is map && d.createdAt is timestamp && d.statusAt is timestamp
+          && d.updatedAt == request.time;
+      }
+      allow read: if signedIn();
+      allow create: if isAdmin() && validProposal(request.resource.data)
+        && request.resource.data.votes.size() == 0
+        && request.resource.data.createdAt == request.time && request.resource.data.statusAt == request.time;
+      allow update: if isAdmin() && validProposal(request.resource.data)
+        && request.resource.data.votes == resource.data.votes
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (request.resource.data.statusAt == resource.data.statusAt || request.resource.data.statusAt == request.time);
+      // A kitchen's thumbs up: its own only, on or off.
+      allow update: if kitchenLogin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes'])
+        && request.resource.data.votes.diff(resource.data.votes).affectedKeys().hasOnly([myKitchen()])
+        && request.resource.data.votes.get(myKitchen(), true) == true;
+      allow delete: if isAdmin();
+
+      match /comments/{cid} {
+        function validComment(d) {
+          return d.keys().hasOnly(['from', 'text', 'images', 'createdAt']) && d.keys().hasAll(['from', 'text', 'images', 'createdAt'])
+            && d.text is string && d.text.size() >= 1 && d.text.size() <= 1000
+            && d.images is list && d.createdAt == request.time;
+        }
+        allow read: if signedIn();
+        allow create: if validComment(request.resource.data)
+          && exists(/databases/$(database)/documents/proposals/$(id))
+          && ((isAdmin() && request.resource.data.from == 'maker' && request.resource.data.images.size() <= 4)
+            || (kitchenLogin() && request.resource.data.from == myKitchen() && request.resource.data.images.size() == 0
+              && postRateOk(myKitchen(), cid)));
+        // The maker's always; a kitchen's own for five minutes, like a post.
+        allow delete: if isAdmin()
+          || (resource.data.from != 'maker' && isMember(resource.data.from) && request.time < resource.data.createdAt + duration.value(5, 'm'));
+      }
+    }
+
     // The maker's inbox reads every kitchen's thread at once.
     match /{path=**}/messages/{id} {
       allow read: if isAdmin();

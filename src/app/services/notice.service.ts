@@ -2,14 +2,16 @@ import {Injectable, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {Notice, NoticeKind, kollegietNotices, newsNotices, sortNotices} from '../interfaces/kollegiet';
 import {millis} from '../time';
+import {proposalNotices} from '../interfaces/proposal';
 import {AuthService} from './auth.service';
 import {KollegietService} from './kollegiet.service';
 import {LeagueService} from './league.service';
 import {MakerService} from './maker.service';
+import {ProposalService} from './proposal.service';
 import {TranslateService} from './translate.service';
 
 const ICONS: Record<NoticeKind, string> = {
-  live: 'nightlife', maker: 'mark_email_unread', news: 'campaign', invite: 'celebration', challenge: 'sports_kabaddi', kudos: 'front_hand', event: 'event',
+  live: 'nightlife', proposal: 'lightbulb', maker: 'mark_email_unread', news: 'campaign', invite: 'celebration', challenge: 'sports_kabaddi', kudos: 'front_hand', event: 'event',
 };
 
 // Everything waiting for the kitchen, most important first: a message from the maker, news on
@@ -25,6 +27,7 @@ export class NoticeService {
 
   private readonly unread = toSignal(this.maker.unreadByKitchen$, {initialValue: []});
   private readonly news = toSignal(this.maker.recentAnnouncements$, {initialValue: []});
+  private readonly proposals = toSignal(inject(ProposalService).recent$, {initialValue: []});
   private readonly events = toSignal(this.kollegiet.events$, {initialValue: []});
   private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
   // Until the seen document is in, nothing counts as new.
@@ -41,7 +44,8 @@ export class NoticeService {
     const latest = this.unread()[0];
     const maker: Notice[] = latest ? [{kind: 'maker', from: null, text: latest.text, at: millis(latest.createdAt),
       link: {path: '/aktuelt', fragment: 'message'}}] : [];
-    return sortNotices([...maker, ...newsNotices(this.news(), this.aktueltSeenAt()), ...kollegietNotices(kid, this.seenAt(), {
+    return sortNotices([...maker, ...newsNotices(this.news(), this.aktueltSeenAt()),
+      ...proposalNotices(this.proposals(), this.aktueltSeenAt()), ...kollegietNotices(kid, this.seenAt(), {
       events: this.events(), battles: this.league.battles(), kudos: this.kudos(),
     }, this.league.now())]);
   });
@@ -70,6 +74,8 @@ export class NoticeService {
         return this.makerUnread() > 1 ? `${this.makerUnread()} ${this.i18n.t('MESSAGES_FROM_TOKE')}` : this.i18n.t('MESSAGE_FROM_TOKE');
       case 'news':
         return this.i18n.t('NOTICE_news');
+      case 'proposal':
+        return this.i18n.t(n.done ? 'NOTICE_proposal_done' : 'NOTICE_proposal');
       case 'kudos': {
         const card = this.kollegiet.card(n.from ?? '');
         const what = n.badge
@@ -95,7 +101,7 @@ export class NoticeService {
     if (n.kind === 'live' && n.eventId) {
       return this.kollegiet.rsvp({id: n.eventId}, 'no');
     }
-    return n.kind === 'news' ? this.kollegiet.markAktueltSeen() : this.kollegiet.markSeen();
+    return n.kind === 'news' || n.kind === 'proposal' ? this.kollegiet.markAktueltSeen() : this.kollegiet.markSeen();
   }
 
   // Shown on every page except where it leads: Aktuelt for the maker's things, Kollegiet for its
@@ -109,5 +115,5 @@ export class NoticeService {
 }
 
 function fromKollegiet(n: Notice): boolean {
-  return n.kind !== 'maker' && n.kind !== 'news';
+  return n.kind !== 'maker' && n.kind !== 'news' && n.kind !== 'proposal';
 }
