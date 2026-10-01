@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore';
 import {Observable, catchError, distinctUntilChanged, firstValueFrom, map, of, shareReplay, switchMap} from 'rxjs';
 import {
-  Badge, KEvent, Kudos, LIVE_HOURS_MAX, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId, pollId,
+  Badge, KEvent, Kudos, LIVE_HOURS_MAX, POLL_SLOTS, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId,
 } from '../interfaces/kollegiet';
 import {Kitchen} from '../interfaces/kitchen';
 import {dayKey} from '../interfaces/meal';
@@ -220,11 +220,34 @@ export class KollegietService {
     return addDoc(collection(db, 'kudos'), {from: this.kitchenId, to, kind: 'badge', badge, reason, createdAt: serverTimestamp()});
   }
 
-  createPoll(title: string, opensAt: Date, closesAt: Date) {
+  // Two open at a time: the poll takes a free place in pollSlots/{kid} in the same batch (the rules
+  // check the place's last poll has closed). Refused if both places hold an open one.
+  async createPoll(title: string, opensAt: Date, closesAt: Date) {
     const kid = this.kitchenId;
-    return setDoc(doc(db, 'polls', pollId(kid, opensAt)), {
-      kitchenId: kid, title, opensAt: Timestamp.fromDate(opensAt), closesAt: Timestamp.fromDate(closesAt), createdAt: serverTimestamp(),
-    });
+    const slotsRef = doc(db, 'pollSlots', kid);
+    const slots = (await getDoc(slotsRef)).data() ?? {};
+    let free: string | null = null;
+    for (const slot of POLL_SLOTS) {
+      const held = slots[slot];
+      const poll = held ? await getDoc(doc(db, 'polls', held)) : null;
+      if (!poll?.exists() || millis(poll.get('closesAt')) <= Date.now()) {
+        free = slot;
+        break;
+      }
+    }
+    if (!free) {
+      throw new Error('two at a time');
+    }
+    const ref = doc(collection(db, 'polls'));
+    const batch = writeBatch(db);
+    batch.set(ref, {kitchenId: kid, title, opensAt: Timestamp.fromDate(opensAt), closesAt: Timestamp.fromDate(closesAt), createdAt: serverTimestamp()});
+    batch.set(slotsRef, {[free]: ref.id}, {merge: true});
+    return batch.commit();
+  }
+
+  // Ends the kitchen's own poll now: counted, or cancelled with no result. Frees its place.
+  closePoll(poll: Poll, cancel: boolean) {
+    return updateDoc(doc(db, 'polls', poll.id), {closesAt: serverTimestamp(), ...(cancel ? {cancelled: true} : {})});
   }
 
   // The kitchen's own vote: the only one it may read.

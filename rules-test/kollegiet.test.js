@@ -235,14 +235,37 @@ test('kudos: from yourself to another kitchen, one high-five a pair a day', asyn
   await assertFails(addDoc(collection(as(A), 'kudos'), { ...badge, reason: '' }));
 });
 
-test('polls: one a month per kitchen; ballots are secret and not for yourself', async () => {
+test('polls: two open at a time per kitchen, ended early by it; ballots are secret and not for yourself', async () => {
   const now = Date.now();
   const p = { kitchenId: A, title: 'Mest plantebaseret', opensAt: ts(now), closesAt: ts(now + 7 * 24 * H), createdAt: serverTimestamp() };
-  // A month other than the one it opens in: more polls than one a month.
-  await assertFails(setDoc(doc(as(A), 'polls', `${A}_2031-01`), p));
-  await assertSucceeds(setDoc(doc(as('tabA'), 'polls', `${A}_${thisMonth()}`), p));
-  await assertFails(setDoc(doc(as(A), 'polls', `${B}_${thisMonth()}`), p));
-  await assertFails(setDoc(doc(as(A), 'polls', `${A}_2026-11`), { ...p, closesAt: ts(now + 60 * 24 * H) }));
+  // A poll takes one of the kitchen's two places in the same batch.
+  const start = (db, id, slot, extra = {}, slotsKid = A) => {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'polls', id), { ...p, ...extra });
+    batch.set(doc(db, 'pollSlots', slotsKid), { [slot]: id }, { merge: true });
+    return batch.commit();
+  };
+  await assertFails(setDoc(doc(as(A), 'polls', 'alone'), p));
+  await assertFails(start(as(A), 'other', 's1', { kitchenId: B }));
+  await assertFails(start(as(A), 'theirs', 's1', {}, B));
+  await assertFails(start(as(A), 'long', 's1', { closesAt: ts(now + 60 * 24 * H) }));
+  await assertFails(start(as(A), 'third-place', 's3'));
+  await assertSucceeds(start(as('tabA'), 'one', 's1'));
+  await assertSucceeds(start(as(A), 'two', 's2'));
+  // Both places hold an open poll: no third.
+  await assertFails(start(as(A), 'three', 's1'));
+  await assertFails(start(as(A), 'three', 's2'));
+  await assertFails(setDoc(doc(as(A), 'pollSlots', A), { s1: 'two' }, { merge: true }));
+  // Its kitchen ends one early: closed now, or cancelled; nobody else, nothing else, not twice.
+  await assertFails(updateDoc(doc(as(B), 'polls', 'one'), { closesAt: serverTimestamp() }));
+  await assertFails(updateDoc(doc(as(A), 'polls', 'one'), { title: 'Noget andet' }));
+  await assertFails(updateDoc(doc(as(A), 'polls', 'one'), { closesAt: ts(now + 3 * 24 * H) }));
+  await assertSucceeds(updateDoc(doc(as('tabA'), 'polls', 'one'), { closesAt: serverTimestamp() }));
+  await assertFails(updateDoc(doc(as(A), 'polls', 'one'), { closesAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(doc(as(A), 'polls', 'two'), { closesAt: serverTimestamp(), cancelled: true }));
+  await assertFails(setDoc(doc(as(B), 'polls', 'two', 'ballots', B), { choice: C, at: serverTimestamp() }));
+  // A closed one's place takes a new poll.
+  await assertSucceeds(start(as(A), 'three', 's1'));
   const poll = `${B}_2026-10`;
   await assertSucceeds(setDoc(doc(as('tabA'), 'polls', poll, 'ballots', A), { choice: C, at: serverTimestamp() }));
   await assertSucceeds(setDoc(doc(as(A), 'polls', poll, 'ballots', A), { choice: B, at: serverTimestamp() }));
