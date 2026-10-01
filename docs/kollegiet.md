@@ -112,8 +112,10 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
 ## Screens
 
 - **Kollegiet** (new menu item, everyone). Three tabs:
-  - **Opslagstavle:** posts, events and kudos mixed, newest first, with a composer that also
-    creates an event.
+  - **Opslagstavle:** pinned at the top: open votes, and one line per battle or vote decided in
+    the last three days. Then a one-line composer (+ for an event or a vote) and the posts with
+    their replies in one panel, newest activity first. Events on the side. High-fives and badges
+    are on the kitchens' profiles and in the notifications, not on the board.
   - **Battles:** live battles with their scoreboard and a button to join. Below that, past
     battles, then a "Udfordr" button.
 - **Live ticker.** While the kitchen is in a live battle, a slim bar on the buy page shows the
@@ -193,7 +195,7 @@ ignores it.
 
 The job is not on the live path. It settles and checks, on tokeserver like `admin-stats.js`, with
 the same service account. It only writes `battles/{id}.result`, `polls/{id}.result`,
-`standings/{kid}` and achievement posts (results are pinned on the board, not posted).
+`standings/{kid}`. It posts nothing on the board: results are pinned by the app, achievements are on the profiles.
 
 - **Every 15 minutes.** A state file on tokeserver (`--state`) keeps how far it has got, so a run
   looks only at battles and polls that ended since the last one: an idle run is 2 reads. A result
@@ -214,7 +216,7 @@ the same service account. It only writes `battles/{id}.result`, `polls/{id}.resu
     reach is taken back and reported: tablets move the tally themselves, so it is not proof.
 - **Achievements, once a day (08:20):** the ones that need history: 10/50/100 food club dinners, a
   month with half the meals plant based, first open kitchen party, 10 high-fives. They go to
-  `standings/{kid}`, and a new one becomes a post. With the state it reads only the kudos and
+  `standings/{kid}`, shown on the kitchen's profile. With the state it reads only the kudos and
   events since yesterday, counts the dinners (1 read per kitchen) and checks the plant-based month
   once, on the first run of the next month: about 30 reads a day, not growing with history.
 - **Polls:** after `closesAt` the job counts the votes, writes `result`, gives the winner the badge

@@ -12,7 +12,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  KEvent, Kudos, POST_MAX, PostThread, Rsvp, rsvpCounts, threads,
+  KEvent, POST_MAX, PostThread, Rsvp, rsvpCounts, threads,
 } from '../../interfaces/kollegiet';
 import {EventFields, HideableCollection, KollegietService} from '../../services/kollegiet.service';
 import {AuthService} from '../../services/auth.service';
@@ -26,10 +26,12 @@ import {EventDialogComponent, EventDialogData, PollDialogComponent, PollResult} 
 import {KitchenChipComponent} from './kitchen-chip.component';
 import {PollCardComponent} from './poll-card.component';
 
-type FeedItem = {kind: 'thread', at: number, thread: PostThread} | {kind: 'kudos', at: number, kudos: Kudos};
+// Posts from Kollegiet itself (old result and achievement posts from ops/league.js): not on the
+// board, the results are pinned and achievements are on the kitchens' profiles.
+const SYSTEM = 'kollegiet';
 
-// The board: posts and replies, events with answers, open votes, and high-fives and badges as
-// they are given. Newest activity first.
+// The board: what is pinned (votes, results), the posts with their replies, newest activity
+// first, and events on the side. High-fives and badges are on the kitchens' profiles.
 @Component({
   selector: 'app-board',
   imports: [DatePipe, NgTemplateOutlet, FormsModule, ReactiveFormsModule, MatButtonModule, MatButtonToggleModule, MatCardModule, MatFormFieldModule, MatIconModule,
@@ -47,7 +49,6 @@ export class BoardComponent {
   private readonly league = inject(LeagueService);
 
   private readonly posts = toSignal(this.kollegiet.posts$, {initialValue: []});
-  private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
   private readonly allEvents = toSignal(this.kollegiet.events$, {initialValue: []});
   private readonly polls = toSignal(this.kollegiet.polls$, {initialValue: []});
 
@@ -82,13 +83,14 @@ export class BoardComponent {
       .filter(b => b.result?.winners.length && b.participants.length > 1 && millis(b.to) > now - 3 * 864e5)
       .sort((a, b) => millis(b.to) - millis(a.to));
   });
-  protected readonly hasPinned = computed(() => !!(this.recentWins().length || this.openPolls().length));
+  // Open votes as cards; decided ones as a line, like a battle won.
+  protected readonly livePolls = computed(() => this.openPolls().filter(p => !p.result));
+  protected readonly decidedPolls = computed(() => this.openPolls().filter(p => p.result?.winners.length));
+  protected readonly hasPinned = computed(() => !!(this.recentWins().length || this.livePolls().length || this.decidedPolls().length));
 
-  protected readonly feed = computed<FeedItem[]>(() => [
-    ...threads(this.posts()).map(t => ({kind: 'thread' as const, thread: t,
-      at: Math.max(millis(t.post.createdAt), ...t.replies.map(r => millis(r.createdAt)))})),
-    ...this.kudos().map(k => ({kind: 'kudos' as const, kudos: k, at: millis(k.createdAt)})),
-  ].sort((a, b) => b.at - a.at));
+  protected readonly feed = computed<PostThread[]>(() => threads(this.posts().filter(p => p.kitchenId !== SYSTEM))
+    .map(t => ({t, at: Math.max(millis(t.post.createdAt), ...t.replies.map(r => millis(r.createdAt)))}))
+    .sort((a, b) => b.at - a.at).map(x => x.t));
 
   protected rsvpCounts = rsvpCounts;
 
