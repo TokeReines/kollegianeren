@@ -30,8 +30,8 @@ import {PollCardComponent} from './poll-card.component';
 // board, the results are pinned and achievements are on the kitchens' profiles.
 const SYSTEM = 'kollegiet';
 
-// The board: what is pinned (votes, results), the posts with their replies, newest activity
-// first, and events on the side. High-fives and badges are on the kitchens' profiles.
+// The board, a pin board with fixed places: posts with the composer on top on the left; votes and
+// results, events, and high-fives and badges on the right, always in that order.
 @Component({
   selector: 'app-board',
   imports: [DatePipe, NgTemplateOutlet, FormsModule, ReactiveFormsModule, MatButtonModule, MatButtonToggleModule, MatCardModule, MatFormFieldModule, MatIconModule,
@@ -50,6 +50,7 @@ export class BoardComponent {
 
   private readonly posts = toSignal(this.kollegiet.posts$, {initialValue: []});
   private readonly allEvents = toSignal(this.kollegiet.events$, {initialValue: []});
+  private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
   private readonly polls = toSignal(this.kollegiet.polls$, {initialValue: []});
 
   protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
@@ -86,7 +87,8 @@ export class BoardComponent {
   // Open votes as cards; decided ones as a line, like a battle won.
   protected readonly livePolls = computed(() => this.openPolls().filter(p => !p.result));
   protected readonly decidedPolls = computed(() => this.openPolls().filter(p => p.result?.winners.length));
-  protected readonly hasPinned = computed(() => !!(this.recentWins().length || this.livePolls().length || this.decidedPolls().length));
+  // The newest high-fives and badges; the rest are on the kitchens' profiles.
+  protected readonly recentKudos = computed(() => this.kudos().slice(0, 8));
 
   protected readonly feed = computed<PostThread[]>(() => threads(this.posts().filter(p => p.kitchenId !== SYSTEM))
     .map(t => ({t, at: Math.max(millis(t.post.createdAt), ...t.replies.map(r => millis(r.createdAt)))}))

@@ -1,32 +1,58 @@
-// The board on the left, events on the right; stacked on phones with the events first.
+// Fixed places: the posts on the left, three zones on the right. On phones one column: votes,
+// events, posts, kudos.
 .board {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas:
+    "posts votes"
+    "posts events"
+    "posts kudos";
+  gap: 24px 20px;
+  align-items: start;
   padding-top: 16px;
 }
 
-.main,
-.events {
+.posts-zone { grid-area: posts; }
+.votes-zone { grid-area: votes; }
+.events-zone { grid-area: events; }
+.kudos-zone { grid-area: kudos; }
+
+.zone {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
-h2 {
-  margin: 0;
-  font: var(--mat-sys-title-medium);
-}
-
-.pinned {
+// Each zone's title, with its own action on the right.
+.zone-head {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--mat-sys-outline-variant);
 
-  mat-icon {
-    color: var(--mat-sys-tertiary);
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font: var(--mat-sys-title-medium);
+
+    mat-icon {
+      color: var(--mat-sys-tertiary);
+    }
   }
+}
+
+.panel {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface);
+  overflow: hidden;
 }
 
 // A battle just won: one quiet line.
@@ -61,8 +87,17 @@ h2 {
 
 }
 
-// One line: the text, + for an event or a vote, Send. Who it is for shows once there is text.
+// The composer: a strip of its own at the top of the posts, always in the same place.
 .composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--mat-sys-surface-container-low);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.composer-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -70,20 +105,11 @@ h2 {
 
 .to {
   width: 220px;
-  margin-top: -4px;
 }
 
 .grow {
   flex: 1;
   min-width: 0;
-}
-
-// The posts in one panel, a thin line between them.
-.posts {
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
-  background: var(--mat-sys-surface);
-  overflow: hidden;
 }
 
 .post {
@@ -193,13 +219,49 @@ header .when {
   color: var(--mat-sys-on-surface-variant);
 }
 
+// A high-five or a badge: one line in the kudos zone.
+.kudos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  font: var(--mat-sys-body-medium);
+
+  & + .kudos {
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .big {
+    font-size: 20px;
+  }
+
+  .what {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    --chip-size: 22px;
+  }
+
+  .reason {
+    font-style: italic;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.kudos-list .empty,
+.posts .empty {
+  margin: 0;
+  padding: 12px 16px;
+}
+
 @media (max-width: 900px) {
   .board {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .events {
-    order: -1;
+    grid-template-rows: none;
+    grid-template-areas: "votes" "events" "posts" "kudos";
   }
 
   .to {
