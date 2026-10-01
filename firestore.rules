@@ -102,7 +102,7 @@ service cloud.firestore {
         return d.keys().hasOnly(['title', 'body', 'images', 'status', 'votes', 'createdAt', 'updatedAt', 'statusAt'])
           && d.keys().hasAll(['title', 'body', 'images', 'status', 'votes', 'createdAt', 'updatedAt', 'statusAt'])
           && d.title is string && d.title.size() >= 1 && d.title.size() <= 120
-          && d.body is string && d.body.size() <= 5000
+          && d.body is string && d.body.size() <= 20000
           && d.images is list && d.images.size() <= 6
           && d.status in ['open', 'planned', 'done', 'dropped']
           && d.votes is map && d.createdAt is timestamp && d.statusAt is timestamp
@@ -126,7 +126,7 @@ service cloud.firestore {
       match /comments/{cid} {
         function validComment(d) {
           return d.keys().hasOnly(['from', 'text', 'images', 'createdAt']) && d.keys().hasAll(['from', 'text', 'images', 'createdAt'])
-            && d.text is string && d.text.size() >= 1 && d.text.size() <= 1000
+            && d.text is string && d.text.size() >= 1 && d.text.size() <= 20000
             && d.images is list && d.createdAt == request.time;
         }
         allow read: if signedIn();
@@ -134,11 +134,16 @@ service cloud.firestore {
           && exists(/databases/$(database)/documents/proposals/$(id))
           && ((isAdmin() && request.resource.data.from == 'maker' && request.resource.data.images.size() <= 4)
             || (kitchenLogin() && request.resource.data.from == myKitchen() && request.resource.data.images.size() == 0
-              && postRateOk(myKitchen(), cid)));
+              && request.resource.data.text.size() <= 1000 && postRateOk(myKitchen(), cid)));
         // The maker's always; a kitchen's own for five minutes, like a post.
         allow delete: if isAdmin()
           || (resource.data.from != 'maker' && isMember(resource.data.from) && request.time < resource.data.createdAt + duration.value(5, 'm'));
       }
+    }
+
+    // Forslag counts every proposal's comments live, with one listener on them all.
+    match /{path=**}/comments/{cid} {
+      allow read: if signedIn();
     }
 
     // The maker's inbox reads every kitchen's thread at once.
