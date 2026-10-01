@@ -62,23 +62,17 @@
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
   box-shadow: var(--mat-sys-level1);
-  transform: rotate(-1.2deg);
   --chip-size: 30px;
-
-  &:nth-child(even) {
-    transform: rotate(1deg);
-  }
 
   &.badge {
     background: var(--mat-sys-tertiary-container);
     color: var(--mat-sys-on-tertiary-container);
   }
 
-  // A battle or a vote won: the theme's muted colours, set apart by its edge.
+  // A battle or a vote won: gold, for the winners, the same in light and dark.
   &.gold {
-    background: var(--mat-sys-surface-container-highest);
-    color: var(--mat-sys-on-surface);
-    box-shadow: inset 0 0 0 2px var(--mat-sys-tertiary), var(--mat-sys-level1);
+    background: linear-gradient(135deg, #ffe082, #ffb300);
+    color: #3b2600;
   }
 
   .sticker-top {
@@ -146,6 +140,8 @@
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   // At least this tall; a row grows to its tallest paper, so nothing is cut off.
   grid-auto-rows: minmax(240px, auto);
+  // Small post-its fill the gaps a tall or big one leaves.
+  grid-auto-flow: row dense;
   gap: 20px 16px;
   padding: 4px 4px 16px;
 }
@@ -369,24 +365,21 @@
   }
 }
 
-// A post: a post-it in the writer's colour. Tap to open it with its replies.
+// A post: a post-it in the writer's colour. Tap to open it with its replies. A conversation is
+// two papers tall with its newest replies; a big one is two wide as well.
 .note {
   background: color-mix(in srgb, var(--kitchen-hue, #ffd54f) 32%, var(--mat-sys-surface));
   cursor: pointer;
 
-  .note-text {
-    margin: 0;
-    font: var(--mat-sys-body-large);
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    display: -webkit-box;
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  &.tall {
+    grid-row: span 2;
   }
 
-  footer {
-    margin-top: auto;
+  &.big {
+    grid-column: span 2;
+  }
+
+  header {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -399,12 +392,79 @@
       font: var(--mat-sys-body-small);
       color: var(--mat-sys-on-surface-variant);
     }
+  }
 
-    .replies {
-      font: var(--mat-sys-label-medium);
-      color: var(--mat-sys-on-surface);
-      margin-right: 4px;
+  .note-text {
+    margin: 0;
+    font: var(--mat-sys-body-large);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .latest {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed color-mix(in srgb, var(--mat-sys-on-surface) 25%, transparent);
+    --chip-size: 22px;
+  }
+
+  .earlier {
+    font: var(--mat-sys-label-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .latest-reply {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font: var(--mat-sys-body-medium);
+
+    span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
+  }
+
+  // Who is talking, and how much: always at the bottom.
+  .talk {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 8px;
+    --chip-size: 26px;
+
+    b {
+      font: var(--mat-sys-label-large);
+      white-space: nowrap;
+    }
+  }
+
+  .faces {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+
+    app-kitchen-chip + app-kitchen-chip {
+      margin-left: -8px;
+    }
+  }
+
+  .more-faces {
+    margin-left: 4px;
+    font: var(--mat-sys-label-medium);
   }
 
   .fresh {

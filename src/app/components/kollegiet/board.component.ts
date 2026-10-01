@@ -11,7 +11,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  Battle, KEvent, Kudos, POST_MAX, Poll, PostThread, Rsvp, rsvpCounts, threads,
+  Battle, KEvent, Kudos, POST_MAX, Poll, Post, PostThread, Rsvp, rsvpCounts, threads,
 } from '../../interfaces/kollegiet';
 import {EventFields, HideableCollection, KollegietService} from '../../services/kollegiet.service';
 import {AuthService} from '../../services/auth.service';
@@ -37,16 +37,24 @@ export type Sticker =
   {kind: 'battle', at: number, battle: Battle} |
   {kind: 'poll', at: number, poll: Poll};
 
-// A post on the wall: the thread, how many replies, and whether there is something new in it.
+// A post on the wall: the thread, whether there is something new in it, the kitchens talking
+// in it, and its size: a single post is small, a conversation tall, a big one two papers wide.
 interface Note {
   thread: PostThread;
   fresh: boolean;
+  kitchens: string[];
+  size: 'small' | 'tall' | 'big';
+  // The newest replies, shown on the post-it, oldest first.
+  latest: Post[];
 }
+const BIG_REPLIES = 5;
+const BIG_KITCHENS = 4;
 
 // The board, a pin board (docs/kollegiet.md). Across the top, loud: high-fives, badges and wins as
 // stickers. Under it one wall of papers, in a fixed order: the note to write on, events as flyers,
 // open votes as ballots, then the posts as post-its in the writer's colour. Space follows how many
-// there are of each. A post-it opens with its replies.
+// there are of each, and a conversation takes more than a single post. A post-it opens with its
+// replies. Nothing is tilted: rotated text blurs.
 @Component({
   selector: 'app-board',
   imports: [DatePipe, NgTemplateOutlet, FormsModule, ReactiveFormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule,
@@ -122,10 +130,17 @@ export class BoardComponent {
   protected readonly notes = computed<Note[]>(() => threads(this.posts().filter(p => p.kitchenId !== SYSTEM))
     .map(thread => {
       const all = [thread.post, ...thread.replies];
+      // Who is talking, the newest first, besides the one who wrote it.
+      const kitchens = [...new Set([...thread.replies].reverse().map(r => r.kitchenId))].filter(k => k !== thread.post.kitchenId);
+      const size: Note['size'] = !thread.replies.length ? 'small'
+        : thread.replies.length >= BIG_REPLIES || kitchens.length >= BIG_KITCHENS ? 'big' : 'tall';
       return {
         thread,
         at: Math.max(...all.map(p => millis(p.createdAt))),
         fresh: all.some(p => p.kitchenId !== this.me() && millis(p.createdAt) > this.seenBefore()),
+        kitchens,
+        size,
+        latest: thread.replies.slice(size === 'big' ? -4 : -2),
       };
     })
     .sort((a, b) => b.at - a.at));
@@ -145,15 +160,6 @@ export class BoardComponent {
   // A kitchen's colour, for its post-its.
   protected colour(kitchenId: string) {
     return this.kollegiet.card(kitchenId).colour;
-  }
-
-  // A small tilt per paper, the same every time, so the wall looks pinned up by hand.
-  protected tilt(id: string) {
-    let h = 0;
-    for (const c of id) {
-      h = (h * 31 + c.charCodeAt(0)) | 0;
-    }
-    return `rotate(${((Math.abs(h) % 7) - 3) * 0.45}deg)`;
   }
 
   protected openComposer() {

@@ -120,9 +120,12 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
     1. a blank note to write on, with buttons for an event and a vote;
     2. events as flyers, soonest first, with yes/maybe/no on them; four, then "+N more";
     3. open votes as ballots;
-    4. posts as post-its in the writing kitchen's colour, newest activity first, with the
-       number of replies and "Ny" when there is something since the kitchen last looked. A
-       post-it opens with the whole post, its replies and a reply field.
+    4. posts as post-its in the writing kitchen's colour, newest activity first, with "Ny"
+       when there is something since the kitchen last looked. A conversation takes more room
+       than a single post: with replies a post-it is two papers tall and shows the newest two;
+       with 5 replies or 4 kitchens in it, it is two wide as well and shows four. At the bottom,
+       the faces of the kitchens in it and "💬 12 svar". A post-it opens with the whole post,
+       its replies and a reply field. Nothing is tilted (rotated text blurs).
     Phones: two papers a row.
   - **Battles:** live battles with their scoreboard and a button to join. Below that, past
     battles, then a "Udfordr" button.
