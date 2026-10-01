@@ -29,6 +29,52 @@ h2 {
   }
 }
 
+// One line each: a battle just won, an event today. Opens it where it is.
+.pin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 8px 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container);
+  color: inherit;
+  font: var(--mat-sys-body-medium);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--mat-sys-surface-container-high);
+  }
+
+  &.win {
+    border-color: var(--mat-sys-tertiary);
+  }
+
+  .pin-icon {
+    flex: none;
+    font-size: 20px;
+    color: var(--mat-sys-tertiary);
+  }
+
+  .pin-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+  }
+
+  .pin-go {
+    flex: none;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
 .composer {
   padding: 12px;
   display: flex;
