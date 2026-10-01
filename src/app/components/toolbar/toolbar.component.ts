@@ -1,7 +1,8 @@
 import {Component, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {Router} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {distinctUntilChanged, map, of, switchMap} from 'rxjs';
+import {MatBadgeModule} from '@angular/material/badge';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatIconModule} from '@angular/material/icon';
@@ -9,6 +10,7 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {AuthService} from '../../services/auth.service';
+import {MakerService} from '../../services/maker.service';
 import {KitchenService} from '../../services/kitchen.service';
 import {SidenavService} from '../../services/sidenav.service';
 import {ThemeMode, ThemeService} from '../../services/theme.service';
@@ -16,10 +18,11 @@ import {Language, TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 
 // M3 top app bar: navigation icon, the kitchen as the title, and one account button on the right
-// that holds the kitchen, the login, theme, language and log out.
+// that holds the kitchen, the login, theme, language and log out. A bell next to it while a
+// message from Toke is unread.
 @Component({
   selector: 'app-toolbar',
-  imports: [MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatToolbarModule, MatTooltipModule, TranslatePipe],
+  imports: [MatBadgeModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatToolbarModule, MatTooltipModule, RouterLink, TranslatePipe],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.scss',
 })
@@ -31,6 +34,7 @@ export class ToolbarComponent {
   protected readonly theme = inject(ThemeService);
   protected readonly i18n = inject(TranslateService);
 
+  protected readonly unread = toSignal(inject(MakerService).unreadForKitchen(), {initialValue: 0});
   protected readonly email = toSignal(this.auth.user$.pipe(map(u => u?.email || '')), {initialValue: ''});
   protected readonly kitchenName = toSignal(this.auth.membership$.pipe(
     map(m => m?.kitchenId || null),

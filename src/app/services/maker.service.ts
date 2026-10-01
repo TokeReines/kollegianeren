@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import {Observable, combineLatest, from, map, of, shareReplay, switchMap} from 'rxjs';
 import {Kitchen} from '../interfaces/kitchen';
-import {Announcement, Message, Thread, toThreads} from '../interfaces/message';
+import {Announcement, Message, Thread, newestFirst, toThreads} from '../interfaces/message';
 import {AuthService} from './auth.service';
 import {db, snapshotOptions, watch} from '../firebase';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
@@ -36,9 +36,16 @@ export class MakerService {
     return watchInKitchen<Message>(this.auth.kitchenId$, kid => query(kitchenCollection(kid, 'messages'), orderBy('createdAt')));
   }
 
+  // The maker's messages the kitchen has not read yet, newest first. One listener, shared by the
+  // menu badge and the banner on the buy page.
+  readonly unreadByKitchen$: Observable<Message[]> = watchInKitchen<Message>(this.auth.kitchenId$,
+    kid => query(kitchenCollection(kid, 'messages'), where('seenByKitchen', '==', false))).pipe(
+    map(list => newestFirst(list)),
+    shareReplay({bufferSize: 1, refCount: true}),
+  );
+
   unreadForKitchen(): Observable<number> {
-    return watchInKitchen<Message>(this.auth.kitchenId$, kid => query(kitchenCollection(kid, 'messages'), where('seenByKitchen', '==', false)))
-      .pipe(map(m => m.length));
+    return this.unreadByKitchen$.pipe(map(m => m.length));
   }
 
   send(text: string) {

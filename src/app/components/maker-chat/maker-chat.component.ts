@@ -1,4 +1,4 @@
-import {Component, ElementRef, afterNextRender, booleanAttribute, effect, inject, input, signal, viewChild} from '@angular/core';
+import {Component, ElementRef, afterNextRender, afterRenderEffect,booleanAttribute, effect, inject, input, signal, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -37,8 +37,20 @@ export class MakerChatComponent {
     effect(() => {
       this.maker.markSeenByKitchen(this.messages()).catch(() => undefined);
     });
-    // Linked from the welcome as /aktuelt#chat: bring the composer into view.
+    // Linked from the message banner as /aktuelt#message: show the newest message from Toke
+    // once the thread has loaded, without opening the keyboard. The news next to it may still be
+    // loading and leave the page too short to scroll, so try again until it is in view.
     const fragment = inject(ActivatedRoute).snapshot.fragment;
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    let shown = fragment !== 'message';
+    afterRenderEffect(() => {
+      if (!shown && this.messages().length) {
+        shown = true;
+        const bubbles = host.querySelectorAll('.bubble.maker');
+        showNewest(bubbles[bubbles.length - 1], 10);
+      }
+    });
+    // Linked from the welcome as /aktuelt#chat: bring the composer into view.
     afterNextRender(() => {
       if (fragment === 'chat') {
         const el = this.composer()?.nativeElement;
@@ -58,5 +70,16 @@ export class MakerChatComponent {
       this.text.set(text);
       this.notify.error(err);
     });
+  }
+}
+
+function showNewest(el: Element | undefined, tries: number) {
+  const {top = 0, bottom = 0} = el?.getBoundingClientRect() ?? {};
+  if (!el || (top >= 0 && bottom <= window.innerHeight)) {
+    return;
+  }
+  el.scrollIntoView({block: 'center'});
+  if (tries > 0) {
+    setTimeout(() => showNewest(el, tries - 1), 200);
   }
 }
