@@ -8,16 +8,17 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
-import {Achievement, Badge, MAX_LIVE_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
+import {Achievement, Badge, KitchenColour, MAX_LIVE_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
 import {dayKey} from '../../interfaces/meal';
 import {db, watch} from '../../firebase';
+import {AccessService} from '../../services/access.service';
 import {AuthService} from '../../services/auth.service';
 import {KollegietService} from '../../services/kollegiet.service';
 import {BattleFields, LeagueService} from '../../services/league.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
-import {BadgeDialogComponent, BadgeResult, BattleDialogComponent, BattleDialogData, ProfileDialogComponent} from './dialogs';
+import {BadgeDialogComponent, BadgeResult, BattleDialogComponent, BattleDialogData, ProfileDialogComponent, ProfileFields} from './dialogs';
 import {KitchenChipComponent} from './kitchen-chip.component';
 
 // Every kitchen as a card; one opened as its profile, with its badges, trophies and achievements,
@@ -37,6 +38,7 @@ export class KitchensComponent {
   private readonly dialog = inject(MatDialog);
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
+  private readonly access = inject(AccessService);
 
   private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
   private readonly standings = toSignal(this.kollegiet.standings$, {initialValue: []});
@@ -117,10 +119,13 @@ export class KitchensComponent {
 
   protected editProfile() {
     const c = this.kollegiet.card(this.me());
-    this.dialog.open(ProfileDialogComponent, {width: '480px', maxWidth: '94vw', data: {emoji: c.emoji, colour: c.colour, bio: c.bio}})
+    this.dialog.open<ProfileDialogComponent, ProfileFields, ProfileFields>(ProfileDialogComponent,
+      {width: '480px', maxWidth: '94vw', data: {name: c.name, emoji: c.emoji, colour: c.colour as KitchenColour, bio: c.bio}})
       .afterClosed().subscribe(p => {
         if (p) {
-          this.kollegiet.saveProfile(p).catch(this.notify.error);
+          const {name, ...profile} = p;
+          Promise.all([this.kollegiet.saveProfile(profile), name !== c.name ? this.access.rename(name) : null])
+            .then(() => this.notify.info(this.i18n.t('KOL_PROFILE_SAVED')), this.notify.error);
         }
       });
   }

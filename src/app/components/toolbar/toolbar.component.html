@@ -47,6 +47,13 @@
       </div>
     </div>
     <mat-divider />
+    @if (worn()?.kitchenId ?? myKitchen(); as kid) {
+      <a mat-menu-item routerLink="/kollegiet" [queryParams]="{tab: 'kitchens', kitchen: kid}">
+        <mat-icon>storefront</mat-icon>
+        <span>{{ "ACCOUNT_KITCHEN" | translate }}</span>
+      </a>
+      <mat-divider />
+    }
     <div class="menu-label">{{ "THEME_TITLE" | translate }}</div>
     @for (m of themes; track m.mode) {
       <button mat-menu-item role="menuitemradio" [attr.aria-checked]="theme.mode() === m.mode" (click)="theme.mode.set(m.mode)">
