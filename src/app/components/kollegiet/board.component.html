@@ -3,25 +3,14 @@
     @if (hasPinned()) {
       <h2 class="pinned"><mat-icon>push_pin</mat-icon> {{ "KOL_PINNED" | translate }}</h2>
       @for (b of recentWins(); track b.id) {
-        <a class="pin win" routerLink="/kollegiet" [queryParams]="{tab: 'battles'}" [fragment]="'battle-' + b.id">
+        <div class="pin">
           <span class="pin-icon">🏆</span>
           <span class="pin-text">
             @for (w of b.result!.winners; track w) { <app-kitchen-chip [kitchenId]="w" /> }
             {{ "KOL_PIN_WON" | translate }} <b>{{ b.title }}</b>
             {{ "KOL_PIN_WITH" | translate }} {{ b.result!.scores[b.result!.winners[0]] }} {{ "KOL_UNIT_" + b.metric | translate }}
           </span>
-          <mat-icon class="pin-go">chevron_right</mat-icon>
-        </a>
-      }
-      @for (e of todayEvents(); track e.id) {
-        <button type="button" class="pin" (click)="show('event-' + e.id)">
-          <mat-icon class="pin-icon">event</mat-icon>
-          <span class="pin-text">
-            <b>{{ (startedNow(e) ? "KOL_NOW" : "KOL_TODAY") | translate }} {{ e.startsAt.toDate() | date:'HH:mm' }}</b>
-            {{ e.title }} · <app-kitchen-chip [kitchenId]="e.kitchenId" />
-          </span>
-          <mat-icon class="pin-go">chevron_right</mat-icon>
-        </button>
+        </div>
       }
       @for (p of openPolls(); track p.id) {
         <app-poll-card [poll]="p" />

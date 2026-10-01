@@ -29,7 +29,7 @@ h2 {
   }
 }
 
-// One line each: a battle just won, an event today. Opens it where it is.
+// A battle just won: one quiet line.
 .pin {
   display: flex;
   align-items: center;
@@ -43,16 +43,6 @@ h2 {
   color: inherit;
   font: var(--mat-sys-body-medium);
   text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-
-  &:hover {
-    background: var(--mat-sys-surface-container-high);
-  }
-
-  &.win {
-    border-color: var(--mat-sys-tertiary);
-  }
 
   .pin-icon {
     flex: none;
@@ -69,10 +59,6 @@ h2 {
     gap: 4px 6px;
   }
 
-  .pin-go {
-    flex: none;
-    color: var(--mat-sys-on-surface-variant);
-  }
 }
 
 .composer {
@@ -158,7 +144,7 @@ header .when {
   margin: 8px 8px 4px 16px;
 }
 
-// A high-five or a badge: a line on the board, louder for a badge.
+// A high-five or a badge: a line on the board, a badge a shade stronger.
 .kudos {
   display: flex;
   align-items: center;
@@ -168,16 +154,11 @@ header .when {
   background: var(--mat-sys-surface-container);
 
   &.badge {
-    background: var(--mat-sys-tertiary-container);
-    color: var(--mat-sys-on-tertiary-container);
-
-    .when {
-      color: inherit;
-    }
+    background: var(--mat-sys-surface-container-high);
   }
 
   .big {
-    font-size: 28px;
+    font-size: 22px;
   }
 
   .what {

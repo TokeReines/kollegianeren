@@ -11,7 +11,6 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
-import {RouterLink} from '@angular/router';
 import {
   KEvent, Kudos, POST_MAX, PostThread, Rsvp, rsvpCounts, threads,
 } from '../../interfaces/kollegiet';
@@ -21,7 +20,6 @@ import {LeagueService} from '../../services/league.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {millis} from '../../time';
-import {showAnchor} from '../../anchor';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {EventDialogComponent, EventDialogData, PollDialogComponent, PollResult} from './dialogs';
@@ -35,7 +33,7 @@ type FeedItem = {kind: 'thread', at: number, thread: PostThread} | {kind: 'kudos
 @Component({
   selector: 'app-board',
   imports: [DatePipe, NgTemplateOutlet, FormsModule, ReactiveFormsModule, MatButtonModule, MatButtonToggleModule, MatCardModule, MatFormFieldModule, MatIconModule,
-    MatInputModule, MatMenuModule, MatSelectModule, RouterLink, TranslatePipe, KitchenChipComponent, PollCardComponent],
+    MatInputModule, MatMenuModule, MatSelectModule, TranslatePipe, KitchenChipComponent, PollCardComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
@@ -77,26 +75,14 @@ export class BoardComponent {
     .sort((a, b) => Number(!!a.result) - Number(!!b.result)
       || (a.result ? millis(b.closesAt) - millis(a.closesAt) : millis(a.closesAt) - millis(b.closesAt))));
 
-  // Pinned too: battles won in the last three days, and today's events (or ones going on now).
+  // Pinned too: battles won in the last three days.
   protected readonly recentWins = computed(() => {
     const now = this.league.now();
     return this.league.battles()
       .filter(b => b.result?.winners.length && b.participants.length > 1 && millis(b.to) > now - 3 * 864e5)
       .sort((a, b) => millis(b.to) - millis(a.to));
   });
-  protected readonly todayEvents = computed(() => {
-    const now = this.league.now(), today = new Date(now).toDateString();
-    return this.events().filter(e => millis(e.startsAt) <= now || new Date(millis(e.startsAt)).toDateString() === today);
-  });
-  protected readonly hasPinned = computed(() => !!(this.recentWins().length || this.todayEvents().length || this.openPolls().length));
-
-  protected startedNow(e: KEvent) {
-    return millis(e.startsAt) <= this.league.now();
-  }
-
-  protected show(id: string) {
-    showAnchor(id);
-  }
+  protected readonly hasPinned = computed(() => !!(this.recentWins().length || this.openPolls().length));
 
   protected readonly feed = computed<FeedItem[]>(() => [
     ...threads(this.posts()).map(t => ({kind: 'thread' as const, thread: t,

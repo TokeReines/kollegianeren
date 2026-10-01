@@ -63,7 +63,7 @@
   }
 
   <div class="grid">
-    @for (k of kollegiet.cards(); track k.id) {
+    @for (k of withProfile(); track k.id) {
       <button type="button" class="card" [class.mine]="k.id === me()" [class.active]="k.id === selectedId()" (click)="open(k.id)">
         <span style="--chip-size: 44px"><app-kitchen-chip [kitchenId]="k.id" [iconOnly]="true" /></span>
         <span class="text">
@@ -78,4 +78,13 @@
       </button>
     }
   </div>
+
+  @if (withoutProfile().length) {
+    <h3 class="rest-title">{{ "KOL_NO_PROFILE_YET" | translate }}</h3>
+    <div class="rest">
+      @for (k of withoutProfile(); track k.id) {
+        <button type="button" class="rest-kitchen" (click)="open(k.id)">{{ k.name }}</button>
+      }
+    </div>
+  }
 </div>

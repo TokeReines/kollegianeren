@@ -41,6 +41,10 @@ export class KitchensComponent {
   private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
   private readonly standings = toSignal(this.kollegiet.standings$, {initialValue: []});
   protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
+  // Kitchens with a profile (and your own) as cards; the rest as a row of names, so a list of
+  // kitchens nobody has set up yet does not fill the page.
+  protected readonly withProfile = computed(() => this.kollegiet.cards().filter(k => k.profiled || k.id === this.me()));
+  protected readonly withoutProfile = computed(() => this.kollegiet.cards().filter(k => !k.profiled && k.id !== this.me()));
   protected readonly canManage = this.auth.canManage;
 
   protected readonly selectedId = toSignal(this.route.queryParamMap.pipe(map(q => q.get('kitchen'))), {initialValue: null});

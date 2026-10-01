@@ -3,8 +3,9 @@ import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {switchMap} from 'rxjs';
 import {MatCardModule} from '@angular/material/card';
-import {MatChipsModule} from '@angular/material/chips';
+import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
+import {MatSelectModule} from '@angular/material/select';
 import {Poll} from '../../interfaces/kollegiet';
 import {KollegietService} from '../../services/kollegiet.service';
 import {Notify} from '../../services/notify.service';
@@ -16,7 +17,7 @@ import {KitchenChipComponent} from './kitchen-chip.component';
 // the winner once ops/league.js has counted.
 @Component({
   selector: 'app-poll-card',
-  imports: [DatePipe, MatCardModule, MatChipsModule, MatIconModule, TranslatePipe, KitchenChipComponent],
+  imports: [DatePipe, MatCardModule, MatFormFieldModule, MatIconModule, MatSelectModule, TranslatePipe, KitchenChipComponent],
   template: `
     <mat-card appearance="outlined" class="poll">
       <header>
@@ -35,12 +36,18 @@ import {KitchenChipComponent} from './kitchen-chip.component';
           <span class="hint">{{ r.votes[r.winners[0]] ?? 0 }} {{ "KOL_VOTES" | translate }}</span>
         </div>
       } @else if (open()) {
-        <p class="hint">{{ "KOL_POLL_SECRET" | translate }}</p>
-        <mat-chip-listbox [value]="mine()" (change)="vote($event.value)" [attr.aria-label]="poll().title">
-          @for (k of others(); track k.id) {
-            <mat-chip-option [value]="k.id"><app-kitchen-chip [kitchenId]="k.id" /></mat-chip-option>
-          }
-        </mat-chip-listbox>
+        <div class="vote">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>{{ "KOL_POLL_YOUR_VOTE" | translate }}</mat-label>
+            <mat-select [value]="mine()" (selectionChange)="vote($event.value)" [attr.aria-label]="poll().title">
+              <mat-option [value]="null">{{ "KOL_POLL_NO_VOTE" | translate }}</mat-option>
+              @for (k of others(); track k.id) {
+                <mat-option [value]="k.id"><app-kitchen-chip [kitchenId]="k.id" /></mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <span class="hint">{{ "KOL_POLL_SECRET" | translate }}</span>
+        </div>
       } @else {
         <p class="hint">{{ "KOL_POLL_COUNTING" | translate }}</p>
       }
@@ -53,6 +60,9 @@ import {KitchenChipComponent} from './kitchen-chip.component';
     .head { display: flex; flex-direction: column; min-width: 0; }
     .hint { color: var(--mat-sys-on-surface-variant); font: var(--mat-sys-body-small); margin: 0; --chip-size: 20px; }
     .result { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 20px; }
+    .vote { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .vote mat-form-field { width: 260px; max-width: 100%; }
+    .vote .hint { flex: 1; min-width: 180px; }
   `,
 })
 export class PollCardComponent {
