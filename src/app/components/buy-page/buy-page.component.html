@@ -1,7 +1,13 @@
-@if (liveBattles().length) {
+@if (featuredBattle(); as b) {
   <div class="battles">
-    @for (b of liveBattles(); track b.id) {
-      <app-battle-ticker [battle]="b" />
+    <app-battle-ticker [battle]="b" [gymButton]="false" />
+    @if (gymBattles().length) {
+      <button mat-flat-button class="gym" (click)="gym()"><mat-icon>fitness_center</mat-icon> +1</button>
+    }
+    @if (liveBattles().length > 1) {
+      <a mat-stroked-button class="more-battles" routerLink="/kollegiet" [queryParams]="{tab: 'battles'}">
+        +{{ liveBattles().length - 1 }} {{ (liveBattles().length === 2 ? "KOL_MORE_BATTLE" : "KOL_MORE_BATTLES") | translate }}
+      </a>
     }
   </div>
 }
