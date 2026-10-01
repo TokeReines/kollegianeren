@@ -18,6 +18,7 @@ import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {BadgeDialogComponent, BadgeResult, BattleDialogComponent, BattleDialogData, ProfileDialogComponent, ProfileFields} from './dialogs';
 import {KitchenChipComponent} from './kitchen-chip.component';
+import {ShelfGuideComponent} from './shelf-guide.component';
 
 // Every kitchen as a card; one opened as its profile, with its badges, trophies and achievements,
 // and buttons for a high-five, a badge or a challenge.
@@ -122,6 +123,11 @@ export class KitchensComponent {
             err => String(err).includes(TOO_MANY_BATTLES) ? this.notify.info(this.i18n.t('KOL_MAX_BATTLES')) : this.notify.error(err));
         }
       });
+  }
+
+  // What can be on the shelf and how to get it; what this kitchen has ticked off.
+  protected guide() {
+    this.dialog.open(ShelfGuideComponent, {width: '600px', maxWidth: '94vw', data: this.achievementsOf(this.me()).map(a => a.id)});
   }
 
   protected editProfile() {

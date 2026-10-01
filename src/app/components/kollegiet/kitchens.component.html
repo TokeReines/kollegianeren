@@ -36,6 +36,7 @@
           </div>
         }
       </div>
+      <button mat-button class="guide-link" (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
 
       @if (k.id !== me()) {
         <div class="actions">
@@ -60,6 +61,9 @@
     </mat-card>
   }
 
+  <div class="grid-head">
+    <button mat-button (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
+  </div>
   <div class="grid">
     @for (k of withProfile(); track k.id) {
       @let s = summary().get(k.id);
