@@ -1,9 +1,9 @@
 import {Injectable, inject} from '@angular/core';
 import {
-  Timestamp, addDoc, collection, deleteDoc, deleteField, doc, getCountFromServer, limit, orderBy, query, serverTimestamp, updateDoc,
-  where, writeBatch,
+  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, limit, onSnapshot, orderBy, query, serverTimestamp,
+  updateDoc, where, writeBatch,
 } from 'firebase/firestore';
-import {Observable, shareReplay} from 'rxjs';
+import {Observable, catchError, of, shareReplay, switchMap} from 'rxjs';
 import {db, watch} from '../firebase';
 import {NEWS_DAYS} from '../interfaces/kollegiet';
 import {MAKER, Proposal, ProposalComment, ProposalStatus} from '../interfaces/proposal';
@@ -14,7 +14,7 @@ export type ProposalFields = Pick<Proposal, 'title' | 'body' | 'images' | 'statu
 
 // Forslag (docs/aktuelt.md). The page lists them all (few, small); the shell keeps the recently
 // changed ones open for the strip and the bell. Comments are read when a proposal is opened, and
-// counted (one read each) on the list.
+// counted live on the list.
 @Injectable({providedIn: 'root'})
 export class ProposalService {
   private readonly auth = inject(AuthService);
@@ -31,8 +31,22 @@ export class ProposalService {
     return watch<ProposalComment>(query(collection(db, 'proposals', id, 'comments'), orderBy('createdAt'), limit(300)));
   }
 
-  commentCount(id: string): Promise<number> {
-    return getCountFromServer(collection(db, 'proposals', id, 'comments')).then(s => s.data().count);
+  // Every proposal's number of comments, live: one listener on all comments (a read each when the
+  // page opens, one per new comment after).
+  commentCounts(): Observable<Record<string, number>> {
+    return this.auth.kitchenId$.pipe(switchMap(() => new Observable<Record<string, number>>(sub => onSnapshot(
+      collectionGroup(db, 'comments'),
+      snap => {
+        const counts: Record<string, number> = {};
+        for (const d of snap.docs) {
+          const id = d.ref.parent.parent?.id;
+          if (id) {
+            counts[id] = (counts[id] ?? 0) + 1;
+          }
+        }
+        sub.next(counts);
+      },
+      err => sub.error(err))).pipe(catchError(() => of({})))));
   }
 
   // The maker's.

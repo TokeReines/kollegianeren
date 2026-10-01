@@ -285,3 +285,21 @@ app-root {
 [data-kitchen-colour=orange] { --kitchen-hue: #fb8c00; }
 [data-kitchen-colour=red] { --kitchen-hue: #e53935; }
 [data-kitchen-colour=pink] { --kitchen-hue: #d81b60; }
+
+// Rich text in Forslag (components/aktuelt/rich-text.ts): written in the editor and shown with
+// innerHTML, so outside the components' scoped styles.
+.rich-text {
+  overflow-wrap: anywhere;
+
+  p, div {
+    margin: 0;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    margin: 10px 0;
+    border-radius: 12px;
+  }
+}

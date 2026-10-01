@@ -3,16 +3,8 @@
   padding-top: 16px;
 }
 
-.head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
 .intro {
-  margin: 0;
+  margin: 0 0 16px;
   color: var(--mat-sys-on-surface-variant);
 }
 
@@ -50,6 +42,24 @@
 
   &[data-status=dropped] h3 {
     color: var(--mat-sys-on-surface-variant);
+  }
+
+  // A new one: dashed, like the board's note to write on.
+  &.new {
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 200px;
+    border: 2px dashed var(--mat-sys-outline);
+    background: var(--mat-sys-surface-container);
+    color: var(--mat-sys-primary);
+    font: var(--mat-sys-title-medium);
+
+    mat-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 40px;
+    }
   }
 
   .cover {
@@ -149,6 +159,29 @@
   font: var(--mat-sys-label-large);
 }
 
+// Who wants it: faces on the card, names when it is opened.
+.faces {
+  display: inline-flex;
+  align-items: center;
+  --chip-size: 24px;
+
+  app-kitchen-chip + app-kitchen-chip {
+    margin-left: -8px;
+  }
+
+  .more {
+    margin-left: 4px;
+    font: var(--mat-sys-label-medium);
+  }
+}
+
+.voters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  --chip-size: 26px;
+}
+
 .empty,
 .hint {
   color: var(--mat-sys-on-surface-variant);
@@ -192,6 +225,11 @@
     margin: 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+
+  // Rich text keeps its own lines (no pre-wrap).
+  .rich-text {
+    white-space: normal;
   }
 
   .want {
@@ -285,35 +323,4 @@
   }
 }
 
-.pictures {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
 
-  .thumb {
-    position: relative;
-
-    img {
-      width: 120px;
-      height: 90px;
-      object-fit: cover;
-      border-radius: 8px;
-      display: block;
-    }
-
-    .drop {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      background: var(--mat-sys-surface);
-      transform: scale(0.8);
-    }
-  }
-}
-
-@media (max-width: 600px) {
-  .head {
-    flex-direction: column;
-  }
-}

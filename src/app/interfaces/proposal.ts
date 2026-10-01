@@ -9,9 +9,12 @@ export const PROPOSAL_STATUSES = ['open', 'planned', 'done', 'dropped'] as const
 export type ProposalStatus = typeof PROPOSAL_STATUSES[number];
 
 export const PROPOSAL_TITLE_MAX = 120;
-export const PROPOSAL_BODY_MAX = 5000;
+// Rich text (HTML with pictures in it): longer than plain text.
+export const PROPOSAL_BODY_MAX = 20000;
 export const PROPOSAL_IMAGES_MAX = 6;
 export const COMMENT_MAX = 1000;
+// The maker's answers are rich text too.
+export const ANSWER_MAX = 20000;
 export const REPLY_IMAGES_MAX = 4;
 
 export interface Proposal {

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { initializeTestEnvironment, assertSucceeds, assertFails } = require('@firebase/rules-unit-testing');
 const {
-  doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit,
+  doc, collection, collectionGroup, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit,
   Timestamp, serverTimestamp, writeBatch, increment, deleteField,
 } = require('firebase/firestore');
 
@@ -361,6 +361,13 @@ test('proposals: only the maker writes them; kitchens give their own thumbs up a
   await assertFails(addDoc(collection(as(A), 'proposals', 'p', 'comments'), { from: A, text: 'Uden grænse', images: [], createdAt: serverTimestamp() }));
   await assertFails(addDoc(collection(as(A), 'proposals', 'p', 'comments'), { from: 'maker', text: 'Toke her', images: [], createdAt: serverTimestamp() }));
   await assertSucceeds(addDoc(collection(as('maker'), 'proposals', 'p', 'comments'), { from: 'maker', text: 'Tak!', images: ['dev/z'], createdAt: serverTimestamp() }));
+  // A kitchen's comment is short; the maker's answer is rich text and may be long.
+  await assertSucceeds(addDoc(collection(as('maker'), 'proposals', 'p', 'comments'), { from: 'maker', text: 'x'.repeat(15000), images: [], createdAt: serverTimestamp() }));
+  await new Promise(r => setTimeout(r, 31000));
+  await assertFails(comment(as(A), A, { text: 'x'.repeat(1001) }));
+  await assertSucceeds(comment(as(A), A, { text: 'x'.repeat(1000) }));
+  // Every comment can be counted at once (Forslag's live numbers).
+  await assertSucceeds(getDocs(query(collectionGroup(as(B), 'comments'))));
   await assertFails(addDoc(collection(as(B), 'proposals', 'nope', 'comments'), { from: B, text: 'x', images: [], createdAt: serverTimestamp() }));
 });
 

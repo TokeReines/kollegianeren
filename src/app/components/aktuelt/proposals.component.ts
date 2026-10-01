@@ -1,4 +1,4 @@
-import {Component, TemplateRef, computed, effect, inject, signal, viewChild} from '@angular/core';
+import {Component, TemplateRef, computed, inject, signal, viewChild} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe, NgTemplateOutlet} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -11,11 +11,11 @@ import {MatInputModule} from '@angular/material/input';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  COMMENT_MAX, MAKER, PROPOSAL_BODY_MAX, PROPOSAL_IMAGES_MAX, PROPOSAL_STATUSES, PROPOSAL_TITLE_MAX, Proposal, ProposalComment,
-  ProposalStatus, REPLY_IMAGES_MAX, sortProposals,
+  ANSWER_MAX, COMMENT_MAX, MAKER, PROPOSAL_BODY_MAX, PROPOSAL_STATUSES, PROPOSAL_TITLE_MAX, Proposal, ProposalComment, ProposalStatus,
+  sortProposals,
 } from '../../interfaces/proposal';
 import {AuthService} from '../../services/auth.service';
-import {CloudinaryService, clUrl} from '../../services/cloudinary.service';
+import {clUrl} from '../../services/cloudinary.service';
 import {KollegietService} from '../../services/kollegiet.service';
 import {MakerService} from '../../services/maker.service';
 import {Notify} from '../../services/notify.service';
@@ -25,6 +25,8 @@ import {millis} from '../../time';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {KitchenChipComponent} from '../kollegiet/kitchen-chip.component';
+import {RichEditorComponent} from './rich-editor.component';
+import {asHtml, cleanHtml, firstPicture, textOf} from './rich-text';
 
 // Forslag (docs/aktuelt.md): the maker's proposals as cards, most wanted first. A card opens with
 // its pictures and comments; kitchens comment and give a thumbs up, the maker answers with text and
@@ -32,7 +34,7 @@ import {KitchenChipComponent} from '../kollegiet/kitchen-chip.component';
 @Component({
   selector: 'app-proposals',
   imports: [DatePipe, NgTemplateOutlet, FormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule,
-    MatProgressSpinnerModule, MatSelectModule, TranslatePipe, KitchenChipComponent],
+    MatProgressSpinnerModule, MatSelectModule, TranslatePipe, KitchenChipComponent, RichEditorComponent],
   templateUrl: './proposals.component.html',
   styleUrl: './proposals.component.scss',
 })
@@ -40,7 +42,6 @@ export class ProposalsComponent {
   private readonly proposals = inject(ProposalService);
   private readonly auth = inject(AuthService);
   private readonly kollegiet = inject(KollegietService);
-  private readonly cloudinary = inject(CloudinaryService);
   private readonly dialog = inject(MatDialog);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
@@ -61,9 +62,8 @@ export class ProposalsComponent {
     return kid && this.kollegiet.byId().has(kid) ? kid : null;
   });
 
-  // Comments per proposal: counted once per proposal (one read each), again after commenting.
-  protected readonly counts = signal<Record<string, number>>({});
-  private readonly counted = new Set<string>();
+  // Comments per proposal, live.
+  protected readonly counts = toSignal(this.proposals.commentCounts(), {initialValue: {} as Record<string, number>});
 
   // The proposal opened, live, with its comments.
   private readonly detailTpl = viewChild.required<TemplateRef<unknown>>('detailDialog');
@@ -78,34 +78,13 @@ export class ProposalsComponent {
     {initialValue: {id: null as string | null, list: [] as ProposalComment[]}});
   protected readonly comments = computed(() => this.thread().id === this.openId() ? this.thread().list : []);
   protected readonly text = signal('');
-  protected readonly replyImages = signal<string[]>([]);
+  protected readonly answerKey = signal(0);
+  protected readonly answerMax = ANSWER_MAX;
 
   // The maker's form: a new proposal, or changing one.
   protected readonly editing = signal<Proposal | null>(null);
   protected readonly form = {title: signal(''), body: signal(''), images: signal<string[]>([]), status: signal<ProposalStatus>('open')};
   protected readonly uploading = signal(false);
-
-  constructor() {
-    // An opened proposal listens to its comments anyway: its count follows them.
-    effect(() => {
-      const {id, list} = this.thread();
-      if (id) {
-        this.counts.update(c => c[id] === list.length ? c : {...c, [id]: list.length});
-      }
-    });
-    effect(() => {
-      for (const p of this.all()) {
-        if (!this.counted.has(p.id)) {
-          this.counted.add(p.id);
-          this.recount(p.id);
-        }
-      }
-    });
-  }
-
-  private recount(id: string) {
-    this.proposals.commentCount(id).then(n => this.counts.update(c => ({...c, [id]: n})), () => undefined);
-  }
 
   protected img(publicId: string, transformation = 'c_limit,w_1600,q_auto') {
     return clUrl(publicId, transformation, 'jpg');
@@ -113,6 +92,11 @@ export class ProposalsComponent {
 
   protected votes(p: Proposal) {
     return Object.keys(p.votes ?? {}).length;
+  }
+
+  // Who wants it, by name: not anonymous.
+  protected voters(p: Proposal) {
+    return Object.keys(p.votes ?? {}).sort((a, b) => this.kollegiet.card(a).name.localeCompare(this.kollegiet.card(b).name, 'da'));
   }
 
   protected voted(p: Proposal) {
@@ -128,22 +112,20 @@ export class ProposalsComponent {
   protected open(p: Proposal) {
     this.openId.set(p.id);
     this.text.set('');
-    this.replyImages.set([]);
     this.detailRef = this.dialog.open(this.detailTpl(), {width: '760px', maxWidth: '96vw', autoFocus: false});
     this.detailRef.afterClosed().subscribe(() => this.openId.set(null));
   }
 
   protected send(p: Proposal) {
-    const text = this.text().trim();
-    if (!text) {
+    const text = this.isAdmin() ? cleanHtml(this.text()) : this.text().trim();
+    if (!this.hasText(text)) {
       return;
     }
     const done = () => {
       this.text.set('');
-      this.replyImages.set([]);
-      this.recount(p.id);
+      this.answerKey.update(k => k + 1);
     };
-    (this.isAdmin() ? this.proposals.reply(p, text, this.replyImages()) : this.proposals.comment(p, text)).then(done,
+    (this.isAdmin() ? this.proposals.reply(p, text, []) : this.proposals.comment(p, text)).then(done,
       err => this.notify.info(String(err).includes('permission') ? this.i18n.t('KOL_TOO_SOON') : String(err)));
   }
 
@@ -154,7 +136,7 @@ export class ProposalsComponent {
   protected async remove(p: Proposal, c: ProposalComment) {
     if (await this.confirm.ask({title: this.i18n.t('FORSLAG_REMOVE'), message: this.i18n.t('FORSLAG_REMOVE_TEXT'),
       confirm: this.i18n.t('FORSLAG_REMOVE'), danger: true})) {
-      this.proposals.removeComment(p, c).then(() => this.recount(p.id), this.notify.error);
+      this.proposals.removeComment(p, c).catch(this.notify.error);
     }
   }
 
@@ -172,7 +154,7 @@ export class ProposalsComponent {
   }
 
   protected save() {
-    const fields = {title: this.form.title().trim(), body: this.form.body().trim(), images: this.form.images(), status: this.form.status()};
+    const fields = {title: this.form.title().trim(), body: cleanHtml(this.form.body()), images: this.form.images(), status: this.form.status()};
     if (!fields.title) {
       return;
     }
@@ -180,31 +162,20 @@ export class ProposalsComponent {
     (p ? this.proposals.update(p, fields) : this.proposals.create(fields)).then(() => this.editRef?.close(), this.notify.error);
   }
 
-  // Pictures for a proposal or an answer: uploaded to Cloudinary, kept as public ids.
-  protected async upload(input: HTMLInputElement, into: 'form' | 'reply') {
-    const files = [...(input.files ?? [])];
-    input.value = '';
-    const target = into === 'form' ? this.form.images : this.replyImages;
-    const max = into === 'form' ? PROPOSAL_IMAGES_MAX : REPLY_IMAGES_MAX;
-    this.uploading.set(true);
-    try {
-      for (const f of files.slice(0, Math.max(0, max - target().length))) {
-        const id = await this.cloudinary.upload(f);
-        target.update(list => [...list, id]);
-      }
-    } catch (err) {
-      this.notify.error(err);
-    } finally {
-      this.uploading.set(false);
+  // Rich text: shown as cleaned HTML; for the cards the text alone and the first picture.
+  protected readonly asHtml = asHtml;
+  protected readonly textOf = textOf;
+
+  protected hasText(text: string) {
+    return !!textOf(text).trim() || /<img/i.test(text);
+  }
+
+  protected cover(p: Proposal): string | null {
+    const inText = firstPicture(p.body);
+    if (inText) {
+      return inText.replace(/\/upload\/[^/]*\//, '/upload/c_fill,g_auto,w_720,h_320,q_auto/');
     }
+    return p.images.length ? this.img(p.images[0], 'c_fill,g_auto,w_720,h_320,q_auto') : null;
   }
 
-  protected dropImage(into: 'form' | 'reply', id: string) {
-    (into === 'form' ? this.form.images : this.replyImages).update(list => list.filter(x => x !== id));
-  }
-
-  protected canUpload(into: 'form' | 'reply') {
-    const n = (into === 'form' ? this.form.images : this.replyImages)().length;
-    return this.cloudinary.canUpload && !this.uploading() && n < (into === 'form' ? PROPOSAL_IMAGES_MAX : REPLY_IMAGES_MAX);
-  }
 }
