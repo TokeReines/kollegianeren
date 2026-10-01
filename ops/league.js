@@ -218,7 +218,8 @@ async function settlePolls(closed, kitchenNames) {
   const left = [];
   for (const doc of closed) {
     const votes = {};
-    for (const ballot of await get(doc.ref.collection('ballots'))) {
+    // Cancelled by its kitchen: no result.
+    for (const ballot of doc.get('cancelled') ? [] : await get(doc.ref.collection('ballots'))) {
       const choice = ballot.get('choice');
       if (choice && choice !== ballot.id) votes[choice] = (votes[choice] || 0) + 1;
     }

@@ -74,7 +74,7 @@ Every new collection is read with `kitchenLogin()`.
 | `battles/{id}` | `kitchenId` (challenger), `title`, `metric`, `from`, `to`, `invited` (`all` or kitchen ids), `participants` (kitchen ids that joined), `createdAt`, `result` (written by the job) | the challenger creates; another kitchen may only add itself to `participants`, before `to` | See Battles. `participants` is an array so a tablet finds its live battles with one `array-contains` listener. |
 | `battles/{id}/tally/{kid}` | `value`, `ticks` (the last 30 increments as `{at, n}`), `updatedAt` | members of `kid`, while the battle is live | The live score. One document per kitchen, so a sale costs each watcher one read. `ticks` is what "20 beers in 20 minutes" is worked out from. |
 | `kudos/{id}` | `from`, `to`, `kind` (`highfive` or `badge`), `badge` (from a fixed list), `reason` (≤ 140), `createdAt`, `hidden` | any member of `from`, `to != from` | A high-five's id is `{from}_{to}_{day}`, so one per kitchen pair per day. |
-| `polls/{kid}_{month}` | `kitchenId` (who started it), `title` (≤ 80), `opensAt`, `closesAt`, `result` (written by the job), `hidden` | any member of `kid` | Kitchens start their own polls ("Bedst til genbrug, oktober"). The id gives one poll per kitchen per month; it runs 1 to 31 days. |
+| `polls/{id}` | `kitchenId` (who started it), `title` (≤ 80), `opensAt`, `closesAt`, `cancelled`, `result` (written by the job), `hidden` | any member of `kitchenId` | Kitchens start their own polls ("Bedst til genbrug, oktober"), two open at a time: a new poll takes a place in `pollSlots/{kid}` (`s1`, `s2`) in the same batch, and the rules let it only into a place whose poll has closed. It runs 1 to 31 days; its kitchen can close it now (counted) or cancel it (no result). Older polls have the id `{kid}_{month}`. |
 | `votes/{poll}_{kid}` | `poll`, `from`, `choice`, `createdAt` | any member of `from`, not for itself, before `closesAt` | The document id gives one vote per kitchen, changeable until it closes. Secret: a kitchen may read only its own vote, nobody else's, the maker included. Only the job (admin SDK) reads them all, and writes the result. |
 | `standings/{kid}` | `achievements`, `badges` (counts), `highfives`, `wins`, `kudosThrough`, `updatedAt` | ops job only | The kitchen's trophy shelf on its profile and its pins in the top bar. Kudos up to `kudosThrough` are in the counts; the app adds newer ones from the kudos it already has. |
 | `standings/{kid}/achievements/{code}` | `battle`, `at` | members of `kid`, only if the rules' check of the tally passes; or the job | Live achievements (see Battles). |
@@ -120,7 +120,8 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
     1. a blank note to write on, with buttons for an event and a vote;
     2. events as flyers, soonest first, with yes/maybe/no on them; four, then "+N more" (one
        that comes while the board is open is shown too, wherever its date puts it);
-    3. open votes as ballots;
+    3. open votes as ballots; the kitchen that started one can close it now (it is counted) or
+       cancel it (no winner, gone from the board);
     4. posts as post-its in the writing kitchen's colour, newest activity first, with "Ny"
        when there is something since the kitchen last looked. A conversation takes more room
        than a single post: with replies a post-it is two papers tall and shows the newest two;

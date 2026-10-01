@@ -113,7 +113,7 @@ export class BoardComponent {
 
   // Open votes as ballots on the wall.
   protected readonly livePolls = computed(() => this.polls()
-    .filter(p => !p.result)
+    .filter(p => !p.result && !p.cancelled)
     .sort((a, b) => millis(a.closesAt) - millis(b.closesAt)));
 
   // Stickers: the newest high-fives and badges, and battles and votes won in the last three days.

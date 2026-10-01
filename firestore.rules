@@ -443,14 +443,39 @@ service cloud.firestore {
 
     // Votes started by a kitchen, one a month (the id). The ballots are secret: a kitchen may
     // read only its own, nobody else's, the maker's neither. ops/league.js counts them.
+    function pollSlotsPath(kid) {
+      return /databases/$(database)/documents/pollSlots/$(kid);
+    }
+    function pollPath(id) {
+      return /databases/$(database)/documents/polls/$(id);
+    }
+    // A kitchen's two places for polls (s1, s2: poll ids). A place takes a new poll, made in the
+    // same batch, only once the poll it held has closed (or is gone).
+    match /pollSlots/{kid} {
+      function takes(slot) {
+        let after = request.resource.data.get(slot, null);
+        let before = resource == null ? null : resource.data.get(slot, null);
+        return after == before || (after is string
+          && getAfter(pollPath(after)).data.kitchenId == kid
+          && getAfter(pollPath(after)).data.createdAt == request.time
+          && (before == null || !exists(pollPath(before)) || get(pollPath(before)).data.closesAt <= request.time));
+      }
+      allow read: if isMember(kid);
+      allow create, update: if kitchenLogin() && kid == myKitchen()
+        && request.resource.data.keys().hasOnly(['s1', 's2'])
+        && takes('s1') && takes('s2');
+      allow delete: if false;
+    }
+
     match /polls/{id} {
       allow read: if kitchenLogin() || isAdmin();
       allow create: if kitchenLogin()
         && request.resource.data.keys().hasOnly(['kitchenId', 'title', 'opensAt', 'closesAt', 'createdAt'])
         && request.resource.data.keys().hasAll(['kitchenId', 'title', 'opensAt', 'closesAt', 'createdAt'])
         && request.resource.data.kitchenId == myKitchen()
-        && id.matches(myKitchen() + '_[0-9]{4}-[0-9]{2}')
-        && isMonthOf(id.split('_')[id.split('_').size() - 1], request.resource.data.opensAt)
+        // Two open at a time: a new poll takes one of the kitchen's two places in the same batch.
+        && (getAfter(pollSlotsPath(myKitchen())).data.get('s1', '') == id
+          || getAfter(pollSlotsPath(myKitchen())).data.get('s2', '') == id)
         && text(request.resource.data.title, 1, 80)
         && request.resource.data.opensAt is timestamp && request.resource.data.closesAt is timestamp
         && request.resource.data.opensAt > request.time - duration.value(1, 'h')
@@ -458,7 +483,13 @@ service cloud.firestore {
         && request.resource.data.closesAt >= request.resource.data.opensAt + duration.value(1, 'd')
         && request.resource.data.closesAt <= request.resource.data.opensAt + duration.value(31, 'd')
         && request.resource.data.createdAt == request.time;
-      allow update: if false;
+      // The kitchen ends its own poll early: closed now (it is counted), or cancelled as well (no
+      // result). Not after it has closed. Either frees its place for a new one.
+      allow update: if kitchenLogin() && isMember(resource.data.kitchenId)
+        && request.time < resource.data.closesAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closesAt', 'cancelled'])
+        && request.resource.data.closesAt == request.time
+        && request.resource.data.get('cancelled', true) == true;
       allow delete: if (isMember(resource.data.kitchenId) && request.time < resource.data.opensAt) || moderates(resource.data.kitchenId);
 
       match /ballots/{kid} {
@@ -472,7 +503,7 @@ service cloud.firestore {
           && request.resource.data.choice is string && request.resource.data.choice != kid
           && kitchenExists(request.resource.data.choice)
           && request.resource.data.at == request.time
-          && request.time >= poll().opensAt && request.time < poll().closesAt;
+          && request.time >= poll().opensAt && request.time < poll().closesAt && !poll().get('cancelled', false);
         allow delete: if kid == myKitchen() && kitchenLogin() && request.time < poll().closesAt;
       }
     }

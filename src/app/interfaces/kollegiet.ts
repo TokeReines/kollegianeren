@@ -129,6 +129,8 @@ export interface Poll {
   opensAt: Timestamp;
   closesAt: Timestamp;
   createdAt: Timestamp;
+  // Cancelled by its kitchen: closed with no result, not on the board.
+  cancelled?: boolean;
   // Written by ops/league.js after closing: who won and with how many votes.
   result?: {votes: Record<string, number>, winners: string[], settledAt: Timestamp} | null;
 }
@@ -310,7 +312,10 @@ export function rsvpCounts(e: Pick<KEvent, 'rsvp'>): Record<Rsvp, number> {
   return counts;
 }
 
-// A poll's document id: one per kitchen per month.
+// A kitchen's two places for open polls (pollSlots/{kid}): two at a time.
+export const POLL_SLOTS = ['s1', 's2'] as const;
+
+// The id polls had before they could run two at a time: one per kitchen per month. Older polls keep it.
 export function pollId(kitchenId: string, opensAt: Date): string {
   return `${kitchenId}_${opensAt.getFullYear()}-${String(opensAt.getMonth() + 1).padStart(2, '0')}`;
 }
