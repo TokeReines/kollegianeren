@@ -46,3 +46,10 @@
     display: block;
   }
 }
+
+// The bell while a message from Toke is unread, in the banner's colour.
+.message-button.mat-mdc-icon-button {
+  width: 48px;
+  height: 48px;
+  color: var(--mat-sys-tertiary);
+}

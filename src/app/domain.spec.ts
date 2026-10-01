@@ -4,7 +4,7 @@ import {computeStats, heatLevel, periodStart} from './components/stats/stats';
 import {initials, tone} from './components/shared/resident-avatar.component';
 import {kitchenKey} from './interfaces/kitchen';
 import {inviteLink, isOpen, newCode} from './interfaces/invite';
-import {toThreads} from './interfaces/message';
+import {newestFirst, toThreads} from './interfaces/message';
 import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
 import {KitchenStats, lastActive, summarise as summariseKitchens, trend} from './interfaces/admin-stats';
@@ -286,6 +286,13 @@ describe('invites and kitchens', () => {
     const threads = toThreads([{id: 'a', name: 'Ny2'}], [m('a', 1, true), m('b', 5, false), m('a', 3, false)]);
     expect(threads.map(t => t.kitchenName)).toEqual(['b', 'Ny2']);
     expect(threads[1]).toMatchObject({unread: 1, messages: [{id: 'a1'}, {id: 'a3'}]});
+  });
+
+  it('puts the newest unread message first for the banner', () => {
+    const m = (day: number) => ({id: `m${day}`, text: 't', from: 'maker' as const, createdAt: at(2026, 9, day), seenByMaker: true, seenByKitchen: false});
+    const list = [m(2), m(7), m(4)];
+    expect(newestFirst(list).map(x => x.id)).toEqual(['m7', 'm4', 'm2']);
+    expect(list[0].id).toBe('m2');
   });
 });
 

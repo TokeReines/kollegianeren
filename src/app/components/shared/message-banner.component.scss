@@ -1,0 +1,99 @@
+:host {
+  display: block;
+}
+
+// In a colour nothing else on the pages uses, with an icon that rings now and then.
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 12px 8px;
+  padding: 10px 12px 10px 10px;
+  border-radius: 16px;
+  background: var(--mat-sys-tertiary);
+  color: var(--mat-sys-on-tertiary);
+  text-decoration: none;
+  box-shadow: var(--mat-sys-level2);
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-on-tertiary) 8%, var(--mat-sys-tertiary));
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--mat-sys-on-tertiary);
+  color: var(--mat-sys-tertiary);
+  animation: ring 4s ease-in-out infinite;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+
+  b {
+    font: var(--mat-sys-title-medium);
+  }
+}
+
+.preview {
+  font: var(--mat-sys-body-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+
+.read {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 12px 0 16px;
+  border-radius: 20px;
+  background: var(--mat-sys-on-tertiary);
+  color: var(--mat-sys-tertiary);
+  font: var(--mat-sys-label-large);
+}
+
+@keyframes ring {
+  0%, 80%, 100% { transform: none; }
+  84% { transform: rotate(-14deg) scale(1.1); }
+  88% { transform: rotate(12deg) scale(1.1); }
+  92% { transform: rotate(-8deg) scale(1.05); }
+  96% { transform: rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon {
+    animation: none;
+  }
+}
+
+// Phones: the arrow alone on the right.
+@media (max-width: 760px) {
+  .banner {
+    margin: 4px 8px 8px;
+    gap: 10px;
+  }
+
+  .read {
+    padding: 0 8px;
+    font-size: 0;
+    gap: 0;
+  }
+}
