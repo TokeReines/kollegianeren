@@ -397,7 +397,7 @@ test('app versions: a login reports its own build, nothing else', async () => {
   await assertSucceeds(setDoc(mine, { build: 'PJ72EFS3', loadedAt: serverTimestamp() }));
   await assertSucceeds(setDoc(mine, { build: 'NEW12345', loadedAt: serverTimestamp() }));
   await assertFails(getDoc(mine));
-  await assertFails(setDoc(mine, { build: 'x', loadedAt: Timestamp.now() }));
+  await assertFails(setDoc(mine, { build: 'x', loadedAt: Timestamp.fromMillis(Date.now() - 60e3) }));
   await assertFails(setDoc(mine, { build: 'x', loadedAt: serverTimestamp(), extra: 1 }));
   await assertFails(setDoc(doc(asKitchen(A), 'kitchens', A, 'appVersions', 'someoneElse'), { build: 'x', loadedAt: serverTimestamp() }));
   await assertFails(setDoc(doc(asKitchen(A), 'kitchens', B, 'appVersions', A), { build: 'x', loadedAt: serverTimestamp() }));
