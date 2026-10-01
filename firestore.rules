@@ -65,8 +65,11 @@ service cloud.firestore {
     }
 
     function validMessage(d) {
-      return d.keys().hasOnly(['text', 'from', 'createdAt', 'seenByMaker', 'seenByKitchen'])
-        && d.text is string && d.text.size() >= 1 && d.text.size() <= 2000
+      return d.keys().hasOnly(['text', 'images', 'from', 'createdAt', 'seenByMaker', 'seenByKitchen'])
+        && d.text is string && d.text.size() <= 2000
+        // Text, pictures (up to four, e.g. a screenshot), or both.
+        && d.get('images', []) is list && d.get('images', []).size() <= 4
+        && (d.text.size() >= 1 || d.get('images', []).size() >= 1)
         && d.createdAt == request.time
         && d.seenByMaker == (d.from == 'maker') && d.seenByKitchen == (d.from == 'kitchen');
     }

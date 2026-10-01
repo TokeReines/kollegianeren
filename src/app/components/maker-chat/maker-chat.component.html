@@ -21,7 +21,14 @@
   <div class="thread">
     @for (m of messages(); track m.id) {
       <div class="bubble" [class.mine]="m.from === 'kitchen'" [class.maker]="m.from === 'maker'">
-        <div class="text">{{ m.text }}</div>
+        @if (m.text) {
+          <div class="text">{{ m.text }}</div>
+        }
+        @if (m.images?.length) {
+          <div class="pics" appPictureViewer>
+            @for (p of m.images; track p) { <img [src]="pic(p)" alt="" loading="lazy"> }
+          </div>
+        }
         <div class="meta">
           @if (m.from === 'maker') {
             <img class="mini" src="assets/img/maker/today.jpg" alt="">
@@ -37,8 +44,10 @@
   <div class="composer">
     <mat-form-field class="grow">
       <mat-label>{{ "MAKER_PLACEHOLDER" | translate }}</mat-label>
-      <textarea #composer matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="send()"></textarea>
+      <textarea #composer matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="send()" (paste)="pics.paste($event)"></textarea>
     </mat-form-field>
-    <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
+    <button mat-flat-button [disabled]="(!text().trim() && !pictures().length) || uploading()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
   </div>
+  <app-chat-pictures #pics [(pictures)]="pictures" [(uploading)]="uploading" />
+  <p class="hint">{{ "MAKER_PICTURE_HINT" | translate }}</p>
 </div>

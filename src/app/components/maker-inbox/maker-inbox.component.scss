@@ -92,3 +92,19 @@
   display: flex;
   gap: 8px;
 }
+
+// Pictures in a message: small, a tap opens them large.
+.pics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 2px;
+
+  img {
+    max-width: 220px;
+    max-height: 160px;
+    border-radius: 10px;
+    display: block;
+    cursor: zoom-in;
+  }
+}

@@ -108,6 +108,8 @@
   "MAKER_EMPTY": "Ingen beskeder endnu. Skriv den første!",
   "MAKER_PLACEHOLDER": "Skriv en besked",
   "MAKER_SEND": "Send",
+  "MAKER_PICTURE": "📷 Billede",
+  "MAKER_PICTURE_HINT": "Går noget galt? Sæt et skærmbillede ind i beskeden, så kan Toke se det.",
   "INBOX_EMPTY": "Ingen beskeder endnu.",
   "INBOX_PICK": "Vælg et køkken til venstre.",
   "INBOX_REPLY": "Svar",
