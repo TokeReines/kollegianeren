@@ -25,7 +25,8 @@ proposals.
   not happening. A card shows the first picture, the status, the text, 👍 and the number of comments.
 - **Rich text:** the maker writes proposals and answers in a text field where pictures are pasted or
   dropped straight in (uploaded to Cloudinary on the spot); pasted text comes in plain. Saved as
-  cleaned HTML: only text, simple formatting and Cloudinary pictures.
+  cleaned HTML: only text, simple formatting and Cloudinary pictures. A picture tapped opens on the whole
+  screen (pinch to zoom), tap again to close.
 - **Opened:** all the text and pictures, 👍 ("Det vil vi gerne have"), the comments, and a field to
   comment. The maker's answers stand out and can have pictures; he sets the status there.
 - **Notices:** a new proposal, or one that became implemented, since the kitchen last opened Aktuelt
