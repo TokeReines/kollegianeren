@@ -1,12 +1,13 @@
 import {Injectable, computed, inject, signal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, addDoc, arrayUnion, collection, deleteDoc, doc, increment, limit, orderBy, query, serverTimestamp, setDoc,
-  updateDoc, where,
+  Timestamp, arrayUnion, collection, deleteDoc, doc, getDoc, increment, limit, orderBy, query, serverTimestamp, setDoc,
+  updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import {Observable, catchError, combineLatest, interval, map, of, shareReplay, startWith, switchMap} from 'rxjs';
 import {
-  Achievement, Battle, Metric, Tally, addTick, during, earnedAchievements, isPlantMeal, liveFor, saleUnits,
+  Achievement, BATTLE_SLOTS, Battle, Metric, TOO_MANY_BATTLES, Tally, addTick, during, earnedAchievements, isPlantMeal, liveFor,
+  saleUnits,
 } from '../interfaces/kollegiet';
 import {Meal} from '../interfaces/meal';
 import {Product} from '../interfaces/product';
@@ -65,9 +66,29 @@ export class LeagueService {
     return watch<Tally>(collection(db, 'battles', battleId, 'tally'));
   }
 
-  create(fields: BattleFields) {
+  // Three on or coming per kitchen that started them: the battle takes a free place in
+  // battleSlots/{kid} in the same batch (the rules check the place's last battle has ended).
+  async create(fields: BattleFields) {
     const kid = this.auth.currentKitchenId;
-    return addDoc(collection(db, 'battles'), {...fields, kitchenId: kid, participants: [kid], createdAt: serverTimestamp()});
+    const slotsRef = doc(db, 'battleSlots', kid);
+    const slots = (await getDoc(slotsRef)).data() ?? {};
+    let free: string | null = null;
+    for (const slot of BATTLE_SLOTS) {
+      const held = slots[slot];
+      const battle = held ? await getDoc(doc(db, 'battles', held)) : null;
+      if (!battle?.exists() || millis(battle.get('to')) <= Date.now()) {
+        free = slot;
+        break;
+      }
+    }
+    if (!free) {
+      throw new Error(TOO_MANY_BATTLES);
+    }
+    const ref = doc(collection(db, 'battles'));
+    const batch = writeBatch(db);
+    batch.set(ref, {...fields, kitchenId: kid, participants: [kid], createdAt: serverTimestamp()});
+    batch.set(slotsRef, {[free]: ref.id}, {merge: true});
+    return batch.commit();
   }
 
   join(battle: Battle) {

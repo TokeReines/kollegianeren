@@ -5,7 +5,7 @@ The maker's page, next to "Skriv til Toke" (the chat with him). Three tabs:
 - **Nyt:** news. Only admins post (`announcements`). A new post is a notice in the strip and the bell
   for NEWS_DAYS days, until the kitchen opens Aktuelt.
 - **Forslag:** feature proposals, so every kitchen can weigh in before something is built.
-- **Om:** what the app is and the questions a kitchen should be able to ask: who is behind it, that
+- **Om:** what the app is (MIT licensed; kitchens download their own data under Adgang) and the questions a kitchen should be able to ask: who is behind it, that
   it is open source (contributions as pull requests on GitHub), where the data is, who can see
   what, what it costs, how it is looked after, and what happens if Toke stops, someone breaks in,
   or Toke himself cannot be trusted. Static text in the app (i18n `ABOUT_*`); it must stay true,

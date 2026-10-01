@@ -374,6 +374,28 @@ service cloud.firestore {
     // Battles: kitchen against kitchen. The challenger creates it with itself as the only
     // participant; another invited kitchen may add itself while it is not over. The result is
     // written by ops/league.js.
+    function battleSlotsPath(kid) {
+      return /databases/$(database)/documents/battleSlots/$(kid);
+    }
+    // The battles a kitchen has started that are on or coming: three places (s1, s2, s3). A place
+    // takes a new battle, made in the same batch, only once the one it held has ended (or was
+    // called off).
+    match /battleSlots/{kid} {
+      function takes(slot) {
+        let after = request.resource.data.get(slot, null);
+        let before = resource == null ? null : resource.data.get(slot, null);
+        return after == before || (after is string
+          && getAfter(battlePath(after)).data.kitchenId == kid
+          && getAfter(battlePath(after)).data.createdAt == request.time
+          && (before == null || !exists(battlePath(before)) || get(battlePath(before)).data.to <= request.time));
+      }
+      allow read: if isMember(kid);
+      allow create, update: if kitchenLogin() && kid == myKitchen()
+        && request.resource.data.keys().hasOnly(['s1', 's2', 's3'])
+        && takes('s1') && takes('s2') && takes('s3');
+      allow delete: if false;
+    }
+
     match /battles/{id} {
       function validBattle(d) {
         return d.keys().hasOnly(['kitchenId', 'title', 'metric', 'from', 'to', 'invited', 'participants', 'createdAt'])
@@ -389,7 +411,10 @@ service cloud.firestore {
         && request.resource.data.kitchenId == myKitchen()
         && request.resource.data.participants == [myKitchen()]
         && request.resource.data.createdAt == request.time
-        && request.resource.data.from > request.time - duration.value(5, 'm');
+        && request.resource.data.from > request.time - duration.value(5, 'm')
+        // It takes one of the kitchen's three places in the same batch.
+        && id in [getAfter(battleSlotsPath(myKitchen())).data.get('s1', ''), getAfter(battleSlotsPath(myKitchen())).data.get('s2', ''),
+          getAfter(battleSlotsPath(myKitchen())).data.get('s3', '')];
       allow update: if kitchenLogin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
         && !(myKitchen() in resource.data.participants)

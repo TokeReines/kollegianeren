@@ -75,6 +75,27 @@
       <button mat-stroked-button (click)="invite(true)"><mat-icon>add_home</mat-icon> {{ "ACCESS_INVITE_KITCHEN" | translate }}</button>
     </mat-card>
 
+    <!-- The kitchen's own data as files, whenever it wants (docs: the About page promises it). -->
+    <mat-card>
+      <mat-card-title>{{ "ACCESS_EXPORT" | translate }}</mat-card-title>
+      <p class="muted">{{ "ACCESS_EXPORT_HINT" | translate }}</p>
+      <div class="row export">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>{{ "ACCESS_EXPORT_PERIOD" | translate }}</mat-label>
+          <mat-select [(ngModel)]="exportMonths">
+            <mat-option [value]="3">{{ "ACCESS_EXPORT_3" | translate }}</mat-option>
+            <mat-option [value]="12">{{ "ACCESS_EXPORT_12" | translate }}</mat-option>
+            <mat-option [value]="null">{{ "ACCESS_EXPORT_ALL" | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-flat-button [disabled]="exporting()" (click)="export('json')"><mat-icon>download</mat-icon> {{ "ACCESS_EXPORT_JSON" | translate }}</button>
+        <button mat-stroked-button [disabled]="exporting()" (click)="export('csv')"><mat-icon>table_view</mat-icon> {{ "ACCESS_EXPORT_CSV" | translate }}</button>
+      </div>
+      @if (exportStatus()) {
+        <p class="muted">{{ exportStatus() }}</p>
+      }
+    </mat-card>
+
     <mat-card>
       <mat-card-title>{{ "ACCESS_OPEN_INVITES" | translate }}</mat-card-title>
       <table class="list">

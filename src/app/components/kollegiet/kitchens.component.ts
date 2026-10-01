@@ -8,7 +8,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
-import {Achievement, Badge, KitchenColour, MAX_LIVE_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
+import {Achievement, Badge, KitchenColour, TOO_MANY_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
 import {dayKey} from '../../interfaces/meal';
 import {db, watch} from '../../firebase';
 import {AccessService} from '../../services/access.service';
@@ -107,14 +107,11 @@ export class KitchensComponent {
   }
 
   protected challenge(against: string) {
-    if (this.league.myLive().length >= MAX_LIVE_BATTLES) {
-      this.notify.info(this.i18n.t('KOL_MAX_BATTLES'));
-      return;
-    }
     this.dialog.open<BattleDialogComponent, BattleDialogData, BattleFields>(BattleDialogComponent, {width: '480px', maxWidth: '94vw', data: {against}})
       .afterClosed().subscribe(fields => {
         if (fields) {
-          this.league.create(fields).then(() => this.router.navigate([], {queryParams: {tab: 'battles'}}), this.notify.error);
+          this.league.create(fields).then(() => this.router.navigate([], {queryParams: {tab: 'battles'}}),
+            err => String(err).includes(TOO_MANY_BATTLES) ? this.notify.info(this.i18n.t('KOL_MAX_BATTLES')) : this.notify.error(err));
         }
       });
   }

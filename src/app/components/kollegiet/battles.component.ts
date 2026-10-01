@@ -2,7 +2,7 @@ import {Component, computed, inject} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
-import {MAX_LIVE_BATTLES, battleState} from '../../interfaces/kollegiet';
+import {TOO_MANY_BATTLES, battleState} from '../../interfaces/kollegiet';
 import {BattleFields, LeagueService} from '../../services/league.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
@@ -63,14 +63,11 @@ export class BattlesComponent {
   });
 
   protected challenge(against: string | null = null) {
-    if (this.league.myLive().length >= MAX_LIVE_BATTLES) {
-      this.notify.info(this.i18n.t('KOL_MAX_BATTLES'));
-      return;
-    }
     this.dialog.open<BattleDialogComponent, BattleDialogData, BattleFields>(BattleDialogComponent, {width: '480px', maxWidth: '94vw', data: {against}})
       .afterClosed().subscribe(fields => {
         if (fields) {
-          this.league.create(fields).catch(this.notify.error);
+          this.league.create(fields).catch(err => String(err).includes(TOO_MANY_BATTLES)
+            ? this.notify.info(this.i18n.t('KOL_MAX_BATTLES')) : this.notify.error(err));
         }
       });
   }

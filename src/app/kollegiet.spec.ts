@@ -130,7 +130,7 @@ describe('kollegiet notifications', () => {
     expect(notices.find(n => n.kind === 'kudos')?.badge).toBeNull();
   });
 
-  it('shows a live call until it ends or is answered, seen or not, first', () => {
+  it('shows a live call until it ends or is answered, seen or not', () => {
     const live = event({id: 'live', kind: 'live', invited: 'all', startsAt: T(NOW - H), endsAt: T(NOW + H), createdAt: T(NOW - H)});
     const notices = sortNotices(kollegietNotices('A', NOW, {events: [live], battles: [], kudos: [kudos]}, NOW));
     expect(notices.map(n => [n.kind, n.eventId])).toEqual([['live', 'live']]);
