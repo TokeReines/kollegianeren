@@ -51,7 +51,8 @@
   border-radius: 50%;
   background: var(--mat-sys-on-tertiary);
   color: var(--mat-sys-tertiary);
-  animation: ring 4s ease-in-out infinite;
+  // A few rings when it appears, then still: tablets show it all day.
+  animation: ring 4s ease-in-out 3;
 }
 
 .text {
@@ -92,6 +93,44 @@
   88% { transform: rotate(12deg) scale(1.1); }
   92% { transform: rotate(-8deg) scale(1.05); }
   96% { transform: rotate(4deg); }
+}
+
+// The buy page: title and preview on one line, a smaller icon and button.
+.slim {
+  margin: 0 12px 6px;
+  border-radius: 12px;
+
+  .open {
+    gap: 10px;
+    padding: 4px 8px 4px 6px;
+    border-radius: 12px;
+  }
+
+  .icon {
+    width: 32px;
+    height: 32px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .text {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+
+    b {
+      flex: none;
+      font: var(--mat-sys-title-small);
+    }
+  }
+
+  .read {
+    height: 32px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

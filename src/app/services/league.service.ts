@@ -26,10 +26,11 @@ export type BattleFields = Pick<Battle, 'title' | 'metric' | 'from' | 'to' | 'in
 export class LeagueService {
   private readonly auth = inject(AuthService);
 
-  // Battles that have not been over for more than two weeks: a handful of documents.
+  // Battles that have not been over for more than two weeks: a handful of documents. Latest ending
+  // first, so new battles keep coming in on a tablet that stays open for weeks.
   readonly battles$: Observable<Battle[]> = whileSignedIn(this.auth.membership$,
     () => watch<Battle>(query(collection(db, 'battles'), where('to', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)),
-      orderBy('to'), limit(40))), [] as Battle[],
+      orderBy('to', 'desc'), limit(40))), [] as Battle[],
   ).pipe(shareReplay({bufferSize: 1, refCount: true}));
   readonly battles = toSignal(this.battles$, {initialValue: []});
 

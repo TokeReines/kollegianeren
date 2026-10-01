@@ -58,7 +58,7 @@ export class BattlesComponent {
     return [
       {state: 'live', battles: of('live')},
       {state: 'upcoming', battles: of('upcoming').sort((a, b) => millis(a.from) - millis(b.from))},
-      {state: 'ended', battles: of('ended').sort((a, b) => millis(b.to) - millis(a.to))},
+      {state: 'ended', battles: of('ended').filter(b => millis(b.to) > now - 14 * 864e5).sort((a, b) => millis(b.to) - millis(a.to))},
     ];
   });
 

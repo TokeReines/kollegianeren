@@ -44,9 +44,11 @@ import {liveBoard} from './live-board';
     </div>
   `,
   styles: `
-    .ticker { display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 12px; border-radius: 14px;
+    :host { display: block; }
+    .ticker { display: flex; align-items: center; gap: 12px; padding: 4px 8px 4px 12px; border-radius: 14px; min-height: 40px; box-sizing: border-box;
       background: var(--mat-sys-surface-container); border: 1px solid var(--mat-sys-tertiary); min-width: 0; }
-    .title { display: flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; white-space: nowrap; flex: none; }
+    .title { display: flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
+    .title b { overflow: hidden; text-overflow: ellipsis; }
     .title mat-icon { color: var(--mat-sys-tertiary); }
     .rows { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; overflow-x: auto; min-width: 0; flex: 1; --chip-size: 24px; }
     li { display: flex; align-items: center; gap: 6px; padding: 2px 10px 2px 4px; border-radius: 16px; white-space: nowrap;

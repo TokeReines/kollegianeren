@@ -95,8 +95,8 @@ Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 
 Live battle tallies are moved by the kitchens' own tablets; these settle and check (docs/kollegiet.md).
 
-- `node league.js --project dev [--daily] [--dry]`: settles battles that ended (recomputed from the real purchases, meals and taps; a tally that is off is reported to the maker's inbox) and polls that closed (the secret ballots counted), and posts the results. `--daily` also writes standings and the achievements that need history. An idle run is 2 reads. `--emulator --loop 60` runs it locally every minute.
-- `cron/tokeserver-league.sh`: the same on prod, every 15 minutes, with `--daily` at 08:15 UTC. Not scheduled yet.
+- `node league.js --project dev [--daily] [--dry] [--state <file>]`: settles battles that ended (recomputed from the real purchases, meals and taps; a tally that is off is reported to the maker's inbox, a live achievement it does not reach is taken back) and polls that closed (the secret ballots counted), and posts the results. `--daily` also writes standings and the achievements that need history. With `--state` it keeps how far it has got: an idle run is 2 reads and the daily one about 30. Without, it looks through the last two weeks and counts everything again. A result is claimed with a precondition, so two runs at once never settle the same battle twice. `--max-reads` (6000) caps the recounting per run. `--emulator --loop 60` runs it locally every minute.
+- `cron/tokeserver-league.sh`: the same on prod with `--state ~/kollegianeren-backups/league-prod.json`, every 15 minutes, with `--daily` at 08:20 UTC. Not scheduled yet.
 - `node suggest-categories.js --project dev [--write]`: proposes beer, soda, water and so on from product names, for products without a category. Writing to prod needs `--i-really-mean-prod`.
 
 ## Removing kitchens and logins

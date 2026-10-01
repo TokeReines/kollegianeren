@@ -4,15 +4,22 @@
 //
 // - an ended battle: each kitchen's number recomputed from its real purchases, meals and taps,
 //   written as the battle's result, a trophy for the winner and a post on the board. A tally that
-//   is off from the real number is reported to the maker, and the result wins;
+//   is off from the real number is reported to the maker, and the result wins; a live achievement
+//   the real number does not reach is taken back;
 // - a closed poll: the secret ballots counted, the result written and posted;
-// - once a day (--daily): standings (wins, high-fives, badges) and the achievements that need
-//   history (food club milestones, a plant-based month, the first open kitchen).
+// - once a day (--daily): standings (high-fives, badges) and the achievements that need history
+//   (food club milestones, a plant-based month, the first open kitchen).
 //
-//   node league.js --project dev [--daily] [--dry]
+//   node league.js --project dev [--daily] [--dry] [--state <file>] [--max-reads 6000]
 //   node league.js --emulator [--daily] [--loop 60]     # local emulators, every 60 seconds
 //
-// An idle run is two queries (2 reads). Cron: every 15 minutes, with --daily once at 08:15 UTC.
+// --state keeps how far it has got (cron on tokeserver): then a run reads only what ended or
+// happened since the last one, and an idle run is 2 reads. Without it, the last two weeks are
+// looked through and --daily counts everything again (by hand, on dev).
+//
+// A battle is claimed with a precondition on the document before anything is posted, so two runs
+// at once (cron's 15-minute run and the daily one) never settle the same battle twice.
+const fs = require('fs');
 const { parseArgs } = require('./lib/firebase');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 
@@ -20,6 +27,8 @@ const args = parseArgs();
 const DAY = 864e5;
 // Posts and kudos from Kollegiet itself, not from a kitchen.
 const SYSTEM = 'kollegiet';
+// Most reads one run spends on recounting battles; a big battle waits for the next run.
+const MAX_READS = Number(args['max-reads']) || 6000;
 let db;
 let reads = 0;
 
@@ -40,11 +49,56 @@ async function get(q) {
   return s.docs;
 }
 
+async function count(q) {
+  const n = (await q.count().get()).data().count;
+  reads += Math.max(1, Math.ceil(n / 1000));
+  return n;
+}
+
+function loadState() {
+  if (!args.state) return null;
+  try {
+    return JSON.parse(fs.readFileSync(args.state, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveState(state) {
+  if (!args.state || args.dry) return;
+  fs.writeFileSync(args.state + '.tmp', JSON.stringify(state, null, 2));
+  fs.renameSync(args.state + '.tmp', args.state);
+}
+
 const ms = t => (t && t.toMillis ? t.toMillis() : 0);
 const winnersOf = scores => {
   const top = Math.max(0, ...Object.values(scores));
   return top > 0 ? Object.keys(scores).filter(k => scores[k] === top) : [];
 };
+
+// What a battle counts, for the result post: "med 14 øl".
+const UNITS = { drinks: 'drikkevarer', beer: 'øl', mealDiners: 'spisende', plantMeals: '%', gym: 'fitness-ture' };
+
+// Live achievements and what earns them (LIVE_ACHIEVEMENTS in src/app/interfaces/kollegiet.ts,
+// earned() in firestore.rules).
+const LIVE_NEEDS = {
+  firstBattle: ['', 1], drinks100: ['drinks', 100], beer50: ['beer', 50], beer100: ['beer', 100],
+  diners50: ['mealDiners', 50], gym25: ['gym', 25],
+};
+
+// The documents a battle's recount reads, from counts (1 read per 1000).
+async function recountCost(battle) {
+  let n = 0;
+  for (const kid of battle.participants || []) {
+    const k = db.collection('kitchens').doc(kid);
+    if (battle.metric === 'drinks' || battle.metric === 'beer') {
+      n += await count(k.collection('purchases').where('timestamp', '>=', battle.from).where('timestamp', '<', battle.to));
+    } else if (battle.metric !== 'gym') {
+      n += await count(k.collection('meals').where('date', '>=', battle.from).where('date', '<', battle.to));
+    }
+  }
+  return n;
+}
 
 // A kitchen's real number in a battle, from its own data.
 async function realScore(battle, kid, tally) {
@@ -98,26 +152,63 @@ async function names() {
   return new Map(docs.map(d => [d.id, d.get('name') || d.id]));
 }
 
-// Battles that ended in the last two weeks and are not settled.
+// Claims the result: fails if another run changed the document since this one read it.
+async function claim(doc, result) {
+  if (args.dry) return true;
+  return doc.ref.update({ result: { ...result, settledAt: FieldValue.serverTimestamp() } }, { lastUpdateTime: doc.updateTime })
+    .then(() => true, e => {
+      console.log(`  ${doc.ref.path} changed meanwhile (${e.code || e.message}), left for the next run`);
+      return false;
+    });
+}
+
+// Live achievements claimed in this battle that the real number does not reach.
+async function takeBackAchievements(b, kid, real, kitchenNames) {
+  const claimed = await get(db.collection('standings').doc(kid).collection('achievements').where('battle', '==', b.id));
+  for (const a of claimed) {
+    const need = LIVE_NEEDS[a.id];
+    if (!need || real >= need[1]) continue;
+    console.log(`  ${kitchenNames.get(kid) || kid}: ${a.id} taken back (real ${real})`);
+    if (args.dry) continue;
+    await a.ref.delete();
+    await report(`battles/${b.id}`, `${kitchenNames.get(kid) || kid}: "${a.id}" taken back, real ${real} in "${b.title}"`);
+  }
+}
+
+// Ended battles that are not settled. Returns the ones left for the next run.
 async function settleBattles(ended, kitchenNames) {
+  const left = [];
+  let spent = 0;
   for (const doc of ended) {
     const b = { id: doc.id, ...doc.data() };
+    const cost = await recountCost(b);
+    if (spent && spent + cost > MAX_READS) {
+      console.log(`battle ${b.id} "${b.title}": about ${cost} reads, waits for the next run`);
+      left.push(doc);
+      continue;
+    }
+    spent += cost;
     const tallies = new Map((await get(doc.ref.collection('tally'))).map(t => [t.id, t.data()]));
-    const scores = {};
+    const scores = {}, live = {};
     for (const kid of b.participants || []) {
-      const real = await realScore(b, kid, tallies.get(kid));
-      const live = liveScore(b.metric, tallies.get(kid));
-      scores[kid] = real;
-      if (Math.abs(real - live) > Math.max(3, real * 0.1)) {
-        await report(`battles/${b.id}`, `${kitchenNames.get(kid) || kid}: live ${live}, real ${real} in "${b.title}"`);
-      }
+      scores[kid] = await realScore(b, kid, tallies.get(kid));
+      live[kid] = liveScore(b.metric, tallies.get(kid));
     }
     const winners = winnersOf(scores);
     console.log(`battle ${b.id} "${b.title}":`, scores, 'winners', winners);
+    if (!await claim(doc, { scores, winners })) {
+      left.push(doc);
+      continue;
+    }
+    for (const kid of b.participants || []) {
+      if (Math.abs(scores[kid] - live[kid]) > Math.max(3, scores[kid] * 0.1)) {
+        await report(`battles/${b.id}`, `${kitchenNames.get(kid) || kid}: live ${live[kid]}, real ${scores[kid]} in "${b.title}"`);
+      }
+      await takeBackAchievements(b, kid, scores[kid], kitchenNames);
+    }
     if (args.dry) continue;
-    await doc.ref.update({ result: { scores, winners, settledAt: FieldValue.serverTimestamp() } });
     if (winners.length && (b.participants || []).length > 1) {
-      const unit = b.metric === 'plantMeals' ? ' %' : '';
+      const unit = UNITS[b.metric] ? (b.metric === 'plantMeals' ? ' %' : ` ${UNITS[b.metric]}`) : '';
       await post(`🏆 ${winners.map(w => kitchenNames.get(w) || w).join(' og ')} vandt "${b.title}" med ${scores[winners[0]]}${unit}!`);
       for (const w of winners) {
         await db.collection('standings').doc(w).set({ wins: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
@@ -126,10 +217,12 @@ async function settleBattles(ended, kitchenNames) {
       }
     }
   }
+  return left;
 }
 
-// Polls that closed in the last two weeks and are not counted.
+// Closed polls that are not counted. Returns the ones left for the next run.
 async function settlePolls(closed, kitchenNames) {
+  const left = [];
   for (const doc of closed) {
     const votes = {};
     for (const ballot of await get(doc.ref.collection('ballots'))) {
@@ -138,8 +231,11 @@ async function settlePolls(closed, kitchenNames) {
     }
     const winners = winnersOf(votes);
     console.log(`poll ${doc.id} "${doc.get('title')}":`, votes, 'winners', winners);
+    if (!await claim(doc, { votes, winners })) {
+      left.push(doc);
+      continue;
+    }
     if (args.dry) continue;
-    await doc.ref.update({ result: { votes, winners, settledAt: FieldValue.serverTimestamp() } });
     if (winners.length) {
       await post(`🗳️ ${winners.map(w => kitchenNames.get(w) || w).join(' og ')} vandt afstemningen "${doc.get('title')}" med ${votes[winners[0]]} stemmer!`);
       for (const w of winners) {
@@ -147,44 +243,7 @@ async function settlePolls(closed, kitchenNames) {
       }
     }
   }
-}
-
-// Once a day: counts for the profiles, and the achievements that need history.
-async function daily(now, kitchenNames) {
-  const kudos = await get(db.collection('kudos'));
-  const battles = await get(db.collection('battles'));
-  const events = await get(db.collection('events').where('kind', '==', 'openKitchen'));
-  for (const kid of kitchenNames.keys()) {
-    const got = kudos.filter(k => k.get('to') === kid);
-    const badges = {};
-    got.filter(k => k.get('kind') === 'badge').forEach(k => badges[k.get('badge')] = (badges[k.get('badge')] || 0) + 1);
-    const highfives = got.filter(k => k.get('kind') === 'highfive').length;
-    const wins = battles.filter(b => (b.get('result')?.winners || []).includes(kid) && (b.get('participants') || []).length > 1).length;
-    const meals = await get(db.collection('kitchens').doc(kid).collection('meals').where('date', '<', Timestamp.fromMillis(now)));
-    const earned = [];
-    for (const [code, n] of [['dinners10', 10], ['dinners50', 50], ['dinners100', 100]]) if (meals.length >= n) earned.push(code);
-    if (highfives >= 10) earned.push('highfives10');
-    if (events.some(e => e.get('kitchenId') === kid && ms(e.get('startsAt')) < now)) earned.push('firstOpenKitchen');
-    const byMonth = new Map();
-    for (const m of meals) {
-      const d = m.get('date').toDate(), key = `${d.getFullYear()}-${d.getMonth()}`;
-      const e = byMonth.get(key) || { all: 0, plant: 0 };
-      e.all++;
-      if ((m.get('tags') || []).some(t => t === 'vegetarian' || t === 'vegan')) e.plant++;
-      byMonth.set(key, e);
-    }
-    if ([...byMonth.values()].some(e => e.all >= 4 && e.plant * 2 >= e.all)) earned.push('plantMonth');
-    if (!got.length && !wins && !earned.length) continue;
-    console.log(`${kitchenNames.get(kid)}: wins ${wins}, high-fives ${highfives}, badges`, badges, 'achievements', earned);
-    if (args.dry) continue;
-    const ref = db.collection('standings').doc(kid);
-    await ref.set({ wins, highfives, badges, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    for (const code of earned) {
-      const created = await ref.collection('achievements').doc(code).create({ battle: null, at: FieldValue.serverTimestamp() })
-        .then(() => true, () => false);
-      if (created) await post(`${ACH_ICONS[code] || '🏅'} ${kitchenNames.get(kid)} har låst op for "${ACH_NAMES[code] || code}"!`);
-    }
-  }
+  return left;
 }
 
 const ACH_NAMES = {
@@ -193,19 +252,96 @@ const ACH_NAMES = {
 };
 const ACH_ICONS = { dinners10: '🥄', dinners50: '🍴', dinners100: '👨‍🍳', highfives10: '🙌', firstOpenKitchen: '🚪', plantMonth: '🥦' };
 
+const isPlant = m => (m.get('tags') || []).some(t => t === 'vegetarian' || t === 'vegan');
+// At least four dinners in a month, half of them plant-based.
+const plantMonth = meals => meals.length >= 4 && meals.filter(isPlant).length * 2 >= meals.length;
+const monthKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+async function award(kid, code, kitchenNames) {
+  if (args.dry) return console.log(`  ${kitchenNames.get(kid)}: ${code}`);
+  const ref = db.collection('standings').doc(kid).collection('achievements').doc(code);
+  const created = await ref.create({ battle: null, at: FieldValue.serverTimestamp() }).then(() => true, () => false);
+  if (created) await post(`${ACH_ICONS[code] || '🏅'} ${kitchenNames.get(kid)} har låst op for "${ACH_NAMES[code] || code}"!`);
+}
+
+// Once a day. With a state: only kudos and events since the last run, the food club totals as
+// counts, and the plant-based month once a month. Without: everything again.
+async function daily(now, kitchenNames, state) {
+  const since = state?.dailyThrough;
+  const kudos = await get(since
+    ? db.collection('kudos').where('createdAt', '>', Timestamp.fromMillis(since)).where('createdAt', '<=', Timestamp.fromMillis(now))
+    : db.collection('kudos'));
+  const events = (await get(since
+    ? db.collection('events').where('startsAt', '>', Timestamp.fromMillis(since)).where('startsAt', '<=', Timestamp.fromMillis(now))
+    : db.collection('events').where('kind', '==', 'openKitchen')))
+    .filter(e => e.get('kind') === 'openKitchen' && ms(e.get('startsAt')) <= now);
+  const month = monthKey(new Date(now));
+  // The month that just ended, the first run in a new month (or every month, without a state).
+  const checkMonths = !since || state.monthChecked !== month;
+  const prevStart = new Date(now); prevStart.setDate(1); prevStart.setHours(0, 0, 0, 0);
+  const monthStart = prevStart.getTime();
+  prevStart.setMonth(prevStart.getMonth() - 1);
+
+  for (const kid of kitchenNames.keys()) {
+    const got = kudos.filter(k => k.get('to') === kid && k.get('from') !== SYSTEM);
+    const badges = {};
+    got.filter(k => k.get('kind') === 'badge').forEach(k => badges[k.get('badge')] = (badges[k.get('badge')] || 0) + 1);
+    const highfives = got.filter(k => k.get('kind') === 'highfive').length;
+    const ref = db.collection('standings').doc(kid);
+    let totalHighfives = highfives;
+    if (got.length && !args.dry) {
+      if (since) {
+        await ref.set({ highfives: FieldValue.increment(highfives), badges: Object.fromEntries(Object.entries(badges)
+          .map(([b, n]) => [b, FieldValue.increment(n)])), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        reads++;
+        totalHighfives = (await ref.get()).get('highfives') || highfives;
+      } else {
+        await ref.set({ highfives, badges, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      }
+    }
+    const earned = [];
+    const meals = db.collection('kitchens').doc(kid).collection('meals');
+    const dinners = await count(meals.where('date', '<', Timestamp.fromMillis(now)));
+    for (const [code, n] of [['dinners10', 10], ['dinners50', 50], ['dinners100', 100]]) if (dinners >= n) earned.push(code);
+    if (totalHighfives >= 10) earned.push('highfives10');
+    if (events.some(e => e.get('kitchenId') === kid)) earned.push('firstOpenKitchen');
+    if (checkMonths && dinners >= 4) {
+      const from = since ? prevStart.getTime() : 0;
+      const list = await get(meals.where('date', '>=', Timestamp.fromMillis(from)).where('date', '<', Timestamp.fromMillis(since ? monthStart : now)));
+      const byMonth = new Map();
+      for (const m of list) {
+        const key = monthKey(m.get('date').toDate());
+        byMonth.set(key, [...(byMonth.get(key) || []), m]);
+      }
+      if ([...byMonth.values()].some(plantMonth)) earned.push('plantMonth');
+    }
+    if (!got.length && !earned.length) continue;
+    console.log(`${kitchenNames.get(kid)}: +${highfives} high-fives, badges`, badges, 'achievements', earned);
+    for (const code of earned) await award(kid, code, kitchenNames);
+  }
+  return { dailyThrough: now, monthChecked: month };
+}
+
 async function run() {
   reads = 0;
   const now = Date.now();
+  const state = loadState();
   const kitchenNames = new Map();
   const lazyNames = async () => kitchenNames.size ? kitchenNames : names().then(m => { m.forEach((v, k) => kitchenNames.set(k, v)); return kitchenNames; });
-  // Names only when there is something to settle.
-  const recent = (name, field) => get(db.collection(name).where(field, '<=', Timestamp.fromMillis(now))
-    .where(field, '>=', Timestamp.fromMillis(now - 14 * DAY))).then(docs => docs.filter(d => !d.get('result')));
-  const battles = await recent('battles', 'to');
-  if (battles.length) await settleBattles(battles, await lazyNames());
-  const polls = await recent('polls', 'closesAt');
-  if (polls.length) await settlePolls(polls, await lazyNames());
-  if (args.daily) await daily(now, await lazyNames());
+  // What ended since the last run (with a state), or in the last two weeks; names only when there
+  // is something to settle.
+  const ended = (name, field, since) => get(db.collection(name).where(field, '<=', Timestamp.fromMillis(now))
+    .where(field, '>', Timestamp.fromMillis(since ?? now - 14 * DAY))).then(docs => docs.filter(d => !d.get('result')));
+  // The next run starts at the earliest one left over, or now.
+  const through = (left, field) => left.length ? Math.min(...left.map(d => ms(d.get(field)))) - 1 : now;
+
+  const battles = await ended('battles', 'to', state?.battlesThrough);
+  const battlesLeft = battles.length ? await settleBattles(battles, await lazyNames()) : [];
+  const polls = await ended('polls', 'closesAt', state?.pollsThrough);
+  const pollsLeft = polls.length ? await settlePolls(polls, await lazyNames()) : [];
+  const next = { ...state, battlesThrough: through(battlesLeft, 'to'), pollsThrough: through(pollsLeft, 'closesAt') };
+  if (args.daily) Object.assign(next, await daily(now, await lazyNames(), state));
+  if (state) saveState(next);
   console.log(`${new Date().toISOString()} league: ${reads} reads`);
 }
 
