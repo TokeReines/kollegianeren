@@ -1,8 +1,9 @@
 #!/bin/sh
 # Daily admin overview for the maker (prod): numbers per kitchen into adminStats/latest.
-# Runs once a day from cron, just after the Spark quota resets (09:00 Danish time), about 700 reads.
-# Uses its own service account (Firestore user, Firebase Auth viewer, Monitoring viewer), not the
-# read-only backup account, because it writes that one document and reads when logins were used.
+# Runs once a day from cron at 08:10 UTC, just after the Spark quota resets, about 700 reads.
+# Uses the toke-server service account (Firestore user, Firebase Auth viewer, Monitoring viewer),
+# not the read-only backup account, because it writes that one document and reads when logins
+# were used.
 set -e
 KEY="$HOME/.config/kollegianeren/stats-sa.json"
 OPS="$HOME/kollegianeren/ops"

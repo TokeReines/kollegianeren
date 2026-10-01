@@ -195,6 +195,16 @@ service cloud.firestore {
         allow delete: if signedIn() && (request.auth.uid == uid || isOwner(kid));
       }
 
+      // Which build each login runs, for the maker's Admin page (read there with the admin SDK).
+      match /appVersions/{uid} {
+        allow read: if false;
+        allow write: if isMember(kid) && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/kitchens/$(kid))
+          && request.resource.data.keys().hasOnly(['build', 'loadedAt'])
+          && request.resource.data.build is string && request.resource.data.build.size() <= 40
+          && request.resource.data.loadedAt == request.time;
+      }
+
       // Tablets buy and may take back a purchase within a minute; managers may do anything.
       match /purchases/{purchaseId} {
         allow read: if isMember(kid) || viewsResident(kid, resource.data.userId);
@@ -269,12 +279,12 @@ service cloud.firestore {
         allow get: if viewsResident(kid, userId);
       }
 
-      // users (residents): every member reads, managers write. Purchases, messages, meals and
-      // members are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
+      // users (residents): every member reads, managers write. Purchases, messages, meals, members and
+      // appVersions are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals']);
-        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals']);
+        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions']);
+        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions']);
       }
     }
   }

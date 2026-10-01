@@ -23,9 +23,14 @@ export class HomeComponent {
   protected readonly online = this.appUpdate.online;
 
   constructor() {
-    this.appUpdate.start();
     const dialog = inject(MatDialog);
-    inject(AuthService).user$.pipe(filter((u): u is User => !!u && !u.isAnonymous), take(1), takeUntilDestroyed()).subscribe(user => {
+    const authService = inject(AuthService);
+    authService.membership$.pipe(takeUntilDestroyed()).subscribe(m => {
+      if (m && !authService.user()?.isAnonymous) {
+        this.appUpdate.reportVersion(m.kitchenId, m.uid);
+      }
+    });
+    authService.user$.pipe(filter((u): u is User => !!u && !u.isAnonymous), take(1), takeUntilDestroyed()).subscribe(user => {
       if (revealWanted(user.uid)) {
         openReveal(dialog, {uid: user.uid});
       }

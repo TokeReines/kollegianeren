@@ -97,7 +97,11 @@
                       <h3>{{ "ADMIN_LOGINS" | translate }}</h3>
                       @for (l of k.logins; track $index) {
                         <p><b>{{ "ROLE_" + l.role.toUpperCase() | translate }}</b> · {{ "ADMIN_LAST_USED" | translate }} {{ (l.lastActive?.toDate() | date:'d. MMM y HH:mm') || '?' }}
-                          <span class="muted">· {{ "ADMIN_CREATED" | translate }} {{ (l.created?.toDate() | date:'d. MMM y') || '?' }}</span></p>
+                          <span class="muted">· {{ "ADMIN_CREATED" | translate }} {{ (l.created?.toDate() | date:'d. MMM y') || '?' }}</span>
+                          @if (l.build) {
+                            <span class="build"><span class="chip" [class.new]="l.latest">{{ (l.latest ? "ADMIN_BUILD_LATEST" : l.latest === false ? "ADMIN_BUILD_OLDER" : "ADMIN_BUILD") | translate }}</span>
+                            <span class="muted">{{ "ADMIN_BUILD_OPENED" | translate }} {{ l.loadedAt?.toDate() | date:'d. MMM HH:mm' }}</span></span>
+                          }</p>
                       }
                       <p class="muted">{{ "ADMIN_INVITES" | translate }}: {{ k.invites.open }} {{ "ADMIN_OPEN" | translate }}, {{ k.invites.used }} {{ "ADMIN_USED" | translate }}. {{ "ADMIN_LINKS" | translate }}: {{ k.residentLinks }}.</p>
                     </section>

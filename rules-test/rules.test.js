@@ -390,3 +390,17 @@ test('admin stats: only admins read them, nobody writes them from the app', asyn
   await assertFails(setDoc(doc(maker(), 'adminStats', 'latest'), { kitchens: [] }));
   await assertFails(setDoc(doc(asKitchen(A), 'adminStats', 'latest'), { kitchens: [] }));
 });
+
+// Build reporting: each login writes only its own entry, nobody reads them from the app.
+test('app versions: a login reports its own build, nothing else', async () => {
+  const mine = doc(asKitchen(A), 'kitchens', A, 'appVersions', A);
+  await assertSucceeds(setDoc(mine, { build: 'PJ72EFS3', loadedAt: serverTimestamp() }));
+  await assertSucceeds(setDoc(mine, { build: 'NEW12345', loadedAt: serverTimestamp() }));
+  await assertFails(getDoc(mine));
+  await assertFails(setDoc(mine, { build: 'x', loadedAt: Timestamp.now() }));
+  await assertFails(setDoc(mine, { build: 'x', loadedAt: serverTimestamp(), extra: 1 }));
+  await assertFails(setDoc(doc(asKitchen(A), 'kitchens', A, 'appVersions', 'someoneElse'), { build: 'x', loadedAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(asKitchen(A), 'kitchens', B, 'appVersions', A), { build: 'x', loadedAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(asKitchen('ghost'), 'kitchens', 'ghost', 'appVersions', 'ghost'), { build: 'x', loadedAt: serverTimestamp() }));
+  await assertFails(deleteDoc(mine));
+});
