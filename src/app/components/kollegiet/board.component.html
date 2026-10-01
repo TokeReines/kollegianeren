@@ -132,7 +132,7 @@
 </div>
 
 <ng-template #menu let-collection="collection" let-item="item" let-author="author">
-  @if (author !== me() || recent(item.createdAt) || mayHide(author)) {
+  @if ((author === me() && recent(item.createdAt)) || mayHide(author)) {
     <button mat-icon-button class="more" [matMenuTriggerFor]="more" [attr.aria-label]="'KOL_MORE' | translate"><mat-icon>more_vert</mat-icon></button>
   }
   <mat-menu #more="matMenu" xPosition="before">
@@ -141,9 +141,6 @@
         <mat-icon>{{ author === me() && recent(item.createdAt) ? 'undo' : 'visibility_off' }}</mat-icon>
         <span>{{ (author === me() && recent(item.createdAt) ? "KOL_TAKE_BACK" : "KOL_HIDE") | translate }}</span>
       </button>
-    }
-    @if (author !== me()) {
-      <button mat-menu-item (click)="report(collection + '/' + item.id)"><mat-icon>flag</mat-icon><span>{{ "KOL_REPORT" | translate }}</span></button>
     }
   </mat-menu>
 </ng-template>

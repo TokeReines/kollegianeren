@@ -79,7 +79,7 @@ Every new collection is read with `kitchenLogin()`.
 | `standings/{kid}` | `achievements`, `badges` (counts), `wins`, `updatedAt` | ops job only | The kitchen's trophy shelf on its profile. |
 | `standings/{kid}/achievements/{code}` | `battle`, `at` | members of `kid`, only if the rules' check of the tally passes; or the job | Live achievements (see Battles). |
 | `seen/{kid}` | `kollegietAt`, `aktueltAt`, `lastPostAt` | a kitchen login of `kid` | When the kitchen last opened Kollegiet and Aktuelt, for the badge and the strip; its last post, for the rate limit. |
-| `reports/{id}` | `kitchenId` (reporter), `target` (path), `createdAt` | any member | Read by the maker only; shown in the maker's inbox. |
+| `reports/{id}` | `kitchenId` (`kollegiet`), `target` (path), `text`, `createdAt` | ops/league.js only | Technical notes (a tally that was off, an achievement taken back), in the maker's inbox. |
 
 Rate limits without functions:
 
@@ -131,8 +131,8 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   your own vote is shown, never a running count. The result becomes a post and a badge for the winner.
 - **Gym counter:** a big "+1 fitness" button (and −1 to undo a slip) on the buy page ticker
   and the Battles tab while a gym battle runs. Someone back from the gym taps it once.
-- **Maker:** only moderation: a Hide action on everything and reports in the inbox. The maker
-  does not play, start polls or battles.
+- **Maker:** does not play, start polls or battles, and does not moderate: what kitchens write to
+  each other is up to them. The inbox shows only the league job's technical notes.
 
 All text goes through `da.json` and `en.json`, with no long dashes.
 
@@ -243,12 +243,11 @@ the first battle night, and `ops/usage.js` stays the check.
 
 ## Moderation and safety
 
-- Kitchen managers can hide their own kitchen's posts. The maker can hide anything. Hidden
+- Kitchen managers can hide their own kitchen's posts; nobody else moderates. Hidden
   documents stay for the maker and are filtered from everyone else by the rules
   (`resource.data.hidden == false`). Queries therefore filter `hidden == false`, which needs an
   index with `createdAt`.
-- **Report** on every post, event and kudos creates `reports/{id}` and shows in the maker's inbox
-  with a link.
+- No reporting to the maker: kitchens sort things out between themselves.
 - Text limits are in the rules. No pictures in the first phases, because the Cloudinary upload
   preset is still unrestricted (#61).
 - The privacy page gets a paragraph: what other kitchens see (the kitchen's name, profile, posts,

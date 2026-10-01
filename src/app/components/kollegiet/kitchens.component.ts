@@ -95,7 +95,9 @@ export class KitchensComponent {
   }
 
   protected highfive(to: string) {
-    this.kollegiet.highfive(to).then(() => this.notify.info('🙌'), () => this.notify.info(this.i18n.t('KOL_HIGHFIVE_DONE')));
+    this.kollegiet.highfive(to).then(
+      () => this.notify.info(`🙌 ${this.i18n.t('KOL_HIGHFIVE_SENT')} ${this.kollegiet.card(to).name}`),
+      () => this.notify.info(this.i18n.t('KOL_HIGHFIVE_DONE')));
   }
 
   protected badge(to: string) {

@@ -30,7 +30,7 @@ export class MakerInboxComponent {
   protected readonly selected = computed(() => this.threads().find(t => t.kitchenId === this.selectedId()));
   protected readonly text = signal('');
 
-  // Reports from kitchens on Kollegiet, and from ops/league.js when a tally was off.
+  // Notes from ops/league.js: a tally that was off, an achievement taken back.
   private readonly kollegiet = inject(KollegietService);
   protected readonly reports = toSignal(this.maker.isAdmin$.pipe(switchMap(admin => admin ? this.kollegiet.reports() : of([]))), {initialValue: []});
 

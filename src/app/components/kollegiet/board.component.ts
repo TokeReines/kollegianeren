@@ -16,7 +16,6 @@ import {
 } from '../../interfaces/kollegiet';
 import {EventFields, HideableCollection, KollegietService} from '../../services/kollegiet.service';
 import {AuthService} from '../../services/auth.service';
-import {MakerService} from '../../services/maker.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {millis} from '../../time';
@@ -44,7 +43,6 @@ export class BoardComponent {
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly i18n = inject(TranslateService);
-  protected readonly isAdmin = inject(MakerService).isAdmin;
 
   private readonly posts = toSignal(this.kollegiet.posts$, {initialValue: []});
   private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
@@ -137,8 +135,9 @@ export class BoardComponent {
     return Date.now() - millis(createdAt as never) < 5 * 60e3;
   }
 
+  // A kitchen's managers hide its own things; nobody else moderates (not the maker either).
   protected mayHide(authorKitchenId: string) {
-    return this.isAdmin() || (this.canManage() && authorKitchenId === this.me());
+    return this.canManage() && authorKitchenId === this.me();
   }
 
   protected async remove(collection: HideableCollection, item: {id: string, createdAt?: unknown}, author: string) {
@@ -150,10 +149,4 @@ export class BoardComponent {
     }
   }
 
-  protected async report(target: string) {
-    const ok = await this.confirm.ask({title: this.i18n.t('KOL_REPORT'), message: this.i18n.t('KOL_REPORT_TEXT'), confirm: this.i18n.t('KOL_REPORT')});
-    if (ok) {
-      this.kollegiet.report(target, '').then(() => this.notify.info(this.i18n.t('KOL_REPORTED')), this.notify.error);
-    }
-  }
 }

@@ -9,7 +9,6 @@ import {MatIconModule} from '@angular/material/icon';
 import {Battle, battleState, isInvited, scoreboard} from '../../interfaces/kollegiet';
 import {AuthService} from '../../services/auth.service';
 import {LeagueService} from '../../services/league.service';
-import {MakerService} from '../../services/maker.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
@@ -59,7 +58,7 @@ import {KitchenChipComponent} from './kitchen-chip.component';
         @if (state() !== 'upcoming') {
           <a mat-button [routerLink]="['/kollegiet/battle', battle().id]"><mat-icon>tv</mat-icon> {{ "KOL_BIG_SCREEN" | translate }}</a>
         }
-        @if ((battle().kitchenId === me() && state() === 'upcoming') || isAdmin()) {
+        @if (battle().kitchenId === me() && state() === 'upcoming') {
           <button mat-button (click)="callOff()"><mat-icon>close</mat-icon> {{ "KOL_CALL_OFF" | translate }}</button>
         }
       </div>
@@ -91,7 +90,6 @@ export class BattleCardComponent {
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
   private readonly auth = inject(AuthService);
-  protected readonly isAdmin = inject(MakerService).isAdmin;
   readonly battle = input.required<Battle>();
 
   private readonly tallies = toSignal(toObservable(computed(() => this.battle().id)).pipe(switchMap(id => this.league.tallies(id))), {initialValue: []});

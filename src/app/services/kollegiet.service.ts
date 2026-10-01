@@ -145,11 +145,8 @@ export class KollegietService {
     return batch.commit();
   }
 
-  report(target: string, text: string) {
-    return addDoc(collection(db, 'reports'), {kitchenId: this.kitchenId, target, text, createdAt: serverTimestamp()});
-  }
-
-  // The maker's side: reports from kitchens and from ops/league.js, with what they point at.
+  // The maker's side: technical notes from ops/league.js (a tally that was off, an achievement
+  // taken back), with what they point at.
   reports(): Observable<Report[]> {
     return watch<Report>(query(collection(db, 'reports'), orderBy('createdAt', 'desc'), limit(50))).pipe(
       switchMap(list => list.length ? Promise.all(list.map(async r => {
