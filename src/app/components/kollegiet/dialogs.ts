@@ -84,7 +84,7 @@ export interface EventDialogData {
         </mat-select>
       </mat-form-field>
       <mat-form-field>
-        <mat-label>{{ "KOL_TITLE" | translate }}</mat-label>
+        <mat-label>{{ "KOL_NAME" | translate }}</mat-label>
         <input matInput formControlName="title" [maxlength]="titleMax" autocomplete="off">
       </mat-form-field>
       <div class="when">
@@ -95,7 +95,7 @@ export interface EventDialogData {
           <mat-datepicker #picker />
         </mat-form-field>
         <mat-form-field>
-          <mat-label>{{ "FOOD_TIME" | translate }}</mat-label>
+          <mat-label>{{ "KOL_TIME" | translate }}</mat-label>
           <input matInput type="time" formControlName="time">
         </mat-form-field>
       </div>
@@ -182,7 +182,7 @@ export interface BattleDialogData {
         <mat-hint>{{ "KOL_METRIC_HINT_" + form.controls.metric.value | translate }}</mat-hint>
       </mat-form-field>
       <mat-form-field>
-        <mat-label>{{ "KOL_TITLE" | translate }}</mat-label>
+        <mat-label>{{ "KOL_NAME" | translate }}</mat-label>
         <input matInput formControlName="title" [maxlength]="titleMax" autocomplete="off" [placeholder]="'KOL_BATTLE_TITLE_HINT' | translate">
       </mat-form-field>
       <div class="when">
@@ -193,7 +193,7 @@ export interface BattleDialogData {
           <mat-datepicker #from />
         </mat-form-field>
         <mat-form-field>
-          <mat-label>{{ "FOOD_TIME" | translate }}</mat-label>
+          <mat-label>{{ "KOL_TIME" | translate }}</mat-label>
           <input matInput type="time" formControlName="fromTime">
         </mat-form-field>
       </div>
@@ -205,7 +205,7 @@ export interface BattleDialogData {
           <mat-datepicker #to />
         </mat-form-field>
         <mat-form-field>
-          <mat-label>{{ "FOOD_TIME" | translate }}</mat-label>
+          <mat-label>{{ "KOL_TIME" | translate }}</mat-label>
           <input matInput type="time" formControlName="toTime">
         </mat-form-field>
       </div>

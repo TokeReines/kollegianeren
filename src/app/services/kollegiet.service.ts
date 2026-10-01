@@ -4,7 +4,7 @@ import {
   Timestamp, addDoc, collection, deleteDoc, deleteField, doc, getDoc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where,
   writeBatch,
 } from 'firebase/firestore';
-import {Observable, distinctUntilChanged, map, shareReplay, switchMap} from 'rxjs';
+import {Observable, catchError, distinctUntilChanged, map, of, shareReplay, switchMap} from 'rxjs';
 import {
   Badge, KEvent, Kudos, Poll, Post, Profile, Rsvp, Standing, highfiveId, pollId,
 } from '../interfaces/kollegiet';
@@ -13,6 +13,7 @@ import {dayKey} from '../interfaces/meal';
 import {db, watch, watchDoc} from '../firebase';
 import {millis} from '../time';
 import {AuthService} from './auth.service';
+import {whileSignedIn} from './kitchen-data';
 
 const DAY = 864e5;
 // Posts from Kollegiet itself (results, achievements), written by ops/league.js.
@@ -47,7 +48,7 @@ export class KollegietService {
   private readonly auth = inject(AuthService);
 
   private shared<T>(build: () => Observable<T[]>): Observable<T[]> {
-    return this.auth.kitchenId$.pipe(switchMap(build), shareReplay({bufferSize: 1, refCount: true}));
+    return whileSignedIn(this.auth.membership$, build, [] as T[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
   }
 
   readonly kitchens$ = this.shared(() => watch<Kitchen>(collection(db, 'kitchens')));
@@ -61,10 +62,9 @@ export class KollegietService {
   readonly polls$ = this.shared(() => watch<Poll>(query(collection(db, 'polls'),
     where('closesAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('closesAt'), limit(20))));
   // When the kitchen last opened Kollegiet and Aktuelt: one document, one listener.
-  private readonly seenDoc$ = this.auth.kitchenId$.pipe(
-    switchMap(kid => watchDoc<{kollegietAt?: Timestamp, aktueltAt?: Timestamp}>(doc(db, 'seen', kid))),
-    shareReplay({bufferSize: 1, refCount: true}),
-  );
+  private readonly seenDoc$ = whileSignedIn(this.auth.membership$,
+    kid => watchDoc<{kollegietAt?: Timestamp, aktueltAt?: Timestamp}>(doc(db, 'seen', kid)), null,
+  ).pipe(shareReplay({bufferSize: 1, refCount: true}));
   readonly seen$ = this.seenDoc$.pipe(map(s => millis(s?.kollegietAt)), distinctUntilChanged(),
     shareReplay({bufferSize: 1, refCount: true}));
   readonly aktueltSeen$ = this.seenDoc$.pipe(map(s => millis(s?.aktueltAt)), distinctUntilChanged(),
@@ -72,7 +72,8 @@ export class KollegietService {
 
   // Posts since the kitchen last opened Kollegiet, for the menu badge: only the new ones are read.
   readonly newPosts$ = this.seen$.pipe(
-    switchMap(seen => watch<Post>(query(collection(db, 'posts'), where('createdAt', '>', Timestamp.fromMillis(seen)), orderBy('createdAt'), limit(20)))),
+    switchMap(seen => watch<Post>(query(collection(db, 'posts'), where('createdAt', '>', Timestamp.fromMillis(seen)), orderBy('createdAt'), limit(20)))
+      .pipe(catchError(() => of([] as Post[])))),
     shareReplay({bufferSize: 1, refCount: true}),
   );
 

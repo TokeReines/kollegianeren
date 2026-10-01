@@ -4,7 +4,7 @@ import {
   Timestamp, addDoc, arrayUnion, collection, deleteDoc, doc, increment, limit, orderBy, query, serverTimestamp, setDoc,
   updateDoc, where,
 } from 'firebase/firestore';
-import {Observable, combineLatest, interval, map, of, shareReplay, startWith, switchMap} from 'rxjs';
+import {Observable, catchError, combineLatest, interval, map, of, shareReplay, startWith, switchMap} from 'rxjs';
 import {
   Achievement, Battle, Metric, Tally, addTick, during, earnedAchievements, isPlantMeal, liveFor, saleUnits,
 } from '../interfaces/kollegiet';
@@ -13,6 +13,7 @@ import {Product} from '../interfaces/product';
 import {db, watch, watchDoc} from '../firebase';
 import {millis} from '../time';
 import {AuthService} from './auth.service';
+import {whileSignedIn} from './kitchen-data';
 
 const DAY = 864e5;
 
@@ -26,11 +27,10 @@ export class LeagueService {
   private readonly auth = inject(AuthService);
 
   // Battles that have not been over for more than two weeks: a handful of documents.
-  readonly battles$: Observable<Battle[]> = this.auth.kitchenId$.pipe(
-    switchMap(() => watch<Battle>(query(collection(db, 'battles'), where('to', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)),
-      orderBy('to'), limit(40)))),
-    shareReplay({bufferSize: 1, refCount: true}),
-  );
+  readonly battles$: Observable<Battle[]> = whileSignedIn(this.auth.membership$,
+    () => watch<Battle>(query(collection(db, 'battles'), where('to', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)),
+      orderBy('to'), limit(40))), [] as Battle[],
+  ).pipe(shareReplay({bufferSize: 1, refCount: true}));
   readonly battles = toSignal(this.battles$, {initialValue: []});
 
   // Ticks once a minute, so battles start and end on screen without a reload.
@@ -44,15 +44,16 @@ export class LeagueService {
   // The kitchen's own tallies in its live battles, for the ticks and the achievements. Keyed on
   // the battle ids, so the minute tick does not reopen the listeners.
   private readonly myLiveIds = computed(() => this.myLive().map(b => b.id).join(','));
-  private readonly myTallies = toSignal(combineLatest([toObservable(this.myLiveIds), this.auth.kitchenId$]).pipe(
-    switchMap(([ids, kid]) => ids
-      ? combineLatest(ids.split(',').map(id => watchDoc<Tally>(doc(db, 'battles', id, 'tally', kid)).pipe(map(t => [id, t ?? undefined] as const))))
+  private readonly myTallies = toSignal(combineLatest([toObservable(this.myLiveIds), this.auth.membership$]).pipe(
+    switchMap(([ids, m]) => ids && m
+      ? combineLatest(ids.split(',').map(id => watchDoc<Tally>(doc(db, 'battles', id, 'tally', m.kitchenId)).pipe(
+        map(t => [id, t ?? undefined] as const), catchError(() => of([id, undefined] as const)))))
       : of([])),
     map(entries => new Map<string, Tally | undefined>(entries)),
   ), {initialValue: new Map<string, Tally | undefined>()});
 
-  private readonly myAchievements = toSignal(this.auth.kitchenId$.pipe(
-    switchMap(kid => watch<Achievement>(collection(db, 'standings', kid, 'achievements'))),
+  private readonly myAchievements = toSignal(whileSignedIn(this.auth.membership$,
+    kid => watch<Achievement>(collection(db, 'standings', kid, 'achievements')), [] as Achievement[]).pipe(
     map(list => new Set(list.map(a => a.id))),
   ), {initialValue: new Set<string>()});
 
@@ -106,7 +107,13 @@ export class LeagueService {
   }
 
   private move(value: (b: Battle) => number, total: (b: Battle) => number = () => 0) {
-    for (const b of this.myLive()) {
+    let live: Battle[];
+    try {
+      live = this.myLive();
+    } catch {
+      return;
+    }
+    for (const b of live) {
       const v = value(b), t = total(b);
       if (v || t) {
         this.write(b, v, t).catch(() => undefined);

@@ -1,5 +1,5 @@
 <div class="screen">
-  <a mat-icon-button class="back" routerLink="/kollegiet" [queryParams]="{tab: 'battles'}" [attr.aria-label]="'BACK' | translate"><mat-icon>arrow_back</mat-icon></a>
+  <button mat-icon-button class="back" (click)="back()" [attr.aria-label]="'BACK' | translate"><mat-icon>arrow_back</mat-icon></button>
   @if (battle(); as b) {
     <header>
       <mat-icon class="metric">{{ icon() }}</mat-icon>

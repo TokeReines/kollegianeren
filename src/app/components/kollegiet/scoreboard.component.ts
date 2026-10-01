@@ -1,6 +1,7 @@
 import {Component, computed, effect, inject, signal, untracked} from '@angular/core';
+import {Location} from '@angular/common';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {interval, map, of, switchMap} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
@@ -16,13 +17,17 @@ import {liveBoard} from './live-board';
 // lead changing hands, and confetti when it is over.
 @Component({
   selector: 'app-scoreboard',
-  imports: [RouterLink, MatButtonModule, MatIconModule, TranslatePipe, KitchenChipComponent],
+  imports: [MatButtonModule, MatIconModule, TranslatePipe, KitchenChipComponent],
   templateUrl: './scoreboard.component.html',
   styleUrl: './scoreboard.component.scss',
 })
 export class ScoreboardComponent {
   private readonly league = inject(LeagueService);
   protected readonly kollegiet = inject(KollegietService);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  // Opened from a page in the app (the buy page's strip, Kollegiet), or straight from a link, as on a TV.
+  private readonly openedInApp = ((this.location.getState() as {navigationId?: number} | null)?.navigationId ?? 1) > 1;
   private readonly id = toSignal(inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id') ?? '')), {initialValue: ''});
 
   protected readonly battle = computed(() => this.league.battles().find(b => b.id === this.id()) ?? null);
@@ -79,5 +84,14 @@ export class ScoreboardComponent {
 
   protected width(score: number) {
     return `${Math.max(4, 100 * score / this.max())}%`;
+  }
+
+  // Back to the page it was opened from; to Kollegiet's battles when there is none.
+  protected back() {
+    if (this.openedInApp) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/kollegiet'], {queryParams: {tab: 'battles'}});
+    }
   }
 }

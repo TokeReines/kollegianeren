@@ -9,7 +9,7 @@ import {Kitchen} from '../interfaces/kitchen';
 import {Announcement, Message, Thread, newestFirst, toThreads} from '../interfaces/message';
 import {AuthService} from './auth.service';
 import {db, snapshotOptions, watch} from '../firebase';
-import {kitchenCollection, watchInKitchen} from './kitchen-data';
+import {kitchenCollection, watchInKitchen, whileSignedIn} from './kitchen-data';
 
 // Everything between the kitchens and the maker: announcements ("Aktuelt"), one message
 // thread per kitchen, and the maker's inbox. Admins are users with an admins/{uid} document,
@@ -29,9 +29,9 @@ export class MakerService {
   }
 
   // The newest posts on Aktuelt, for the notifications. Few and small, one shared listener.
-  readonly recentAnnouncements$: Observable<Announcement[]> = watchInKitchen<Announcement>(this.auth.kitchenId$,
-    () => query(collection(db, 'announcements'), where('createdAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
-      orderBy('createdAt', 'desc'), limit(10))).pipe(shareReplay({bufferSize: 1, refCount: true}));
+  readonly recentAnnouncements$: Observable<Announcement[]> = whileSignedIn(this.auth.membership$,
+    () => watch<Announcement>(query(collection(db, 'announcements'), where('createdAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
+      orderBy('createdAt', 'desc'), limit(10))), [] as Announcement[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
 
   postAnnouncement(title: string, body: string) {
     return addDoc(collection(db, 'announcements'), {title, body, createdAt: serverTimestamp()});
@@ -44,8 +44,8 @@ export class MakerService {
 
   // The maker's messages the kitchen has not read yet, newest first. One listener, shared by the
   // menu badge and the banner on the buy page.
-  readonly unreadByKitchen$: Observable<Message[]> = watchInKitchen<Message>(this.auth.kitchenId$,
-    kid => query(kitchenCollection(kid, 'messages'), where('seenByKitchen', '==', false))).pipe(
+  readonly unreadByKitchen$: Observable<Message[]> = whileSignedIn(this.auth.membership$,
+    kid => watch<Message>(query(kitchenCollection(kid, 'messages'), where('seenByKitchen', '==', false))), [] as Message[]).pipe(
     map(list => newestFirst(list)),
     shareReplay({bufferSize: 1, refCount: true}),
   );
