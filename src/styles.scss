@@ -172,6 +172,50 @@ app-root {
   }
 }
 
+// The bell's list: one row per notification, headline and a line of preview.
+.notice-menu {
+  min-width: 300px !important;
+  max-width: min(400px, calc(100vw - 32px)) !important;
+
+  .menu-label {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+    padding: 12px 16px 4px;
+  }
+
+  .notice-item.mat-mdc-menu-item {
+    min-height: 64px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+
+    > .mat-icon {
+      color: var(--mat-sys-tertiary);
+    }
+  }
+
+  .notice-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    b {
+      font: var(--mat-sys-title-small);
+    }
+  }
+
+  .notice-preview {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .notice-item .mat-mdc-menu-item-text {
+    min-width: 0;
+  }
+}
+
 // ---- Tables
 
 // Wide tables scroll sideways inside the page instead of squeezing their columns.
@@ -219,4 +263,59 @@ app-root {
   .mat-column-name {
     min-width: 160px;
   }
+}
+
+// Kollegiet: the battle or event a notification pointed at, for a moment.
+.flash {
+  animation: flash 2.4s ease-out;
+}
+
+@keyframes flash {
+  0%, 30% { box-shadow: 0 0 0 3px var(--mat-sys-tertiary); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+// Kitchen colours on Kollegiet (post-its): fixed hues, mixed into the surface where they are used.
+[data-kitchen-colour=purple] { --kitchen-hue: #7e57c2; }
+[data-kitchen-colour=blue] { --kitchen-hue: #1e88e5; }
+[data-kitchen-colour=teal] { --kitchen-hue: #00897b; }
+[data-kitchen-colour=green] { --kitchen-hue: #43a047; }
+[data-kitchen-colour=lime] { --kitchen-hue: #c0ca33; }
+[data-kitchen-colour=amber] { --kitchen-hue: #ffb300; }
+[data-kitchen-colour=orange] { --kitchen-hue: #fb8c00; }
+[data-kitchen-colour=red] { --kitchen-hue: #e53935; }
+[data-kitchen-colour=pink] { --kitchen-hue: #d81b60; }
+
+// Rich text in Forslag (components/aktuelt/rich-text.ts): written in the editor and shown with
+// innerHTML, so outside the components' scoped styles.
+.rich-text {
+  overflow-wrap: anywhere;
+
+  p, div {
+    margin: 0;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    margin: 10px 0;
+    border-radius: 12px;
+  }
+
+  // Shown (not in the editor): a tap opens it large (picture-viewer.ts).
+  &[apppictureviewer] img {
+    cursor: zoom-in;
+  }
+}
+
+// The picture viewer: the whole screen, dark behind the picture.
+.picture-panel .mat-mdc-dialog-surface {
+  background: rgb(0 0 0 / 0.92);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.picture-panel .mat-mdc-dialog-container {
+  --mat-dialog-container-shape: 0;
 }

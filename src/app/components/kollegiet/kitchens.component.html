@@ -1,0 +1,105 @@
+<div class="kitchens">
+  @if (selected(); as k) {
+    <mat-card appearance="outlined" class="profile">
+      <button mat-icon-button class="close" (click)="open(null)" [attr.aria-label]="'CLOSE' | translate"><mat-icon>close</mat-icon></button>
+      <div class="hero" style="--chip-size: 72px">
+        <app-kitchen-chip [kitchenId]="k.id" [iconOnly]="true" />
+        <div>
+          <h2>{{ k.name }}</h2>
+          @if (k.bio) {
+            <p class="bio">{{ k.bio }}</p>
+          }
+        </div>
+      </div>
+
+      <!-- The trophy shelf: big, it is fine to brag. Gold is for what was won. -->
+      <div class="shelf">
+        <div class="tile gold">
+          <span class="icon">🏆</span><b class="n">{{ summary().get(k.id)?.wins ?? 0 }}</b><span class="label">{{ "KOL_WINS" | translate }}</span>
+        </div>
+        @for (t of titles(); track t) {
+          <div class="tile gold"><span class="icon">🗳️</span><span class="label title">{{ t }}</span></div>
+        }
+        <div class="tile">
+          <span class="icon">🙌</span><b class="n">{{ summary().get(k.id)?.highfives ?? 0 }}</b>
+          <span class="label">{{ (summary().get(k.id)?.highfives === 1 ? "KOL_HIGHFIVE_ONE" : "KOL_HIGHFIVES") | translate }}</span>
+        </div>
+        @for (b of badgeList(k.id); track b[0]) {
+          <div class="tile badge">
+            <span class="icon">{{ "KOL_BADGE_ICON_" + b[0] | translate }}</span>@if (b[1] > 1) { <b class="n">× {{ b[1] }}</b> }
+            <span class="label">{{ "KOL_BADGE_" + b[0] | translate }}</span>
+          </div>
+        }
+        @for (a of achievements(); track a.id) {
+          <div class="tile achievement">
+            <span class="icon">{{ "KOL_ACH_ICON_" + a.id | translate }}</span><span class="label">{{ "KOL_ACH_" + a.id | translate }}</span>
+          </div>
+        }
+      </div>
+      <button mat-button class="guide-link" (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
+
+      @if (k.id !== me()) {
+        <div class="actions">
+          <button mat-flat-button [disabled]="highfivedToday()" (click)="highfive(k.id)">🙌 {{ (highfivedToday() ? "KOL_HIGHFIVE_DONE" : "KOL_HIGHFIVE") | translate }}</button>
+          <button mat-stroked-button (click)="badge(k.id)"><mat-icon>military_tech</mat-icon> {{ "KOL_BADGE_GIVE" | translate }}</button>
+          <button mat-stroked-button (click)="challenge(k.id)"><mat-icon>sports_kabaddi</mat-icon> {{ "KOL_CHALLENGE" | translate }}</button>
+        </div>
+      } @else if (canManage()) {
+        <div class="actions">
+          <button mat-stroked-button (click)="editProfile()"><mat-icon>edit</mat-icon> {{ "KOL_PROFILE_EDIT" | translate }}</button>
+        </div>
+      }
+
+      @if (selectedKudos().length) {
+        <h3>{{ "KOL_BADGES_WHY" | translate }}</h3>
+        @for (x of selectedKudos(); track x.id) {
+          <p class="why">{{ "KOL_BADGE_ICON_" + x.badge | translate }} <app-kitchen-chip [kitchenId]="x.from" />: "{{ x.reason }}"
+            <span class="when">{{ x.createdAt.toDate() | date:'d/M' }}</span></p>
+        }
+      }
+
+    </mat-card>
+  }
+
+  <div class="grid-head">
+    <button mat-button (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
+  </div>
+  <div class="grid">
+    @for (k of withProfile(); track k.id) {
+      @let s = summary().get(k.id);
+      <button type="button" class="card" [class.mine]="k.id === me()" [class.active]="k.id === selectedId()" (click)="open(k.id)">
+        <span class="top">
+          <span style="--chip-size: 48px"><app-kitchen-chip [kitchenId]="k.id" [iconOnly]="true" /></span>
+          <span class="text">
+            <b>{{ k.name }} @if (k.id === me()) { <span class="you">({{ "KOL_YOU" | translate }})</span> }</b>
+            <span class="bio">{{ k.bio || ("KOL_NO_BIO" | translate) }}</span>
+          </span>
+        </span>
+        <span class="pins">
+          <!-- The same as the profile's shelf, small: wins and poll titles (gold), high-fives, badges, achievements. -->
+          @if (s?.wins) { <span class="pin gold">🏆<b>{{ s!.wins }}</b></span> }
+          @if (titlesOf(k.id).length) { <span class="pin gold">🗳️<b>{{ titlesOf(k.id).length }}</b></span> }
+          @if (s?.highfives) { <span class="pin">🙌<b>{{ s!.highfives }}</b></span> }
+          @for (b of badgeList(k.id); track b[0]) {
+            <span class="pin">{{ "KOL_BADGE_ICON_" + b[0] | translate }}@if (b[1] > 1) {<b>{{ b[1] }}</b>}</span>
+          }
+          @for (a of achievementsOf(k.id); track a.id) {
+            <span class="pin achievement" [attr.aria-label]="'KOL_ACH_' + a.id | translate">{{ "KOL_ACH_ICON_" + a.id | translate }}</span>
+          }
+          @if (!s?.wins && !s?.highfives && !badgeList(k.id).length && !titlesOf(k.id).length && !achievementsOf(k.id).length) {
+            <span class="none">{{ "KOL_NOTHING_YET" | translate }}</span>
+          }
+        </span>
+      </button>
+    }
+  </div>
+
+  @if (withoutProfile().length) {
+    <h3 class="rest-title">{{ "KOL_NO_PROFILE_YET" | translate }}</h3>
+    <div class="rest">
+      @for (k of withoutProfile(); track k.id) {
+        <button type="button" class="rest-kitchen" (click)="open(k.id)">{{ k.name }}</button>
+      }
+    </div>
+  }
+</div>

@@ -8,8 +8,14 @@
   &.with-rail mat-sidenav {
     width: 88px;
     border-right: none;
+    overflow-x: hidden;
+
+    ::ng-deep .mat-drawer-inner-container {
+      overflow-x: hidden;
+    }
   }
 }
+
 
 // Material 3 navigation rail: an icon in a pill-shaped indicator with a short label under it.
 .rail {
@@ -70,5 +76,18 @@
     .label {
       font-weight: 700;
     }
+  }
+}
+
+// Short screens (a 1024x600 tablet): the rail tighter, so it fits without scrolling.
+@media (max-height: 760px) {
+  .rail {
+    gap: 0;
+    padding: 4px 0;
+  }
+
+  .rail-item {
+    gap: 2px;
+    padding: 1px 0 2px;
   }
 }

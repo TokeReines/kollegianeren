@@ -2,7 +2,8 @@ import {Injectable, computed} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {Observable, filter, map, of, shareReplay, distinctUntilChanged, switchMap} from 'rxjs';
 import {
-  User, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut,
+  EmailAuthProvider, User, createUserWithEmailAndPassword, onAuthStateChanged, reauthenticateWithCredential,
+  sendPasswordResetEmail, signInWithEmailAndPassword, signOut, verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import {doc, onSnapshot} from 'firebase/firestore';
 import {auth, db} from '../firebase';
@@ -62,6 +63,18 @@ export class AuthService {
 
   sendResetEmail(email: string) {
     return sendPasswordResetEmail(auth, email);
+  }
+
+  // Hands the login over to someone else, e.g. when the owner moves out: Firebase mails a link
+  // to the new address and switches the login's email once it is opened. Kitchen, role and data
+  // stay; the successor sets a new password with "forgot password". Needs the current password.
+  async handOver(password: string, newEmail: string) {
+    const user = auth.currentUser;
+    if (!user?.email) {
+      throw new Error('Not signed in');
+    }
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+    await verifyBeforeUpdateEmail(user, newEmail);
   }
 
   logout() {

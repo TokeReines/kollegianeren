@@ -6,7 +6,9 @@ import {Purchase} from '../interfaces/purchase';
 import {User} from '../interfaces/user';
 import {db} from '../firebase';
 import {AuthService} from './auth.service';
+import {LeagueService} from './league.service';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
+import {millis} from '../time';
 
 // Units per product, for the stock and sold counters.
 type Units = {product: Pick<Product, 'id' | 'stock'>, units: number}[];
@@ -14,6 +16,7 @@ type Units = {product: Pick<Product, 'id' | 'stock'>, units: number}[];
 @Injectable({providedIn: 'root'})
 export class PurchaseService {
   private readonly auth = inject(AuthService);
+  private readonly league = inject(LeagueService);
 
   private purchases() {
     return kitchenCollection(this.auth.currentKitchenId, 'purchases');
@@ -43,14 +46,18 @@ export class PurchaseService {
         userId: buyer.id, userName: buyer.name, userRoom: buyer.room, timestamp: serverTimestamp(),
       });
     }
+    const sale = batch.commit();
     this.moveCounters([{product, units: amount * buyers.length}], -1).catch(() => undefined);
-    return batch.commit();
+    // Live battles the kitchen is in: its own, separate write after the sale (docs/kollegiet.md, Battles).
+    this.league.onSale(product, amount * buyers.length);
+    return sale;
   }
 
   // Takes a purchase back (a wrong tap, or a correction by the treasurer), and gives its units
   // back to the stock and sold counters. Tablets may do this for a minute after buying.
-  async remove(purchase: Purchase, product: Pick<Product, 'id' | 'stock'> | undefined): Promise<void> {
+  async remove(purchase: Purchase, product: Pick<Product, 'id' | 'stock' | 'category'> | undefined): Promise<void> {
     await deleteDoc(doc(this.purchases(), purchase.id));
+    this.league.onSale(product ?? {category: null}, -(Number(purchase.amount) || 0), millis(purchase.timestamp));
     if (product) {
       await this.moveCounters([{product, units: Number(purchase.amount) || 0}], 1).catch(() => undefined);
     }

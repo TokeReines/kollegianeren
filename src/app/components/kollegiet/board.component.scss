@@ -1,0 +1,679 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 16px;
+}
+
+// The title of the sticker row, with its action on the right.
+.zone-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--mat-sys-outline-variant);
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font: var(--mat-sys-title-medium);
+
+    mat-icon {
+      color: var(--mat-sys-tertiary);
+    }
+  }
+}
+
+.give .short {
+  display: none;
+}
+
+// High-fives, badges and wins: stickers, loud, newest first, in one row that scrolls.
+.stickers {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  // A new sticker comes in on the left, and stays in view.
+  overflow-anchor: none;
+  padding: 10px 4px 12px;
+  scrollbar-width: thin;
+
+  .empty {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.sticker {
+  flex: none;
+  width: 210px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 10px 14px;
+  border-radius: 16px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  box-shadow: var(--mat-sys-level1);
+  --chip-size: 30px;
+
+  &.badge {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  // A battle or a vote won: gold, for the winners, the same in light and dark.
+  &.gold {
+    background: linear-gradient(135deg, #ffe082, #ffb300);
+    color: #3b2600;
+  }
+
+  .sticker-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    min-height: 48px;
+  }
+
+  .big {
+    font-size: 44px;
+    line-height: 1;
+  }
+
+  .to {
+    font: var(--mat-sys-title-medium);
+  }
+
+  .winners {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .what {
+    font: var(--mat-sys-title-small);
+  }
+
+  .reason {
+    font: var(--mat-sys-body-medium);
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  q.reason {
+    font-style: italic;
+  }
+
+  footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: var(--mat-sys-body-small);
+    --chip-size: 22px;
+
+    .when {
+      margin-left: auto;
+      opacity: 0.8;
+    }
+  }
+
+  .more {
+    margin: -8px -8px 0 0;
+    color: inherit;
+  }
+}
+
+// The wall: papers of one size, in a fixed order. Space follows how many there are of each.
+.wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  // At least this tall; a row grows to its tallest paper, so nothing is cut off.
+  grid-auto-rows: minmax(240px, auto);
+  // Small post-its fill the gaps a tall or big one leaves.
+  grid-auto-flow: row dense;
+  gap: 20px 16px;
+  padding: 4px 4px 16px;
+}
+
+.paper {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 20px 14px 12px;
+  overflow: hidden;
+  border: none;
+  border-radius: 3px;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  text-align: left;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.16), 0 8px 14px -8px rgb(0 0 0 / 0.3);
+
+  // Lines are clamped, never squeezed.
+  > * {
+    flex: none;
+  }
+
+  // The pin.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ff8a80, #c62828);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  }
+}
+
+// Always first: a blank note to write on, and the other things to put up.
+.write {
+  background: var(--mat-sys-surface-container);
+  border: 2px dashed var(--mat-sys-outline);
+  box-shadow: none;
+  padding: 12px;
+
+  &::before {
+    display: none;
+  }
+
+  .write-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--mat-sys-primary);
+    font: var(--mat-sys-title-medium);
+    cursor: pointer;
+
+    mat-icon {
+      width: 36px;
+      height: 36px;
+      font-size: 36px;
+    }
+  }
+
+  // Between the note and the two buttons: either one.
+  .or {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+    }
+  }
+
+  .write-more {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// An event: a flyer with a coloured top and a big date.
+.flyer {
+  border-top: 6px solid var(--mat-sys-primary);
+  padding-top: 16px;
+
+  &::before {
+    background: radial-gradient(circle at 35% 35%, #82b1ff, #1565c0);
+    top: 2px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .kind {
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  .date {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+
+    b {
+      font: var(--mat-sys-title-medium);
+      color: var(--mat-sys-primary);
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+
+    span {
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .more {
+    flex: none;
+    margin: -8px -8px 0 0;
+  }
+
+  .title {
+    font: var(--mat-sys-title-small);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .by {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+    --chip-size: 22px;
+  }
+
+  .text {
+    margin: 0;
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .foot {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+// A live call going on now: a red edge and a pulsing dot, at the front of the flyers.
+.flyer.live {
+  border-top-color: var(--mat-sys-error);
+
+  .now {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--mat-sys-error);
+  }
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mat-sys-error);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
+
+// Yes, maybe, no: three small segments, so they fit on the flyer.
+.rsvp {
+  display: flex;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 18px;
+  overflow: hidden;
+
+  button {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0 4px;
+    border: none;
+    background: none;
+    color: var(--mat-sys-on-surface);
+    font: var(--mat-sys-label-large);
+    cursor: pointer;
+
+    & + button {
+      border-left: 1px solid var(--mat-sys-outline);
+    }
+
+    &.on {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+  }
+}
+
+.more-events {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-title-small);
+  cursor: pointer;
+  box-shadow: none;
+  border: 2px dashed var(--mat-sys-outline-variant);
+
+  &::before {
+    display: none;
+  }
+}
+
+// An open vote: a ballot with a dashed edge.
+.ballot {
+  border: 2px dashed var(--mat-sys-tertiary);
+
+  &::before {
+    background: radial-gradient(circle at 35% 35%, #ffe57f, #ff8f00);
+  }
+}
+
+// A post: a post-it in the writer's colour. Tap to open it with its replies. A conversation is
+// two papers tall with its newest replies; a big one is two wide as well.
+.note {
+  background: color-mix(in srgb, var(--kitchen-hue, #ffd54f) 32%, var(--mat-sys-surface));
+  cursor: pointer;
+
+  &.tall {
+    grid-row: span 2;
+  }
+
+  &.big {
+    grid-column: span 2;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    --chip-size: 24px;
+
+    .when {
+      margin-left: auto;
+      flex: none;
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  .note-text {
+    margin: 0;
+    font: var(--mat-sys-body-large);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .latest {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed color-mix(in srgb, var(--mat-sys-on-surface) 25%, transparent);
+    --chip-size: 22px;
+  }
+
+  .earlier {
+    font: var(--mat-sys-label-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .latest-reply {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font: var(--mat-sys-body-medium);
+
+    span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  // Who is talking, and how much: always at the bottom.
+  .talk {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 8px;
+    --chip-size: 26px;
+
+    b {
+      font: var(--mat-sys-label-large);
+      white-space: nowrap;
+    }
+  }
+
+  .faces {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+
+    app-kitchen-chip + app-kitchen-chip {
+      margin-left: -8px;
+    }
+  }
+
+  .more-faces {
+    margin-left: 4px;
+    font: var(--mat-sys-label-medium);
+  }
+
+  .fresh {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    padding: 0 8px;
+    border-radius: 10px;
+    background: var(--mat-sys-error);
+    color: var(--mat-sys-on-error);
+    font: var(--mat-sys-label-small);
+    line-height: 18px;
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--mat-sys-primary);
+  }
+}
+
+.empty-note {
+  grid-column: span 2;
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container-low);
+  box-shadow: none;
+
+  &::before {
+    display: none;
+  }
+}
+
+.arrow {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// The dialogs: writing a note, and a post-it opened.
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  // Room for the first field's label, inside the scrolling content.
+  > mat-form-field:first-child {
+    margin-top: 8px;
+  }
+}
+
+.thread {
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .when {
+    margin-left: auto;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-small);
+  }
+
+  .text {
+    margin: 8px 0 4px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .big-text {
+    font: var(--mat-sys-body-large);
+  }
+
+  .reply {
+    margin-left: 16px;
+    padding-left: 12px;
+    border-left: 2px solid var(--mat-sys-outline-variant);
+  }
+
+  .reply-composer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .grow {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// Phones: two papers a row.
+@media (max-width: 600px) {
+  .wall {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(200px, auto);
+    gap: 14px 10px;
+  }
+
+  .paper {
+    padding: 18px 10px 10px;
+  }
+
+  .note .note-text {
+    font: var(--mat-sys-body-medium);
+    -webkit-line-clamp: 7;
+  }
+
+  .sticker {
+    width: 180px;
+  }
+
+  .give {
+    .long { display: none; }
+    .short { display: inline; }
+  }
+}
+
+// Arriving while the board is open (Material 3 emphasized decelerate). A sticker slides in at the
+// start of the row and pushes the others along; a paper is pinned up: it drops in a little,
+// settles, then its pin goes in.
+$enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+
+.stickers {
+  --sticker-step: 224px;
+}
+
+// They start once the dialog that made them has faded, so they are not played behind it.
+.sticker.arrive {
+  animation: sticker-in 600ms 200ms $enter both;
+}
+
+@keyframes sticker-in {
+  from { margin-left: calc(-1 * var(--sticker-step)); opacity: 0; transform: scale(0.6); }
+  50% { opacity: 1; }
+  to { margin-left: 0; opacity: 1; transform: none; }
+}
+
+.paper.arrive {
+  animation: pin-up 550ms 300ms $enter both;
+
+  &::before {
+    animation: pin-in 300ms 700ms $enter both;
+  }
+}
+
+@keyframes pin-up {
+  from { opacity: 0; transform: translateY(-18px) scale(0.94); box-shadow: 0 18px 28px -10px rgb(0 0 0 / 0.35); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pin-in {
+  from { transform: scale(2.2); opacity: 0; }
+  70% { transform: scale(0.9); opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (max-width: 600px) {
+  .stickers {
+    --sticker-step: 194px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker.arrive,
+  .paper.arrive,
+  .paper.arrive::before {
+    animation: none;
+  }
+}

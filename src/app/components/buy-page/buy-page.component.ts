@@ -1,7 +1,8 @@
-import {Component, DestroyRef, computed, inject, signal, untracked} from '@angular/core';
+import {Component, DestroyRef, computed, effect, inject, signal, untracked} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {DecimalPipe} from '@angular/common';
+import {DatePipe, DecimalPipe} from '@angular/common';
 import {map} from 'rxjs';
+import {RouterLink} from '@angular/router';
 import {MatBadgeModule} from '@angular/material/badge';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {MatButtonModule} from '@angular/material/button';
@@ -18,6 +19,13 @@ import {ProductPictureComponent} from '../shared/product-picture.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 import {describeSale, productOrder} from './basket';
+import {KEvent, isInvited, isLiveNow} from '../../interfaces/kollegiet';
+import {AuthService} from '../../services/auth.service';
+import {KollegietService} from '../../services/kollegiet.service';
+import {LeagueService} from '../../services/league.service';
+import {BattleTickerComponent} from '../kollegiet/battle-ticker.component';
+import {KitchenChipComponent} from '../kollegiet/kitchen-chip.component';
+import {WhoIsComingComponent} from '../kollegiet/who-is-coming.component';
 
 // How long the confirmation of a purchase stays in the bar.
 const CONFIRM_MS = 4000;
@@ -27,7 +35,8 @@ const CONFIRM_MS = 4000;
 // long-press takes one off. A wrong purchase is taken back under "Seneste køb".
 @Component({
   selector: 'app-buy-page',
-  imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent],
+  imports: [DatePipe, DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent,
+    BattleTickerComponent, KitchenChipComponent, RouterLink, WhoIsComingComponent],
   templateUrl: './buy-page.component.html',
   styleUrl: './buy-page.component.scss',
 })
@@ -64,8 +73,48 @@ export class BuyPageComponent {
   protected readonly confirmation = signal('');
   private timer: ReturnType<typeof setTimeout> | undefined;
 
+  // Battles the kitchen is in right now (Kollegiet): one strip above the grid, for the one that
+  // ends first, and a link to the rest. Only to look at: gym taps are on the Battles tab.
+  private readonly league = inject(LeagueService);
+  protected readonly liveBattles = this.league.myLive;
+  // Live calls ("Kom over nu", Kollegiet): other kitchens' to this one, and this kitchen's own.
+  // The events listener is already open for the strip and the bell.
+  private readonly kollegiet = inject(KollegietService);
+  private readonly auth = inject(AuthService);
+  private readonly allEvents = toSignal(this.kollegiet.events$, {initialValue: []});
+  protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
+  // The time itself too, not only the app's minute clock: an ended call goes at once.
+  private readonly liveNow = computed(() => this.allEvents().filter(e => isLiveNow(e, Math.max(this.league.now(), Date.now()))));
+  // One bar, however many calls: the newest one not said no to, and how many more there are.
+  private readonly liveCalls = computed(() => this.liveNow()
+    .filter(e => isInvited(e, this.me()) && e.rsvp?.[this.me()] !== 'no')
+    .sort((a, b) => b.startsAt.toMillis() - a.startsAt.toMillis()));
+  protected readonly liveCall = computed(() => this.liveCalls()[0] ?? null);
+  protected readonly moreCalls = computed(() => Math.max(0, this.liveCalls().length - 1));
+  protected readonly myLiveCall = computed(() => this.liveNow().find(e => e.kitchenId === this.me()) ?? null);
+
+  // "Ikke nu": answers no, so the bar goes and the party sees it.
+  protected notNow(e: KEvent) {
+    this.kollegiet.rsvp(e, 'no').catch(this.notify.error);
+  }
+
+  protected come(e: KEvent) {
+    this.kollegiet.rsvp(e, e.rsvp?.[this.me()] === 'yes' ? null : 'yes').catch(this.notify.error);
+  }
+
+  protected readonly featuredBattle = computed(() =>
+    [...this.liveBattles()].sort((a, b) => a.to.toMillis() - b.to.toMillis())[0] ?? null);
+
+
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    // A live achievement claimed by this tablet: say it.
+    effect(() => {
+      const earned = this.league.justEarned();
+      if (earned) {
+        untracked(() => this.notify.info(`${this.i18n.t('KOL_ACH_ICON_' + earned.code)} ${this.i18n.t('KOL_ACH_UNLOCKED')}: ${this.i18n.t('KOL_ACH_' + earned.code)}`, 6000));
+      }
+    });
   }
 
   protected amountOf(product: Product): number {

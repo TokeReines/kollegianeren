@@ -7,14 +7,15 @@ import {MatIconModule} from '@angular/material/icon';
 import {AppUpdateService} from '../../services/app-update.service';
 import {AuthService} from '../../services/auth.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {MessageBannerComponent} from '../shared/message-banner.component';
 import {NavigationComponent} from '../navigation/navigation.component';
 import {ToolbarComponent} from '../toolbar/toolbar.component';
 import {openReveal, revealWanted} from '../reveal-dialog/reveal-dialog.component';
 
-// The signed-in shell: offline banner, top app bar, navigation and the page.
+// The signed-in shell: offline banner, top app bar, a new message from Toke, navigation and the page.
 @Component({
   selector: 'app-home',
-  imports: [MatIconModule, TranslatePipe, NavigationComponent, ToolbarComponent],
+  imports: [MatIconModule, TranslatePipe, MessageBannerComponent, NavigationComponent, ToolbarComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })

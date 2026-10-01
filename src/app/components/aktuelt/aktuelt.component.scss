@@ -26,16 +26,36 @@
 }
 
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
+h1 {
+  margin: 0 0 8px;
+}
+
+mat-tab-group {
+  --mat-tab-container-height: 52px;
+}
+
+.news {
+  padding-top: 16px;
 }
 
 .announcement,
 .post-form {
   margin-bottom: 16px;
+}
+
+.announcement.new {
+  outline: 2px solid var(--mat-sys-tertiary);
+}
+
+.new-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  vertical-align: middle;
+  background: var(--mat-sys-tertiary);
+  color: var(--mat-sys-on-tertiary);
+  font: var(--mat-sys-label-medium);
 }
 
 .body {

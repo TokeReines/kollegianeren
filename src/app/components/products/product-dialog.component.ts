@@ -5,7 +5,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {EditableProduct, Product} from '../../interfaces/product';
+import {MatSelectModule} from '@angular/material/select';
+import {EditableProduct, PRODUCT_CATEGORIES, Product, ProductCategory} from '../../interfaces/product';
 import {TranslatePipe} from '../../translate.pipe';
 import {ImagePickerComponent} from '../shared/image-picker.component';
 
@@ -13,7 +14,7 @@ import {ImagePickerComponent} from '../shared/image-picker.component';
 // Stock is not among them: it changes with every sale and has its own buttons.
 @Component({
   selector: 'app-product-dialog',
-  imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
+  imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     TranslatePipe, ImagePickerComponent],
   template: `
     <h2 mat-dialog-title>{{ (product ? "PRODUCTS_EDIT_PRODUCT" : "PRODUCTS_NEW") | translate }}</h2>
@@ -34,6 +35,16 @@ import {ImagePickerComponent} from '../shared/image-picker.component';
           <span matTextSuffix>kr.</span>
         </mat-form-field>
       </div>
+      <mat-form-field>
+        <mat-label>{{ "PRODUCTS_CATEGORY" | translate }}</mat-label>
+        <mat-select formControlName="category">
+          <mat-option [value]="null">{{ "PRODUCTS_CATEGORY_NONE" | translate }}</mat-option>
+          @for (c of categories; track c) {
+            <mat-option [value]="c">{{ "CATEGORY_" + c | translate }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>{{ "PRODUCTS_CATEGORY_HINT" | translate }}</mat-hint>
+      </mat-form-field>
       <app-image-picker [(image)]="image" [(clId)]="clId" />
       <mat-checkbox formControlName="active">{{ "PRODUCTS_FRIDGE" | translate }}</mat-checkbox>
     </form>
@@ -55,7 +66,9 @@ export class ProductDialogComponent {
     price: [this.product?.price ?? (null as number | null), [Validators.required, Validators.min(0)]],
     retailPrice: [this.product?.retailPrice ?? (null as number | null), [Validators.min(0)]],
     active: [this.product?.active ?? true],
+    category: [this.product?.category ?? (null as ProductCategory | null)],
   });
+  protected readonly categories = PRODUCT_CATEGORIES;
   protected readonly image = signal(this.product?.image ?? '');
   protected readonly clId = signal(this.product?.clId ?? '');
 
@@ -63,10 +76,10 @@ export class ProductDialogComponent {
     if (this.form.invalid) {
       return;
     }
-    const {name, price, retailPrice, active} = this.form.getRawValue();
+    const {name, price, retailPrice, active, category} = this.form.getRawValue();
     this.ref.close({
       name: name.trim(), price: Number(price), retailPrice: retailPrice === null ? null : Number(retailPrice),
-      active, image: this.image(), clId: this.clId(),
+      active, category, image: this.image(), clId: this.clId(),
     });
   }
 }

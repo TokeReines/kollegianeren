@@ -39,6 +39,24 @@ mat-card {
   line-height: 1.5;
 }
 
+.sent {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  line-height: 1.5;
+
+  mat-icon {
+    flex: none;
+    color: var(--mat-sys-tertiary);
+  }
+}
+
 .small {
   font-size: 13px;
+}
+
+.export {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }

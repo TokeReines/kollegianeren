@@ -4,7 +4,37 @@
     <mat-icon>{{ sidenav.narrow() || sidenav.railHidden() ? 'menu' : 'menu_open' }}</mat-icon>
   </button>
   <span class="title" [class.kiosk]="sidenav.railHidden()">{{ kitchenName() }}</span>
+  @if (worn(); as w) {
+    <!-- The badges the kitchen has been given, worn next to its name. New ones wiggle. -->
+    <a class="worn" routerLink="/kollegiet" [queryParams]="{tab: 'kitchens', kitchen: w.kitchenId}"
+       [matTooltip]="w.label" [attr.aria-label]="w.label">
+      @for (b of w.badges; track b.badge) {
+        <span class="pin" [class.fresh]="b.fresh">{{ "KOL_BADGE_ICON_" + b.badge | translate }}@if (b.count > 1) {<small>{{ b.count }}</small>}</span>
+      }
+      @if (w.highfives) {
+        <span class="pin" [class.fresh]="w.freshHighfive">🙌<small>{{ w.highfives }}</small></span>
+      }
+    </a>
+  }
   <span class="fill-space"></span>
+  @if (notices().length) {
+    <button class="message-button" mat-icon-button [matMenuTriggerFor]="noticeMenu"
+       [attr.aria-label]="'NOTICES' | translate" [matTooltip]="'NOTICES' | translate" [matBadge]="notices().length">
+      <mat-icon>notifications_active</mat-icon>
+    </button>
+  }
+  <mat-menu #noticeMenu="matMenu" xPosition="before" class="notice-menu">
+    <div class="menu-label">{{ "NOTICES" | translate }}</div>
+    @for (n of notices(); track $index) {
+      <a mat-menu-item class="notice-item" [routerLink]="n.link.path" [fragment]="n.link.fragment" [queryParams]="n.link.query">
+        <mat-icon>{{ notice.icon(n) }}</mat-icon>
+        <span class="notice-text">
+          <b>{{ notice.title(n) }}</b>
+          @if (n.text) { <span class="notice-preview">{{ n.text }}</span> }
+        </span>
+      </a>
+    }
+  </mat-menu>
   <button class="account-button" mat-icon-button [matMenuTriggerFor]="account" [attr.aria-label]="'ACCOUNT' | translate" [matTooltip]="'ACCOUNT' | translate">
     <img src="assets/img/navbar_logo.jpg" alt="" />
   </button>
@@ -17,6 +47,13 @@
       </div>
     </div>
     <mat-divider />
+    @if (worn()?.kitchenId ?? myKitchen(); as kid) {
+      <a mat-menu-item routerLink="/kollegiet" [queryParams]="{tab: 'kitchens', kitchen: kid}">
+        <mat-icon>storefront</mat-icon>
+        <span>{{ "ACCOUNT_KITCHEN" | translate }}</span>
+      </a>
+      <mat-divider />
+    }
     <div class="menu-label">{{ "THEME_TITLE" | translate }}</div>
     @for (m of themes; track m.mode) {
       <button mat-menu-item role="menuitemradio" [attr.aria-checked]="theme.mode() === m.mode" (click)="theme.mode.set(m.mode)">

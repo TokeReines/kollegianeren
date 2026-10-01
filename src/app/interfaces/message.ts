@@ -27,6 +27,10 @@ export interface Thread {
   lastAt: number;
 }
 
+export function newestFirst(messages: Message[]): Message[] {
+  return [...messages].sort((a, b) => millis(b.createdAt) - millis(a.createdAt));
+}
+
 // Messages from every kitchen grouped into one thread per kitchen, newest activity first.
 export function toThreads(kitchens: Kitchen[], messages: Message[]): Thread[] {
   const names = new Map(kitchens.map(k => [k.id, k.name]));

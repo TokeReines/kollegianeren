@@ -1,6 +1,7 @@
 import {CollectionReference, Query, collection} from 'firebase/firestore';
-import {Observable, switchMap} from 'rxjs';
+import {Observable, catchError, of, switchMap} from 'rxjs';
 import {db, watch} from '../firebase';
+import {Membership} from './auth.service';
 
 export type KitchenCollection = 'products' | 'users' | 'purchases' | 'messages' | 'members' | 'meals';
 
@@ -13,3 +14,11 @@ export function watchInKitchen<T>(kitchenId$: Observable<string>, build: (kitche
   return kitchenId$.pipe(switchMap(kid => watch<T>(build(kid))));
 }
 
+// For listeners that app-wide services keep open (notifications, Kollegiet, battles): opened again
+// at every sign-in and closed at sign-out. A listener the server refuses, as one does while a login
+// signs out, gives `fallback` instead of an error, which would otherwise stick to the service and
+// break every page that reads it until a reload.
+export function whileSignedIn<T>(membership$: Observable<Membership | null>, build: (kitchenId: string) => Observable<T>,
+                                 fallback: T): Observable<T> {
+  return membership$.pipe(switchMap(m => m ? build(m.kitchenId).pipe(catchError(() => of(fallback))) : of(fallback)));
+}

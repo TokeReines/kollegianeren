@@ -84,10 +84,20 @@ On top of the anonymised prod copy (`restore.js --anonymise` into the emulator):
 - `node seed-emulator.js`: the maker login and the launch post.
 - `node seed-demo.js`: extra logins with roles, invites, stock, moved-out residents, a week of purchases, maker threads, a small referred kitchen.
 - `node seed-avatars.js`: illustrated avatars (DiceBear Notionists, CC0, generated locally) for every other resident.
+- `node seed-kollegiet.js`: Kollegiet (docs/kollegiet.md): a test case for every feature around Ny2: a message from Toke, profiles, product categories, posts, events, a live beer battle, a challenge, kudos and polls. Then `node league.js --emulator --daily` settles the ended battle and the closed poll.
+- `node seed-kollegiet.js --project dev --kitchen <id>`: the same on dev around one kitchen, against four test kitchens (`test-rival-1` to `4`, "Test Ny2" and so on) with their own products, residents and purchases. Nothing is written to the home kitchen's purchases or residents. `--remove` takes it all out again. Refuses prod.
 
 Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 
 - `node seed-test-kitchen.js --project dev --catalogue <file>`: a test kitchen on dev (products with pictures, 23 residents, two weeks of purchases) and two 14-day invite links, owner and tablet. The tester registers with their own email and password. Refuses prod.
+
+## Kollegiet
+
+Live battle tallies are moved by the kitchens' own tablets; these settle and check (docs/kollegiet.md).
+
+- `node league.js --project dev [--daily] [--dry] [--state <file>]`: settles battles that ended (recomputed from the real purchases, meals and taps; a tally that is off is reported to the maker's inbox, a live achievement it does not reach is taken back) and polls that closed (the secret ballots counted). Results are pinned on the board by the app, not posted. `--daily` also writes standings and the achievements that need history. With `--state` it keeps how far it has got: an idle run is 2 reads and the daily one about 30. Without, it looks through the last two weeks and counts everything again. A result is claimed with a precondition, so two runs at once never settle the same battle twice. `--max-reads` (6000) caps the recounting per run. `--emulator --loop 60` runs it locally every minute.
+- `cron/tokeserver-league.sh`: the same on prod with `--state ~/kollegianeren-backups/league-prod.json`, every 15 minutes, with `--daily` at 08:20 UTC. Not scheduled yet.
+- `node suggest-categories.js --project dev [--write]`: proposes beer, soda, water and so on from product names, for products without a category. Writing to prod needs `--i-really-mean-prod`.
 
 ## Removing kitchens and logins
 

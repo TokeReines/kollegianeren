@@ -1,0 +1,160 @@
+<p class="intro">{{ "FORSLAG_INTRO" | translate }}</p>
+
+<div class="cards">
+  <!-- The maker's: always first, a blank card to write a new one on (like the board's note). -->
+  @if (isAdmin()) {
+    <button type="button" class="card new" (click)="edit(null)">
+      <mat-icon>add_circle</mat-icon>
+      <span>{{ "FORSLAG_NEW" | translate }}</span>
+    </button>
+  }
+  @for (p of sorted(); track p.id) {
+    <article class="card" [id]="'proposal-' + p.id" [attr.data-status]="p.status" role="button" tabindex="0"
+             (click)="open(p)" (keydown.enter)="open(p)">
+      @if (cover(p); as src) {
+        <img class="cover" [src]="src" alt="" loading="lazy">
+      }
+      <div class="card-body">
+        <span class="status">{{ "FORSLAG_STATUS_" + p.status | translate }}</span>
+        <h3>{{ p.title }}</h3>
+        <p class="body">{{ textOf(p.body) }}</p>
+        <footer>
+          <button type="button" class="vote" [class.on]="voted(p)" [disabled]="!me()" [attr.aria-pressed]="voted(p)"
+                  [attr.aria-label]="'FORSLAG_WANT' | translate" (click)="$event.stopPropagation(); vote(p)">👍 {{ votes(p) }}</button>
+          @if (votes(p)) {
+            <span class="faces" [attr.aria-label]="'FORSLAG_WHO_WANTS' | translate">
+              @for (k of voters(p).slice(0, 5); track k) { <app-kitchen-chip [kitchenId]="k" [iconOnly]="true" /> }
+              @if (votes(p) > 5) { <span class="more">+{{ votes(p) - 5 }}</span> }
+            </span>
+          }
+          <span class="count">💬 {{ counts()[p.id] ?? 0 }}</span>
+          <span class="when">{{ p.createdAt.toDate() | date:'d/M' }}</span>
+        </footer>
+      </div>
+    </article>
+  } @empty {
+    <p class="empty">{{ "FORSLAG_EMPTY" | translate }}</p>
+  }
+</div>
+
+<!-- A proposal opened: all of it, its pictures, and the talk about it. -->
+<ng-template #detailDialog>
+  @if (openProposal(); as p) {
+    <div mat-dialog-content class="detail">
+      <div class="detail-head">
+        <span class="status" [attr.data-status]="p.status">{{ "FORSLAG_STATUS_" + p.status | translate }}</span>
+        <span class="when">{{ p.createdAt.toDate() | date:'d. MMMM y' }}</span>
+        @if (isAdmin()) {
+          <mat-form-field class="status-select" subscriptSizing="dynamic">
+            <mat-label>{{ "FORSLAG_STATUS" | translate }}</mat-label>
+            <mat-select [value]="p.status" (selectionChange)="setStatus(p, $event.value)">
+              @for (s of statuses; track s) {
+                <mat-option [value]="s">{{ "FORSLAG_STATUS_" + s | translate }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button mat-icon-button (click)="edit(p)" [attr.aria-label]="'EDIT' | translate"><mat-icon>edit</mat-icon></button>
+        }
+      </div>
+      <h2>{{ p.title }}</h2>
+      <div class="text rich-text" appPictureViewer [innerHTML]="asHtml(p.body)"></div>
+      @if (p.images.length) {
+        <div class="gallery" appPictureViewer>
+          @for (i of p.images; track i) {
+            <img [src]="img(i, 'c_limit,w_900,q_auto')" alt="" loading="lazy">
+          }
+        </div>
+      }
+      <div class="want">
+        <button mat-stroked-button [class.on]="voted(p)" [disabled]="!me()" (click)="vote(p)">
+          👍 {{ (voted(p) ? "FORSLAG_WANTED" : "FORSLAG_WANT") | translate }}
+        </button>
+        <span class="hint">{{ votes(p) }} {{ (votes(p) === 1 ? "FORSLAG_KITCHEN_WANTS" : "FORSLAG_KITCHENS_WANT") | translate }}</span>
+      </div>
+      @if (votes(p)) {
+        <div class="voters" [attr.aria-label]="'FORSLAG_WHO_WANTS' | translate">
+          @for (k of voters(p); track k) { <app-kitchen-chip [kitchenId]="k" /> }
+        </div>
+      }
+
+      <h3>{{ "FORSLAG_COMMENTS" | translate }} ({{ comments().length }})</h3>
+      @for (c of comments(); track c.id) {
+        <div class="comment" [class.from-maker]="c.from === maker">
+          <header>
+            @if (c.from === maker) {
+              <span class="maker-name"><mat-icon>engineering</mat-icon> Toke</span>
+            } @else {
+              <app-kitchen-chip [kitchenId]="c.from" />
+            }
+            <span class="when">{{ c.createdAt.toDate() | date:'d/M HH:mm' }}</span>
+            @if (mayRemove(c)) {
+              <button mat-icon-button class="remove" (click)="remove(p, c)" [attr.aria-label]="'FORSLAG_REMOVE' | translate">
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </header>
+          @if (c.from === maker) {
+            <div class="text rich-text" appPictureViewer [innerHTML]="asHtml(c.text)"></div>
+          } @else {
+            <p class="text">{{ c.text }}</p>
+          }
+          @if (c.images.length) {
+            <div class="gallery small" appPictureViewer>
+              @for (i of c.images; track i) {
+                <img [src]="img(i, 'c_limit,w_600,q_auto')" alt="" loading="lazy">
+              }
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="hint">{{ "FORSLAG_NO_COMMENTS" | translate }}</p>
+      }
+
+      @if (me() || isAdmin()) {
+        <div class="composer">
+          @if (isAdmin()) {
+            <!-- A fresh editor after each answer: empty again. -->
+            @for (k of [answerKey()]; track k) {
+              <app-rich-editor [(value)]="text" [(uploading)]="uploading" [label]="'FORSLAG_ANSWER' | translate" [minHeight]="90" />
+            }
+          } @else {
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>{{ "FORSLAG_COMMENT" | translate }}</mat-label>
+              <textarea matInput rows="3" [(ngModel)]="text" [maxlength]="commentMax"></textarea>
+            </mat-form-field>
+          }
+          <div class="composer-actions">
+            <button mat-flat-button [disabled]="!hasText(text()) || uploading()" (click)="send(p)">{{ "MAKER_SEND" | translate }}</button>
+          </div>
+        </div>
+      }
+    </div>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close type="button">{{ "CLOSE" | translate }}</button>
+    </mat-dialog-actions>
+  }
+</ng-template>
+
+<!-- The maker's form: a new proposal, or changing one. -->
+<ng-template #editDialog>
+  <h2 mat-dialog-title>{{ (editing() ? "FORSLAG_EDIT" : "FORSLAG_NEW") | translate }}</h2>
+  <div mat-dialog-content class="edit">
+    <mat-form-field class="first">
+      <mat-label>{{ "FORSLAG_TITLE" | translate }}</mat-label>
+      <input matInput [(ngModel)]="form.title" [maxlength]="titleMax" autocomplete="off">
+    </mat-form-field>
+    <app-rich-editor [(value)]="form.body" [(uploading)]="uploading" [label]="'FORSLAG_BODY' | translate" [minHeight]="220" />
+    <mat-form-field>
+      <mat-label>{{ "FORSLAG_STATUS" | translate }}</mat-label>
+      <mat-select [(ngModel)]="form.status">
+        @for (s of statuses; track s) {
+          <mat-option [value]="s">{{ "FORSLAG_STATUS_" + s | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
+    <button mat-flat-button [disabled]="!form.title().trim() || uploading()" (click)="save()">{{ "SAVE" | translate }}</button>
+  </mat-dialog-actions>
+</ng-template>

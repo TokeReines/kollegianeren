@@ -1,3 +1,44 @@
+<!-- A live call from another kitchen ("Kom over nu"): seen when buying, answered with one tap.
+     The kitchen that called sees who is coming. -->
+@if (liveCall(); as e) {
+  @let coming = e.rsvp[me()] === 'yes';
+  <div class="live-call" role="status">
+    <span class="dot" aria-hidden="true"></span>
+    <app-kitchen-chip [kitchenId]="e.kitchenId" />
+    <span class="what"><b>{{ e.title }}</b>
+      <span class="hint">@if (e.place) { {{ e.place }} · }{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span></span>
+    <app-who-is-coming [event]="e" />
+    @if (moreCalls()) {
+      <a mat-button routerLink="/kollegiet" [queryParams]="{tab: 'board'}">+{{ moreCalls() }} {{ "KOL_LIVE_MORE" | translate }}</a>
+    }
+    <button mat-flat-button [class.coming]="coming" (click)="come(e)">
+      @if (coming) { <mat-icon>check</mat-icon> {{ "KOL_LIVE_YOU_COME" | translate }} } @else { {{ "KOL_RSVP_yes" | translate }} }
+    </button>
+    @if (!coming) {
+      <button mat-icon-button (click)="notNow(e)" [attr.aria-label]="'NOTICE_DISMISS' | translate"><mat-icon>close</mat-icon></button>
+    }
+  </div>
+}
+@if (myLiveCall(); as e) {
+  <div class="live-call mine" role="status">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="what"><b>📣 {{ "KOL_LIVE_YOURS" | translate }}: {{ e.title }}</b>
+      <span class="hint">{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span></span>
+    <app-who-is-coming [event]="e" [host]="true" />
+  </div>
+}
+
+@if (featuredBattle(); as b) {
+  <div class="battles">
+    <app-battle-ticker [battle]="b" />
+    @if (liveBattles().length > 1) {
+      <a mat-stroked-button class="more-battles" routerLink="/kollegiet" [queryParams]="{tab: 'battles'}">
+        +{{ liveBattles().length - 1 }} {{ (liveBattles().length === 2 ? "KOL_MORE_BATTLE" : "KOL_MORE_BATTLES") | translate }}
+      </a>
+    }
+  </div>
+}
+
 <div class="panes">
   <section class="pane" [attr.aria-label]="'BUY_PRODUCTS' | translate">
     <header>

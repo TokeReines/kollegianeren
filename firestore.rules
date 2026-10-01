@@ -94,6 +94,63 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Forslag on Aktuelt (docs/aktuelt.md): the maker's feature proposals. Only the maker writes
+    // them; every kitchen reads them, gives its own thumbs up and comments (text, 30 seconds apart,
+    // like posts); the maker answers, with pictures.
+    match /proposals/{id} {
+      function validProposal(d) {
+        return d.keys().hasOnly(['title', 'body', 'images', 'status', 'votes', 'createdAt', 'updatedAt', 'statusAt'])
+          && d.keys().hasAll(['title', 'body', 'images', 'status', 'votes', 'createdAt', 'updatedAt', 'statusAt'])
+          && d.title is string && d.title.size() >= 1 && d.title.size() <= 120
+          && d.body is string && d.body.size() <= 20000
+          && d.images is list && d.images.size() <= 6
+          && d.status in ['open', 'planned', 'done', 'dropped']
+          && d.votes is map && d.createdAt is timestamp && d.statusAt is timestamp
+          && d.updatedAt == request.time;
+      }
+      allow read: if signedIn();
+      allow create: if isAdmin() && validProposal(request.resource.data)
+        && request.resource.data.votes.size() == 0
+        && request.resource.data.createdAt == request.time && request.resource.data.statusAt == request.time;
+      allow update: if isAdmin() && validProposal(request.resource.data)
+        && request.resource.data.votes == resource.data.votes
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (request.resource.data.statusAt == resource.data.statusAt || request.resource.data.statusAt == request.time);
+      // A kitchen's thumbs up: its own only, on or off.
+      allow update: if kitchenLogin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes'])
+        && request.resource.data.votes.diff(resource.data.votes).affectedKeys().hasOnly([myKitchen()])
+        && request.resource.data.votes.get(myKitchen(), true) == true;
+      allow delete: if isAdmin();
+
+      match /comments/{cid} {
+        function validComment(d) {
+          return d.keys().hasOnly(['from', 'text', 'images', 'createdAt']) && d.keys().hasAll(['from', 'text', 'images', 'createdAt'])
+            && d.text is string && d.text.size() >= 1 && d.text.size() <= 20000
+            && d.images is list && d.createdAt == request.time;
+        }
+        allow read: if signedIn();
+        allow create: if validComment(request.resource.data)
+          && exists(/databases/$(database)/documents/proposals/$(id))
+          && ((isAdmin() && request.resource.data.from == 'maker' && request.resource.data.images.size() <= 4)
+            || (kitchenLogin() && request.resource.data.from == myKitchen() && request.resource.data.images.size() == 0
+              && request.resource.data.text.size() <= 1000 && postRateOk(myKitchen(), cid)));
+        // The maker's always; a kitchen's own for five minutes, like a post.
+        allow delete: if isAdmin()
+          || (resource.data.from != 'maker' && isMember(resource.data.from) && request.time < resource.data.createdAt + duration.value(5, 'm'));
+      }
+    }
+
+    // Every kitchen's achievements at once, for the cards on Køkkener (standings/{kid}/achievements).
+    match /{path=**}/achievements/{code} {
+      allow read: if kitchenLogin() || isAdmin();
+    }
+
+    // Forslag counts every proposal's comments live, with one listener on them all.
+    match /{path=**}/comments/{cid} {
+      allow read: if signedIn();
+    }
+
     // The maker's inbox reads every kitchen's thread at once.
     match /{path=**}/messages/{id} {
       allow read: if isAdmin();
@@ -165,6 +222,368 @@ service cloud.firestore {
             && existsAfter(/databases/$(database)/documents/kitchens/$(request.resource.data.kitchenId))));
       allow update: if false;
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner(resource.data.kitchenId));
+    }
+
+    // Kollegiet (docs/kollegiet.md): the kitchens together. Every kitchen login takes part, the
+    // tablet included; resident links sign in anonymously and do not. Everything is per kitchen:
+    // a document a kitchen writes names it (kitchenId, from), and it must be the writer's own.
+    function kitchenLogin() {
+      return signedIn() && request.auth.token.get('firebase', {}).get('sign_in_provider', '') != 'anonymous'
+        && exists(/databases/$(database)/documents/kitchens/$(myKitchen())) && isMember(myKitchen());
+    }
+    function kitchenExists(kid) {
+      return exists(/databases/$(database)/documents/kitchens/$(kid));
+    }
+    function text(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+    // A tablet's local day ('YYYY-MM-DD') that can be today in Denmark: rules only know UTC, and
+    // Danish time is one or two hours ahead.
+    function isToday(day) {
+      let p = day.split('-');
+      let start = timestamp.date(int(p[0]), int(p[1]), int(p[2]));
+      return request.time > start - duration.value(3, 'h') && request.time < start + duration.value(1, 'd');
+    }
+    // A local month ('YYYY-MM') that a moment falls in, in Danish time (UTC + 1 or 2 hours).
+    function isMonthOf(month, t) {
+      let p = month.split('-');
+      let local = t + duration.value(2, 'h');
+      return (int(p[0]) == t.year() && int(p[1]) == t.month()) || (int(p[0]) == local.year() && int(p[1]) == local.month());
+    }
+    function validInvited(v) {
+      return v == 'all' || (v is list && v.size() >= 1 && v.size() <= 40);
+    }
+    // Hiding: the author kitchen's managers, or the maker.
+    function moderates(kid) {
+      return canManage(kid) || isAdmin();
+    }
+    // Taking back your own, like a sale: for five minutes.
+    function ownRecent(kid) {
+      return isMember(kid) && request.time < resource.data.createdAt + duration.value(5, 'm');
+    }
+    function seenPath(kid) {
+      return /databases/$(database)/documents/seen/$(kid);
+    }
+    // One post per 30 seconds per kitchen: the post moves seen/{kid}.lastPostAt in the same batch,
+    // and names itself there (lastPostId), so a batch of several posts cannot pass it together.
+    function postRateOk(kid, postId) {
+      return getAfter(seenPath(kid)).data.get('lastPostAt', null) == request.time
+        && getAfter(seenPath(kid)).data.get('lastPostId', null) == postId
+        && (!exists(seenPath(kid))
+          || get(seenPath(kid)).data.get('lastPostAt', timestamp.value(0)) < request.time - duration.value(30, 's'));
+    }
+    function battlePath(id) {
+      return /databases/$(database)/documents/battles/$(id);
+    }
+    // Live achievements and what earns them (LIVE_ACHIEVEMENTS in interfaces/kollegiet.ts).
+    function earned(code, battleId, kid) {
+      let need = {'firstBattle': ['', 1], 'drinks100': ['drinks', 100], 'beer50': ['beer', 50], 'beer100': ['beer', 100],
+        'diners50': ['mealDiners', 50], 'gym25': ['gym', 25]};
+      let b = get(battlePath(battleId)).data;
+      return code in need && kid in b.participants && (need[code][0] == '' || need[code][0] == b.metric)
+        && get(/databases/$(database)/documents/battles/$(battleId)/tally/$(kid)).data.value >= need[code][1];
+    }
+
+    // What other kitchens see next to the name.
+    match /profiles/{kid} {
+      allow read: if kitchenLogin() || isAdmin();
+      allow create, update: if canManage(kid) && kitchenLogin()
+        && request.resource.data.keys().hasOnly(['emoji', 'colour', 'bio', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['emoji', 'colour', 'bio', 'updatedAt'])
+        && text(request.resource.data.emoji, 1, 16)
+        && request.resource.data.colour in ['purple', 'blue', 'teal', 'green', 'lime', 'amber', 'orange', 'red', 'pink', 'grey']
+        && text(request.resource.data.bio, 0, 200)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // When the kitchen last opened Kollegiet and Aktuelt, and its last post (the rate limit).
+    match /seen/{kid} {
+      function stamp(field) {
+        return request.resource.data.get(field, null) == null
+          || request.resource.data.get(field, null) == request.time
+          || (resource != null && request.resource.data.get(field, null) == resource.data.get(field, null));
+      }
+      allow read: if isMember(kid);
+      allow create, update: if isMember(kid) && kitchenLogin()
+        && request.resource.data.keys().hasOnly(['kollegietAt', 'lastPostAt', 'lastPostId', 'aktueltAt'])
+        && request.resource.data.get('lastPostId', '') is string
+        && stamp('kollegietAt') && stamp('lastPostAt') && stamp('aktueltAt');
+      allow delete: if false;
+    }
+
+    // The board. Replies are posts with parentId; `to` makes it a post for one kitchen.
+    match /posts/{id} {
+      allow read: if kitchenLogin() || isAdmin();
+      allow create: if kitchenLogin()
+        && request.resource.data.keys().hasOnly(['kitchenId', 'text', 'to', 'parentId', 'createdAt'])
+        && request.resource.data.keys().hasAll(['kitchenId', 'text', 'to', 'parentId', 'createdAt'])
+        && request.resource.data.kitchenId == myKitchen()
+        && text(request.resource.data.text, 1, 1000)
+        && (request.resource.data.to == null
+          || (request.resource.data.to is string && request.resource.data.to != myKitchen() && kitchenExists(request.resource.data.to)))
+        && (request.resource.data.parentId == null
+          || exists(/databases/$(database)/documents/posts/$(request.resource.data.parentId)))
+        && request.resource.data.createdAt == request.time
+        && postRateOk(myKitchen(), id);
+      allow update: if false;
+      allow delete: if ownRecent(resource.data.kitchenId) || moderates(resource.data.kitchenId);
+    }
+
+    // Events: for everyone or a few kitchens. The author kitchen edits; every other kitchen
+    // only answers, in its own key of rsvp.
+    match /events/{id} {
+      function validEvent(d) {
+        return d.keys().hasOnly(['kitchenId', 'kind', 'title', 'text', 'place', 'startsAt', 'endsAt', 'invited', 'rsvp', 'createdAt'])
+          && d.keys().hasAll(['kitchenId', 'kind', 'title', 'text', 'place', 'startsAt', 'endsAt', 'invited', 'rsvp', 'createdAt'])
+          && d.kind in ['openKitchen', 'party', 'dinner', 'other', 'live']
+          // A live call ("Kom over nu") is the kitchen's one document live_{kid}: one at a time.
+          // To everyone, three hours at most.
+          && ((d.kind == 'live') == (id == 'live_' + d.kitchenId))
+          && (d.kind != 'live' || (d.invited == 'all' && d.endsAt <= d.startsAt + duration.value(3, 'h')))
+          && text(d.title, 1, 80) && text(d.text, 0, 1000) && text(d.place, 0, 80)
+          && d.startsAt is timestamp && d.endsAt is timestamp
+          && d.endsAt > d.startsAt && d.endsAt <= d.startsAt + duration.value(7, 'd')
+          && validInvited(d.invited) && d.rsvp is map;
+      }
+      allow read: if kitchenLogin() || isAdmin();
+      allow create: if kitchenLogin() && validEvent(request.resource.data)
+        && request.resource.data.kitchenId == myKitchen()
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.rsvp.size() == 0
+        && request.resource.data.startsAt > request.time - duration.value(1, 'h')
+        // A live call starts when it is sent.
+        && (request.resource.data.kind != 'live' || request.resource.data.startsAt < request.time + duration.value(5, 'm'));
+      // A new live call over the kitchen's last one, once that has ended: one at a time. Starts
+      // now, with no answers.
+      function newLiveCall(d) {
+        return resource.data.kind == 'live' && isMember(resource.data.kitchenId)
+          && d.kitchenId == resource.data.kitchenId
+          && d.createdAt == request.time && d.rsvp.size() == 0
+          && d.startsAt > request.time - duration.value(1, 'h') && d.startsAt < request.time + duration.value(5, 'm')
+          && resource.data.endsAt <= request.time;
+      }
+      // The kitchen may change its call's text or end it early, not move or lengthen it.
+      function sameLiveCall(d) {
+        return resource.data.kind != 'live'
+          || (d.startsAt == resource.data.startsAt && d.endsAt <= resource.data.endsAt);
+      }
+      allow update: if kitchenLogin() && validEvent(request.resource.data) && newLiveCall(request.resource.data);
+      allow update: if kitchenLogin() && validEvent(request.resource.data)
+        && request.resource.data.kitchenId == resource.data.kitchenId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && ((isMember(resource.data.kitchenId) && request.resource.data.rsvp == resource.data.rsvp && sameLiveCall(request.resource.data))
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rsvp'])
+            && (resource.data.invited == 'all' || myKitchen() in resource.data.invited)
+            && request.resource.data.rsvp.diff(resource.data.rsvp).affectedKeys().hasOnly([myKitchen()])
+            && request.resource.data.rsvp.get(myKitchen(), 'no') in ['yes', 'maybe', 'no']));
+      // Not a live call: it ends instead (and stays the kitchen's one call document).
+      allow delete: if resource.data.kind != 'live' && (isMember(resource.data.kitchenId) || moderates(resource.data.kitchenId));
+    }
+
+    // Battles: kitchen against kitchen. The challenger creates it with itself as the only
+    // participant; another invited kitchen may add itself while it is not over. The result is
+    // written by ops/league.js.
+    function battleSlotsPath(kid) {
+      return /databases/$(database)/documents/battleSlots/$(kid);
+    }
+    // The battles a kitchen has started that are on or coming: three places (s1, s2, s3). A place
+    // takes a new battle, made in the same batch, only once the one it held has ended (or was
+    // called off).
+    match /battleSlots/{kid} {
+      function takes(slot) {
+        let after = request.resource.data.get(slot, null);
+        let before = resource == null ? null : resource.data.get(slot, null);
+        return after == before || (after is string
+          && getAfter(battlePath(after)).data.kitchenId == kid
+          && getAfter(battlePath(after)).data.createdAt == request.time
+          && (before == null || !exists(battlePath(before)) || get(battlePath(before)).data.to <= request.time));
+      }
+      allow read: if isMember(kid);
+      allow create, update: if kitchenLogin() && kid == myKitchen()
+        && request.resource.data.keys().hasOnly(['s1', 's2', 's3'])
+        && takes('s1') && takes('s2') && takes('s3');
+      allow delete: if false;
+    }
+
+    match /battles/{id} {
+      function validBattle(d) {
+        return d.keys().hasOnly(['kitchenId', 'title', 'metric', 'from', 'to', 'invited', 'participants', 'createdAt'])
+          && d.keys().hasAll(['kitchenId', 'title', 'metric', 'from', 'to', 'invited', 'participants', 'createdAt'])
+          && text(d.title, 1, 80)
+          && d.metric in ['drinks', 'beer', 'mealDiners', 'plantMeals', 'gym']
+          && d.from is timestamp && d.to is timestamp
+          && d.to > d.from && d.to <= d.from + duration.value(31, 'd')
+          && validInvited(d.invited) && d.participants is list && d.participants.size() <= 41;
+      }
+      allow read: if kitchenLogin() || isAdmin();
+      allow create: if kitchenLogin() && validBattle(request.resource.data)
+        && request.resource.data.kitchenId == myKitchen()
+        && request.resource.data.participants == [myKitchen()]
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.from > request.time - duration.value(5, 'm')
+        // It takes one of the kitchen's three places in the same batch.
+        && id in [getAfter(battleSlotsPath(myKitchen())).data.get('s1', ''), getAfter(battleSlotsPath(myKitchen())).data.get('s2', ''),
+          getAfter(battleSlotsPath(myKitchen())).data.get('s3', '')];
+      allow update: if kitchenLogin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
+        && !(myKitchen() in resource.data.participants)
+        && request.resource.data.participants == resource.data.participants.concat([myKitchen()])
+        && (resource.data.invited == 'all' || myKitchen() in resource.data.invited)
+        && request.time < resource.data.to;
+      // The challenger may call it off before it starts; the maker any time.
+      allow delete: if (isMember(resource.data.kitchenId) && request.time < resource.data.from) || isAdmin();
+
+      // A kitchen's live score. Its own tablets move it while the battle is live: trusted like the
+      // sold counter, checked by ops/league.js at the end. Gym is a tap counter: one at a time.
+      match /tally/{kid} {
+        function delta(field) {
+          return request.resource.data.get(field, 0) - (resource == null ? 0 : resource.data.get(field, 0));
+        }
+        allow read: if kitchenLogin() || isAdmin();
+        allow create, update: if isMember(kid) && kitchenLogin()
+          && kid in get(battlePath(id)).data.participants
+          && request.time >= get(battlePath(id)).data.from && request.time < get(battlePath(id)).data.to
+          && request.resource.data.keys().hasOnly(['value', 'total', 'ticks', 'updatedAt'])
+          && request.resource.data.value is int && request.resource.data.value >= 0
+          && request.resource.data.get('total', 0) is int && request.resource.data.get('total', 0) >= 0
+          && request.resource.data.ticks is list && request.resource.data.ticks.size() <= 30
+          && request.resource.data.updatedAt == request.time
+          && (get(battlePath(id)).data.metric == 'gym'
+            ? delta('value') >= -1 && delta('value') <= 1 && delta('total') == 0
+              && (resource == null || request.time > resource.data.updatedAt + duration.value(5, 's'))
+            : delta('value') >= -400 && delta('value') <= 400 && delta('total') >= -400 && delta('total') <= 400);
+        allow delete: if false;
+      }
+    }
+
+    // High-fives (one per kitchen pair a day: the id) and badges from one kitchen to another.
+    match /kudos/{id} {
+      allow read: if kitchenLogin() || isAdmin();
+      allow create: if kitchenLogin()
+        && request.resource.data.keys().hasOnly(['from', 'to', 'kind', 'badge', 'reason', 'createdAt'])
+        && request.resource.data.keys().hasAll(['from', 'to', 'kind', 'badge', 'reason', 'createdAt'])
+        && request.resource.data.from == myKitchen()
+        && request.resource.data.to is string && request.resource.data.to != myKitchen() && kitchenExists(request.resource.data.to)
+        && request.resource.data.createdAt == request.time
+        && text(request.resource.data.reason, 0, 140)
+        && ((request.resource.data.kind == 'highfive' && request.resource.data.badge == null
+            && id.matches(myKitchen() + '_' + request.resource.data.to + '_[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            && isToday(id.split('_')[id.split('_').size() - 1]))
+          || (request.resource.data.kind == 'badge' && request.resource.data.reason.size() >= 1
+            && request.resource.data.badge in ['goodFriends', 'bestParty', 'bestFood', 'helpful', 'recycling', 'plantBased', 'cosy', 'loud']));
+      allow update: if false;
+      allow delete: if ownRecent(resource.data.from) || moderates(resource.data.from);
+    }
+
+    // Votes started by a kitchen, one a month (the id). The ballots are secret: a kitchen may
+    // read only its own, nobody else's, the maker's neither. ops/league.js counts them.
+    function pollSlotsPath(kid) {
+      return /databases/$(database)/documents/pollSlots/$(kid);
+    }
+    function pollPath(id) {
+      return /databases/$(database)/documents/polls/$(id);
+    }
+    // A kitchen's two places for polls (s1, s2: poll ids). A place takes a new poll, made in the
+    // same batch, only once the poll it held has closed (or is gone).
+    match /pollSlots/{kid} {
+      function takes(slot) {
+        let after = request.resource.data.get(slot, null);
+        let before = resource == null ? null : resource.data.get(slot, null);
+        return after == before || (after is string
+          && getAfter(pollPath(after)).data.kitchenId == kid
+          && getAfter(pollPath(after)).data.createdAt == request.time
+          && (before == null || !exists(pollPath(before)) || get(pollPath(before)).data.closesAt <= request.time));
+      }
+      allow read: if isMember(kid);
+      allow create, update: if kitchenLogin() && kid == myKitchen()
+        && request.resource.data.keys().hasOnly(['s1', 's2'])
+        && takes('s1') && takes('s2');
+      allow delete: if false;
+    }
+
+    match /polls/{id} {
+      allow read: if kitchenLogin() || isAdmin();
+      allow create: if kitchenLogin()
+        && request.resource.data.keys().hasOnly(['kitchenId', 'title', 'opensAt', 'closesAt', 'createdAt'])
+        && request.resource.data.keys().hasAll(['kitchenId', 'title', 'opensAt', 'closesAt', 'createdAt'])
+        && request.resource.data.kitchenId == myKitchen()
+        // Two open at a time: a new poll takes one of the kitchen's two places in the same batch.
+        && (getAfter(pollSlotsPath(myKitchen())).data.get('s1', '') == id
+          || getAfter(pollSlotsPath(myKitchen())).data.get('s2', '') == id)
+        && text(request.resource.data.title, 1, 80)
+        && request.resource.data.opensAt is timestamp && request.resource.data.closesAt is timestamp
+        && request.resource.data.opensAt > request.time - duration.value(1, 'h')
+        && request.resource.data.opensAt < request.time + duration.value(31, 'd')
+        && request.resource.data.closesAt >= request.resource.data.opensAt + duration.value(1, 'd')
+        && request.resource.data.closesAt <= request.resource.data.opensAt + duration.value(31, 'd')
+        && request.resource.data.createdAt == request.time;
+      // The kitchen ends its own poll early: closed now (it is counted), or cancelled as well (no
+      // result). Not after it has closed. Either frees its place for a new one.
+      allow update: if kitchenLogin() && isMember(resource.data.kitchenId)
+        && request.time < resource.data.closesAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closesAt', 'cancelled'])
+        && request.resource.data.closesAt == request.time
+        && request.resource.data.get('cancelled', true) == true;
+      allow delete: if (isMember(resource.data.kitchenId) && request.time < resource.data.opensAt) || moderates(resource.data.kitchenId);
+
+      match /ballots/{kid} {
+        function poll() {
+          return get(/databases/$(database)/documents/polls/$(id)).data;
+        }
+        allow get: if kid == myKitchen() && kitchenLogin();
+        allow list: if false;
+        allow create, update: if kid == myKitchen() && kitchenLogin()
+          && request.resource.data.keys().hasOnly(['choice', 'at'])
+          && request.resource.data.choice is string && request.resource.data.choice != kid
+          && kitchenExists(request.resource.data.choice)
+          && request.resource.data.at == request.time
+          && request.time >= poll().opensAt && request.time < poll().closesAt && !poll().get('cancelled', false);
+        allow delete: if kid == myKitchen() && kitchenLogin() && request.time < poll().closesAt;
+      }
+    }
+
+    // A kitchen's trophy shelf, written by ops/league.js. Live achievements are claimed by the
+    // kitchen's own tablet, and only if its tally has earned them.
+    match /standings/{kid} {
+      allow read: if kitchenLogin() || isAdmin();
+      allow write: if false;
+
+      match /achievements/{code} {
+        allow read: if kitchenLogin() || isAdmin();
+        allow create: if isMember(kid) && kitchenLogin()
+          && request.resource.data.keys().hasOnly(['battle', 'at'])
+          && request.resource.data.at == request.time
+          && request.resource.data.battle is string
+          && earned(code, request.resource.data.battle, kid);
+        allow update, delete: if false;
+      }
+    }
+
+    // Technical notes to the maker from ops/league.js (admin SDK): a tally that was off, an
+    // achievement taken back. Kitchens do not report each other; they look after their own posts.
+    match /reports/{id} {
+      allow read, delete: if isAdmin();
+      allow create, update: if false;
+    }
+
+    // Hidden things are moved here (and deleted where they were), for the maker. The id is
+    // {collection}_{original id}; the copy must be the original, by the kitchen it names, and the
+    // original deleted in the same batch, so nobody can plant a made-up copy.
+    match /hidden/{id} {
+      function original() {
+        return /databases/$(database)/documents/$(request.resource.data.collection)/$(id.replace('^' + request.resource.data.collection + '_', ''));
+      }
+      allow read, delete: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['collection', 'kitchenId', 'data', 'hiddenAt'])
+        && request.resource.data.collection in ['posts', 'events', 'kudos', 'battles', 'polls']
+        && id.matches(request.resource.data.collection + '_.+')
+        && request.resource.data.kitchenId is string && moderates(request.resource.data.kitchenId)
+        && exists(original()) && !existsAfter(original())
+        && request.resource.data.data == get(original()).data
+        && request.resource.data.kitchenId == get(original()).data.get('kitchenId', get(original()).data.get('from', ''))
+        && request.resource.data.hiddenAt == request.time;
+      allow update: if false;
     }
 
     match /kitchens/{kid} {
