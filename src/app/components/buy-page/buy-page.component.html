@@ -1,5 +1,9 @@
-@for (b of liveBattles(); track b.id) {
-  <app-battle-ticker [battle]="b" />
+@if (liveBattles().length) {
+  <div class="battles">
+    @for (b of liveBattles(); track b.id) {
+      <app-battle-ticker [battle]="b" />
+    }
+  </div>
 }
 
 <div class="panes">

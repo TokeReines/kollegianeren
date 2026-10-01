@@ -180,6 +180,19 @@ service cloud.firestore {
     function text(v, min, max) {
       return v is string && v.size() >= min && v.size() <= max;
     }
+    // A tablet's local day ('YYYY-MM-DD') that can be today in Denmark: rules only know UTC, and
+    // Danish time is one or two hours ahead.
+    function isToday(day) {
+      let p = day.split('-');
+      let start = timestamp.date(int(p[0]), int(p[1]), int(p[2]));
+      return request.time > start - duration.value(3, 'h') && request.time < start + duration.value(1, 'd');
+    }
+    // A local month ('YYYY-MM') that a moment falls in, in Danish time (UTC + 1 or 2 hours).
+    function isMonthOf(month, t) {
+      let p = month.split('-');
+      let local = t + duration.value(2, 'h');
+      return (int(p[0]) == t.year() && int(p[1]) == t.month()) || (int(p[0]) == local.year() && int(p[1]) == local.month());
+    }
     function validInvited(v) {
       return v == 'all' || (v is list && v.size() >= 1 && v.size() <= 40);
     }
@@ -194,9 +207,11 @@ service cloud.firestore {
     function seenPath(kid) {
       return /databases/$(database)/documents/seen/$(kid);
     }
-    // One post per 30 seconds per kitchen: the post moves seen/{kid}.lastPostAt in the same batch.
-    function postRateOk(kid) {
+    // One post per 30 seconds per kitchen: the post moves seen/{kid}.lastPostAt in the same batch,
+    // and names itself there (lastPostId), so a batch of several posts cannot pass it together.
+    function postRateOk(kid, postId) {
       return getAfter(seenPath(kid)).data.get('lastPostAt', null) == request.time
+        && getAfter(seenPath(kid)).data.get('lastPostId', null) == postId
         && (!exists(seenPath(kid))
           || get(seenPath(kid)).data.get('lastPostAt', timestamp.value(0)) < request.time - duration.value(30, 's'));
     }
@@ -234,7 +249,8 @@ service cloud.firestore {
       }
       allow read: if isMember(kid);
       allow create, update: if isMember(kid) && kitchenLogin()
-        && request.resource.data.keys().hasOnly(['kollegietAt', 'lastPostAt', 'aktueltAt'])
+        && request.resource.data.keys().hasOnly(['kollegietAt', 'lastPostAt', 'lastPostId', 'aktueltAt'])
+        && request.resource.data.get('lastPostId', '') is string
         && stamp('kollegietAt') && stamp('lastPostAt') && stamp('aktueltAt');
       allow delete: if false;
     }
@@ -252,7 +268,7 @@ service cloud.firestore {
         && (request.resource.data.parentId == null
           || exists(/databases/$(database)/documents/posts/$(request.resource.data.parentId)))
         && request.resource.data.createdAt == request.time
-        && postRateOk(myKitchen());
+        && postRateOk(myKitchen(), id);
       allow update: if false;
       allow delete: if ownRecent(resource.data.kitchenId) || moderates(resource.data.kitchenId);
     }
@@ -280,6 +296,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt
         && ((isMember(resource.data.kitchenId) && request.resource.data.rsvp == resource.data.rsvp)
           || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rsvp'])
+            && (resource.data.invited == 'all' || myKitchen() in resource.data.invited)
             && request.resource.data.rsvp.diff(resource.data.rsvp).affectedKeys().hasOnly([myKitchen()])
             && request.resource.data.rsvp.get(myKitchen(), 'no') in ['yes', 'maybe', 'no']));
       allow delete: if isMember(resource.data.kitchenId) || moderates(resource.data.kitchenId);
@@ -329,7 +346,7 @@ service cloud.firestore {
           && request.resource.data.ticks is list && request.resource.data.ticks.size() <= 30
           && request.resource.data.updatedAt == request.time
           && (get(battlePath(id)).data.metric == 'gym'
-            ? delta('value') >= -1 && delta('value') <= 1
+            ? delta('value') >= -1 && delta('value') <= 1 && delta('total') == 0
               && (resource == null || request.time > resource.data.updatedAt + duration.value(5, 's'))
             : delta('value') >= -400 && delta('value') <= 400 && delta('total') >= -400 && delta('total') <= 400);
         allow delete: if false;
@@ -347,7 +364,8 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && text(request.resource.data.reason, 0, 140)
         && ((request.resource.data.kind == 'highfive' && request.resource.data.badge == null
-            && id.matches(myKitchen() + '_' + request.resource.data.to + '_[0-9]{4}-[0-9]{2}-[0-9]{2}'))
+            && id.matches(myKitchen() + '_' + request.resource.data.to + '_[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            && isToday(id.split('_')[id.split('_').size() - 1]))
           || (request.resource.data.kind == 'badge' && request.resource.data.reason.size() >= 1
             && request.resource.data.badge in ['goodFriends', 'bestParty', 'bestFood', 'helpful', 'recycling', 'plantBased', 'cosy', 'loud']));
       allow update: if false;
@@ -363,6 +381,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['kitchenId', 'title', 'opensAt', 'closesAt', 'createdAt'])
         && request.resource.data.kitchenId == myKitchen()
         && id.matches(myKitchen() + '_[0-9]{4}-[0-9]{2}')
+        && isMonthOf(id.split('_')[id.split('_').size() - 1], request.resource.data.opensAt)
         && text(request.resource.data.title, 1, 80)
         && request.resource.data.opensAt is timestamp && request.resource.data.closesAt is timestamp
         && request.resource.data.opensAt > request.time - duration.value(1, 'h')
@@ -417,13 +436,21 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // Hidden things are moved here (and deleted where they were), for the maker.
+    // Hidden things are moved here (and deleted where they were), for the maker. The id is
+    // {collection}_{original id}; the copy must be the original, by the kitchen it names, and the
+    // original deleted in the same batch, so nobody can plant a made-up copy.
     match /hidden/{id} {
+      function original() {
+        return /databases/$(database)/documents/$(request.resource.data.collection)/$(id.replace('^' + request.resource.data.collection + '_', ''));
+      }
       allow read, delete: if isAdmin();
       allow create: if request.resource.data.keys().hasOnly(['collection', 'kitchenId', 'data', 'hiddenAt'])
         && request.resource.data.collection in ['posts', 'events', 'kudos', 'battles', 'polls']
+        && id.matches(request.resource.data.collection + '_.+')
         && request.resource.data.kitchenId is string && moderates(request.resource.data.kitchenId)
-        && request.resource.data.data is map
+        && exists(original()) && !existsAfter(original())
+        && request.resource.data.data == get(original()).data
+        && request.resource.data.kitchenId == get(original()).data.get('kitchenId', get(original()).data.get('from', ''))
         && request.resource.data.hiddenAt == request.time;
       allow update: if false;
     }

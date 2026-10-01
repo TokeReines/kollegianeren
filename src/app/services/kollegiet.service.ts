@@ -55,12 +55,13 @@ export class KollegietService {
   readonly profiles$ = this.shared(() => watch<Profile>(collection(db, 'profiles')));
   readonly standings$ = this.shared(() => watch<Standing>(collection(db, 'standings')));
   readonly posts$ = this.shared(() => watch<Post>(query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(60))));
-  // Events that have not been over for a day.
+  // Events that have not been over for a day. Latest ending first: the lower bound is fixed when the
+  // listener opens, so on a tablet open for weeks old ones would otherwise fill the limit.
   readonly events$ = this.shared(() => watch<KEvent>(query(collection(db, 'events'),
-    where('endsAt', '>=', Timestamp.fromMillis(Date.now() - DAY)), orderBy('endsAt'), limit(40))));
+    where('endsAt', '>=', Timestamp.fromMillis(Date.now() - DAY)), orderBy('endsAt', 'desc'), limit(40))));
   readonly kudos$ = this.shared(() => watch<Kudos>(query(collection(db, 'kudos'), orderBy('createdAt', 'desc'), limit(60))));
   readonly polls$ = this.shared(() => watch<Poll>(query(collection(db, 'polls'),
-    where('closesAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('closesAt'), limit(20))));
+    where('closesAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('closesAt', 'desc'), limit(20))));
   // When the kitchen last opened Kollegiet and Aktuelt: one document, one listener.
   private readonly seenDoc$ = whileSignedIn(this.auth.membership$,
     kid => watchDoc<{kollegietAt?: Timestamp, aktueltAt?: Timestamp}>(doc(db, 'seen', kid)), null,
@@ -118,8 +119,9 @@ export class KollegietService {
   post(text: string, opts: {to?: string | null, parentId?: string | null} = {}) {
     const kid = this.kitchenId;
     const batch = writeBatch(db);
-    batch.set(doc(collection(db, 'posts')), {kitchenId: kid, text, to: opts.to ?? null, parentId: opts.parentId ?? null, createdAt: serverTimestamp()});
-    batch.set(doc(db, 'seen', kid), {lastPostAt: serverTimestamp()}, {merge: true});
+    const ref = doc(collection(db, 'posts'));
+    batch.set(ref, {kitchenId: kid, text, to: opts.to ?? null, parentId: opts.parentId ?? null, createdAt: serverTimestamp()});
+    batch.set(doc(db, 'seen', kid), {lastPostAt: serverTimestamp(), lastPostId: ref.id}, {merge: true});
     return batch.commit();
   }
 
@@ -129,11 +131,17 @@ export class KollegietService {
   }
 
   // Hiding (a manager of the author kitchen, or the maker): moved to hidden/ for the maker.
-  hide(collectionName: HideableCollection, item: {id: string}, authorKitchenId: string) {
+  // The copy is the stored document itself, not what the screen shows: the rules require it to match.
+  async hide(collectionName: HideableCollection, item: {id: string}, authorKitchenId: string) {
+    const ref = doc(db, collectionName, item.id);
+    const stored = await getDoc(ref);
+    if (!stored.exists()) {
+      return;
+    }
     const batch = writeBatch(db);
-    const {id, ...data} = item as Record<string, unknown> & {id: string};
-    batch.set(doc(db, 'hidden', `${collectionName}_${id}`), {collection: collectionName, kitchenId: authorKitchenId, data, hiddenAt: serverTimestamp()});
-    batch.delete(doc(db, collectionName, id));
+    batch.set(doc(db, 'hidden', `${collectionName}_${item.id}`),
+      {collection: collectionName, kitchenId: authorKitchenId, data: stored.data(), hiddenAt: serverTimestamp()});
+    batch.delete(ref);
     return batch.commit();
   }
 

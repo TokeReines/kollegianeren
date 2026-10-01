@@ -14,6 +14,9 @@ const B = 'kitchenB';
 const C = 'kitchenC';
 const H = 3600e3;
 const ts = ms => Timestamp.fromMillis(ms);
+// Today and this month as a tablet names them (the rules allow Danish time, a few hours ahead of UTC).
+const today = () => new Date().toISOString().slice(0, 10);
+const thisMonth = () => new Date().toISOString().slice(0, 7);
 
 before(async () => {
   env = await initializeTestEnvironment({
@@ -59,10 +62,14 @@ const as = uid => env.authenticatedContext(uid).firestore();
 const asAnonymous = uid => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'anonymous' } }).firestore();
 const out = () => env.unauthenticatedContext().firestore();
 
-function post(db, kitchenId, extra = {}) {
+function post(db, kitchenId, extra = {}, count = 1) {
   const b = writeBatch(db);
-  b.set(doc(collection(db, 'posts')), { kitchenId, text: 'Åbent køkken i aften!', to: null, parentId: null, createdAt: serverTimestamp(), ...extra });
-  b.set(doc(db, 'seen', kitchenId), { lastPostAt: serverTimestamp() }, { merge: true });
+  let ref;
+  for (let i = 0; i < count; i++) {
+    ref = doc(collection(db, 'posts'));
+    b.set(ref, { kitchenId, text: 'Åbent køkken i aften!', to: null, parentId: null, createdAt: serverTimestamp(), ...extra });
+  }
+  b.set(doc(db, 'seen', kitchenId), { lastPostAt: serverTimestamp(), lastPostId: ref.id }, { merge: true });
   return b.commit();
 }
 
@@ -91,17 +98,33 @@ test('posts: as the own kitchen only, with the rate limit, replies and direct po
   await assertSucceeds(post(as(C), C, { parentId: 'p1' }));
   await assertSucceeds(post(as(B), B, { to: A }));
   await assertFails(post(as(B), B, { text: '' }));
+  // Several posts in one batch, past the rate limit together.
+  await assertFails(post(as('tabA'), A, {}, 3));
 });
 
 test('posts: the author takes back for five minutes; managers and the maker hide', async () => {
   await assertSucceeds(deleteDoc(doc(as(B), 'posts', 'p1')));
-  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'posts', 'old'),
-    { kitchenId: A, text: 'x', to: null, parentId: null, createdAt: ts(Date.now() - H) }));
+  const old = { kitchenId: A, text: 'x', to: null, parentId: null, createdAt: ts(Date.now() - H) };
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), 'posts', 'old'), old);
+    await setDoc(doc(ctx.firestore(), 'posts', 'old2'), old);
+  });
   // The tablet cannot hide after five minutes; the owner and the maker can; another kitchen cannot.
   await assertFails(deleteDoc(doc(as('tabA'), 'posts', 'old')));
   await assertFails(deleteDoc(doc(as(B), 'posts', 'old')));
-  await assertSucceeds(setDoc(doc(as(A), 'hidden', 'old'), { collection: 'posts', kitchenId: A, data: { text: 'x' }, hiddenAt: serverTimestamp() }));
-  await assertSucceeds(deleteDoc(doc(as('maker'), 'posts', 'old')));
+  const hide = (db, hiddenId, data, { kitchenId = A, remove = 'old' } = {}) => {
+    const b = writeBatch(db);
+    b.set(doc(db, 'hidden', hiddenId), { collection: 'posts', kitchenId, data, hiddenAt: serverTimestamp() });
+    if (remove) b.delete(doc(db, 'posts', remove));
+    return b.commit();
+  };
+  // Made-up copies: other text, under another id, the original left in place, another author.
+  await assertFails(hide(as(A), 'posts_old', { ...old, text: 'something B never wrote' }));
+  await assertFails(hide(as(A), 'posts_other', old));
+  await assertFails(hide(as(A), 'posts_old', old, { remove: null }));
+  await assertFails(hide(as(B), 'posts_old', old, { kitchenId: B }));
+  await assertSucceeds(hide(as(A), 'posts_old', old));
+  await assertSucceeds(deleteDoc(doc(as('maker'), 'posts', 'old2')));
   await assertFails(setDoc(doc(as(B), 'hidden', 'x'), { collection: 'posts', kitchenId: A, data: {}, hiddenAt: serverTimestamp() }));
 });
 
@@ -117,6 +140,10 @@ test('events: the author edits, other kitchens only answer for themselves', asyn
   await assertSucceeds(updateDoc(doc(as(A), 'events', ref.id), { title: 'Åbent køkken med DJ' }));
   await assertFails(updateDoc(doc(as(A), 'events', ref.id), { [`rsvp.${B}`]: deleteField() }));
   await assertSucceeds(updateDoc(doc(as(B), 'events', ref.id), { [`rsvp.${B}`]: deleteField() }));
+  // Only invited kitchens answer an event for a few.
+  const few = await assertSucceeds(addDoc(collection(as(A), 'events'), { ...e, invited: [B] }));
+  await assertSucceeds(updateDoc(doc(as(B), 'events', few.id), { [`rsvp.${B}`]: 'maybe' }));
+  await assertFails(updateDoc(doc(as(C), 'events', few.id), { [`rsvp.${C}`]: 'yes' }));
 });
 
 test('battles: create as yourself, join only yourself, once, while not over', async () => {
@@ -148,6 +175,8 @@ test('tally: own kitchen, while live, at most 400 a write; gym one tap at a time
   await assertSucceeds(tally(as(A), 'gym', A, 1));
   await assertFails(updateDoc(doc(as(A), 'battles', 'gym', 'tally', A), { value: increment(1), updatedAt: serverTimestamp() }));
   await assertFails(tally(as(B), 'gym', B, 2));
+  // Gym has no total.
+  await assertFails(setDoc(doc(as(B), 'battles', 'gym', 'tally', B), { value: 1, total: 50, ticks: [], updatedAt: serverTimestamp() }));
 });
 
 test('live achievements: only when the tally has earned them', async () => {
@@ -164,11 +193,14 @@ test('live achievements: only when the tally has earned them', async () => {
 
 test('kudos: from yourself to another kitchen, one high-five a pair a day', async () => {
   const k = { from: A, to: B, kind: 'highfive', badge: null, reason: '', createdAt: serverTimestamp() };
-  await assertSucceeds(setDoc(doc(as('tabA'), 'kudos', `${A}_${B}_2026-10-01`), k));
-  await assertFails(setDoc(doc(as(A), 'kudos', `${A}_${B}_2026-10-01`), k));
+  await assertSucceeds(setDoc(doc(as('tabA'), 'kudos', `${A}_${B}_${today()}`), k));
+  await assertFails(setDoc(doc(as(A), 'kudos', `${A}_${B}_${today()}`), k));
   await assertFails(setDoc(doc(as(A), 'kudos', `whatever`), k));
-  await assertFails(setDoc(doc(as(A), 'kudos', `${A}_${A}_2026-10-01`), { ...k, to: A }));
-  await assertFails(setDoc(doc(as(C), 'kudos', `${A}_${B}_2026-10-02`), k));
+  await assertFails(setDoc(doc(as(A), 'kudos', `${A}_${A}_${today()}`), { ...k, to: A }));
+  await assertFails(setDoc(doc(as(C), 'kudos', `${A}_${C}_${today()}`), { ...k, to: C }));
+  // Another day than today: more high-fives than one a day.
+  await assertFails(setDoc(doc(as(A), 'kudos', `${A}_${C}_2031-01-01`), { ...k, to: C }));
+  await assertFails(setDoc(doc(as(A), 'kudos', `${A}_${C}_2020-01-01`), { ...k, to: C }));
   const badge = { from: A, to: B, kind: 'badge', badge: 'goodFriends', reason: 'Lånte os en grill', createdAt: serverTimestamp() };
   await assertSucceeds(addDoc(collection(as(A), 'kudos'), badge));
   await assertFails(addDoc(collection(as(A), 'kudos'), { ...badge, badge: 'invented' }));
@@ -178,8 +210,10 @@ test('kudos: from yourself to another kitchen, one high-five a pair a day', asyn
 test('polls: one a month per kitchen; ballots are secret and not for yourself', async () => {
   const now = Date.now();
   const p = { kitchenId: A, title: 'Mest plantebaseret', opensAt: ts(now), closesAt: ts(now + 7 * 24 * H), createdAt: serverTimestamp() };
-  await assertSucceeds(setDoc(doc(as('tabA'), 'polls', `${A}_2026-10`), p));
-  await assertFails(setDoc(doc(as(A), 'polls', `${B}_2026-11`), p));
+  // A month other than the one it opens in: more polls than one a month.
+  await assertFails(setDoc(doc(as(A), 'polls', `${A}_2031-01`), p));
+  await assertSucceeds(setDoc(doc(as('tabA'), 'polls', `${A}_${thisMonth()}`), p));
+  await assertFails(setDoc(doc(as(A), 'polls', `${B}_${thisMonth()}`), p));
   await assertFails(setDoc(doc(as(A), 'polls', `${A}_2026-11`), { ...p, closesAt: ts(now + 60 * 24 * H) }));
   const poll = `${B}_2026-10`;
   await assertSucceeds(setDoc(doc(as('tabA'), 'polls', poll, 'ballots', A), { choice: C, at: serverTimestamp() }));

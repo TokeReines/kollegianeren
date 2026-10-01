@@ -14,7 +14,7 @@ import {TranslatePipe} from '../../translate.pipe';
   imports: [MatButtonModule, MatIconModule, RouterLink, TranslatePipe],
   template: `
     @if (shown(); as n) {
-      <div class="banner" role="alert">
+      <div class="banner" role="alert" [class.slim]="path() === '/'">
         <a class="open" [routerLink]="n.link.path" [fragment]="n.link.fragment" [queryParams]="n.link.query">
           <span class="icon"><mat-icon>{{ notices.icon(n) }}</mat-icon></span>
           <span class="text">
@@ -38,7 +38,7 @@ import {TranslatePipe} from '../../translate.pipe';
 export class MessageBannerComponent {
   private readonly router = inject(Router);
   protected readonly notices = inject(NoticeService);
-  private readonly path = toSignal(this.router.events.pipe(
+  protected readonly path = toSignal(this.router.events.pipe(
     filter(e => e instanceof NavigationEnd),
     map(() => this.router.url.split(/[?#]/)[0])), {initialValue: this.router.url.split(/[?#]/)[0]});
   protected readonly shown = computed(() => this.notices.notices().find(n => !this.notices.hiddenOn(n, this.path())) ?? null);

@@ -194,17 +194,28 @@ The job is not on the live path. It settles and checks, on tokeserver like `admi
 the same service account. It only writes `battles/{id}.result`, `polls/{id}.result`,
 `standings/{kid}` and the result posts.
 
-- **Every 15 minutes.** If no battle or poll ended since the last run, it stops after one query
-  (1 read). So a result and its trophy show up at most 15 minutes after the end.
+- **Every 15 minutes.** A state file on tokeserver (`--state`) keeps how far it has got, so a run
+  looks only at battles and polls that ended since the last one: an idle run is 2 reads. A result
+  and its trophy show up at most 15 minutes after the end.
+- **Never twice.** The result is claimed with a precondition on the battle or poll document before
+  anything is posted, so two runs at once (the 15-minute one and the daily one) cannot both settle
+  it. The daily run is at 08:20, off the quarter hours anyway.
 - **Settling a battle** reads what happened, once, when it has ended:
   - the kitchen's purchases in the period, added up (for `beer`, only beer products). An
     aggregation sum over a time range would need a composite index, so it is read instead: one
     read per purchase, about 400 for a busy Friday battle;
   - meals in the period (they are few);
   - gym is the tally itself.
-- **Achievements, once a day (08:15):** the ones that need history: 10/50/100 food club dinners, a
+  - A run spends at most 6,000 reads on recounting (`--max-reads`, estimated first with counts);
+    a bigger battle waits for the next run, alone. A month-long beer battle for every kitchen is
+    about 8,000 reads, once.
+  - A live achievement claimed in the battle (beer50 and so on) that the real number does not
+    reach is taken back and reported: tablets move the tally themselves, so it is not proof.
+- **Achievements, once a day (08:20):** the ones that need history: 10/50/100 food club dinners, a
   month with half the meals plant based, first open kitchen party, 10 high-fives. They go to
-  `standings/{kid}`, and a new one becomes a post.
+  `standings/{kid}`, and a new one becomes a post. With the state it reads only the kudos and
+  events since yesterday, counts the dinners (1 read per kitchen) and checks the plant-based month
+  once, on the first run of the next month: about 30 reads a day, not growing with history.
 - **Polls:** after `closesAt` the job counts the votes, writes `result`, gives the winner the badge
   and posts it. Ties share the badge.
 
@@ -218,7 +229,7 @@ sales:
 | Rule read of the battle per sale | 400 |
 | Each tablet sees each tally change (20 × 400) | 8,000 |
 | Each tablet loading the battle and tallies at start or reload | ~300 |
-| League job (96 runs, settling one battle) | ~600 |
+| League job (96 idle runs, settling one battle, the daily run) | ~650 |
 | Board, events and kudos listeners | ~1,000 |
 | **Total on top of today's ~4,000** | **~10,000** |
 

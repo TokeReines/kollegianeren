@@ -27,6 +27,18 @@
   ));
 }
 
+// Live battles: side by side when they fit, so two cost one row, not two.
+.battles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  app-battle-ticker {
+    flex: 1 1 440px;
+    min-width: 0;
+  }
+}
+
 .panes {
   flex: 1;
   min-height: 0;
