@@ -39,8 +39,6 @@ export const EVENT_KINDS = ['openKitchen', 'party', 'dinner', 'other'] as const;
 // starts when it is sent, lasts at most LIVE_HOURS_MAX hours, and is not in the event dialog.
 export type EventKind = typeof EVENT_KINDS[number] | 'live';
 export const LIVE_HOURS_MAX = 3;
-// A kitchen's next call: 6 hours after its last one started (the rules check it).
-export const LIVE_COOLDOWN_HOURS = 6;
 
 export function liveCallId(kitchenId: string): string {
   return `live_${kitchenId}`;

@@ -142,10 +142,9 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   board's write note opens a filled-in call (text, place, 1 to 3 hours) and sends it to every
   kitchen. It is an event of kind `live` in the kitchen's own document `events/live_{kid}`, so
   a kitchen has one call at most. The rules check that it is to everyone, starts when sent,
-  lasts three hours at most, and that a new call comes 6 hours after the last one started at
-  the earliest (ending early does not shorten the wait). It can be ended early ("Afslut
-  kaldet" on its flyer) or its text changed, never moved, lengthened or deleted (a delete would
-  reset the wait), so it cannot be used to spam. Kept small on purpose:
+  lasts three hours at most, and that a new call only replaces one that has ended: one at a
+  time. It can be ended early ("Afslut kaldet" on its flyer) or its text changed, never moved,
+  lengthened or deleted. Kept small on purpose:
   While it goes on:
   - the other kitchens' buy page shows one slim bar with a pulsing dot above everything,
     however many calls there are: the newest, "+N kald mere", who, the text, until when, how
@@ -155,6 +154,9 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   - it is the first thing in the strip on other pages, until it ends or is answered ("Ikke nu"
     answers no), seen or not;
   - on the board it is the first flyer, with a red edge and "NU".
+- **Who is coming.** On every flyer (and the live call's bar on the buy page): the faces of the
+  kitchens coming and how many; tapping them (tablets have no hover) lists them by name, with who
+  said maybe, and for the kitchen that made it also who said no.
   No new reads: the events listener is already open for the strip.
 - **Kitchen profile:** opened from a card. The kitchen's own profile is the one place to change
   the kitchen: name (the same everywhere), emoji, colour and bio, for its owner and treasurers.

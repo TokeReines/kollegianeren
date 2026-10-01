@@ -344,14 +344,14 @@ service cloud.firestore {
         && request.resource.data.startsAt > request.time - duration.value(1, 'h')
         // A live call starts when it is sent.
         && (request.resource.data.kind != 'live' || request.resource.data.startsAt < request.time + duration.value(5, 'm'));
-      // A new live call over the kitchen's last one: at most every 6 hours, ending early does not
-      // shorten the wait. Starts now, with no answers.
+      // A new live call over the kitchen's last one, once that has ended: one at a time. Starts
+      // now, with no answers.
       function newLiveCall(d) {
         return resource.data.kind == 'live' && isMember(resource.data.kitchenId)
           && d.kitchenId == resource.data.kitchenId
           && d.createdAt == request.time && d.rsvp.size() == 0
           && d.startsAt > request.time - duration.value(1, 'h') && d.startsAt < request.time + duration.value(5, 'm')
-          && resource.data.startsAt < request.time - duration.value(6, 'h');
+          && resource.data.endsAt <= request.time;
       }
       // The kitchen may change its call's text or end it early, not move or lengthen it.
       function sameLiveCall(d) {
@@ -367,7 +367,7 @@ service cloud.firestore {
             && (resource.data.invited == 'all' || myKitchen() in resource.data.invited)
             && request.resource.data.rsvp.diff(resource.data.rsvp).affectedKeys().hasOnly([myKitchen()])
             && request.resource.data.rsvp.get(myKitchen(), 'no') in ['yes', 'maybe', 'no']));
-      // Not a live call: deleting it would reset the 6 hours. It ends instead.
+      // Not a live call: it ends instead (and stays the kitchen's one call document).
       allow delete: if resource.data.kind != 'live' && (isMember(resource.data.kitchenId) || moderates(resource.data.kitchenId));
     }
 

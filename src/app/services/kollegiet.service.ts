@@ -190,7 +190,7 @@ export class KollegietService {
   }
 
   // "Kom over nu": a call to every kitchen, from now for a few hours. Each kitchen has one call
-  // document, written over by the next call, at most every LIVE_COOLDOWN_HOURS.
+  // document, written over by its next call once the last has ended.
   startLiveCall(title: string, place: string, hours: number) {
     const now = Date.now();
     return setDoc(doc(db, 'events', liveCallId(this.kitchenId)), {kind: 'live', title, text: '', place, invited: 'all',
@@ -204,8 +204,10 @@ export class KollegietService {
   }
 
   // The party is over: the call ends now.
+  // Never later than it was set to end (the rules check it), so a second tap is harmless.
   endLiveCall(e: KEvent) {
-    return updateDoc(doc(db, 'events', e.id), {endsAt: Timestamp.fromMillis(Math.max(Date.now(), millis(e.startsAt) + 1000))});
+    const end = Math.min(millis(e.endsAt), Math.max(Date.now(), millis(e.startsAt) + 1000));
+    return updateDoc(doc(db, 'events', e.id), {endsAt: Timestamp.fromMillis(end)});
   }
 
   highfive(to: string) {

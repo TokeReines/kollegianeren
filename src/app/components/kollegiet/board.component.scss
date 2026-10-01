@@ -37,7 +37,6 @@
   display: flex;
   gap: 14px;
   overflow-x: auto;
-  scroll-snap-type: x proximity;
   // A new sticker comes in on the left, and stays in view.
   overflow-anchor: none;
   padding: 10px 4px 12px;
@@ -51,7 +50,6 @@
 
 .sticker {
   flex: none;
-  scroll-snap-align: start;
   width: 210px;
   box-sizing: border-box;
   display: flex;
@@ -636,8 +634,9 @@ $enter: cubic-bezier(0.05, 0.7, 0.1, 1);
   --sticker-step: 224px;
 }
 
+// They start once the dialog that made them has faded, so they are not played behind it.
 .sticker.arrive {
-  animation: sticker-in 550ms $enter both;
+  animation: sticker-in 600ms 200ms $enter both;
 }
 
 @keyframes sticker-in {
@@ -647,10 +646,10 @@ $enter: cubic-bezier(0.05, 0.7, 0.1, 1);
 }
 
 .paper.arrive {
-  animation: pin-up 500ms $enter both;
+  animation: pin-up 550ms 300ms $enter both;
 
   &::before {
-    animation: pin-in 300ms 350ms $enter both;
+    animation: pin-in 300ms 700ms $enter both;
   }
 }
 
