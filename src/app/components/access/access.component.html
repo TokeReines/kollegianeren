@@ -4,16 +4,13 @@
   @if (role() === 'tablet') {
     <p class="muted">{{ "ACCESS_TABLET_ONLY" | translate }}</p>
   } @else {
-    <mat-card>
-      <mat-card-title>{{ "ACCESS_KITCHEN" | translate }}: {{ kitchenName() }}</mat-card-title>
-      <div class="row">
-        <mat-form-field class="grow">
-          <mat-label>{{ "ACCESS_NEW_NAME" | translate }}</mat-label>
-          <input matInput [(ngModel)]="newName" maxlength="40" (keydown.enter)="newName().trim() && rename()">
-        </mat-form-field>
-        <button mat-stroked-button [disabled]="!newName().trim()" (click)="rename()">{{ "ACCESS_RENAME" | translate }}</button>
-      </div>
-    </mat-card>
+    <!-- The kitchen itself (name, emoji, colour, bio) is changed in one place: its profile. -->
+    <p class="muted kitchen-link">
+      {{ "ACCESS_KITCHEN_ELSEWHERE" | translate }}
+      <a mat-button routerLink="/kollegiet" [queryParams]="{tab: 'kitchens', kitchen: kitchenId()}">
+        <mat-icon>storefront</mat-icon> {{ "ACCOUNT_KITCHEN" | translate }}
+      </a>
+    </p>
 
     <mat-card>
       <mat-card-title>{{ "ACCESS_LOGINS" | translate }}</mat-card-title>

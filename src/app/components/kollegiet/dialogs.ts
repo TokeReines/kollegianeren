@@ -387,6 +387,11 @@ export class PollDialogComponent {
   }
 }
 
+export type ProfileFields = Pick<Profile, 'emoji' | 'colour' | 'bio'> & {name: string};
+
+// The kitchen as the others see it: its name (the same everywhere), emoji, colour and bio. The one
+// place to change the kitchen; Adgang is only logins and invitations.
+
 // The kitchen's own emoji, colour and a line about it.
 @Component({
   selector: 'app-profile-dialog',
@@ -394,6 +399,10 @@ export class PollDialogComponent {
   template: `
     <h2 mat-dialog-title>{{ "KOL_PROFILE_EDIT" | translate }}</h2>
     <div mat-dialog-content class="content">
+      <mat-form-field class="name">
+        <mat-label>{{ "KOL_PROFILE_NAME" | translate }}</mat-label>
+        <input matInput [(ngModel)]="name" maxlength="40" autocomplete="off">
+      </mat-form-field>
       <span class="label">{{ "KOL_PROFILE_EMOJI" | translate }}</span>
       <div class="pick">
         @for (e of emojis; track e) {
@@ -415,10 +424,11 @@ export class PollDialogComponent {
     </div>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
-      <button mat-flat-button (click)="save()">{{ "SAVE" | translate }}</button>
+      <button mat-flat-button [disabled]="!name().trim()" (click)="save()">{{ "SAVE" | translate }}</button>
     </mat-dialog-actions>
   `,
   styles: `
+    .name { margin-top: 8px; }
     .content { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
     .label { color: var(--mat-sys-on-surface-variant); font: var(--mat-sys-body-small); }
     .pick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
@@ -433,8 +443,9 @@ export class PollDialogComponent {
   `,
 })
 export class ProfileDialogComponent {
-  private readonly current = inject<Pick<Profile, 'emoji' | 'colour' | 'bio'>>(MAT_DIALOG_DATA);
-  private readonly ref = inject<MatDialogRef<ProfileDialogComponent, Pick<Profile, 'emoji' | 'colour' | 'bio'>>>(MatDialogRef);
+  private readonly current = inject<ProfileFields>(MAT_DIALOG_DATA);
+  private readonly ref = inject<MatDialogRef<ProfileDialogComponent, ProfileFields>>(MatDialogRef);
+  protected readonly name = signal(this.current.name);
   protected readonly emojis = KITCHEN_EMOJIS;
   protected readonly colours = KITCHEN_COLOURS;
   protected readonly bioMax = BIO_MAX;
@@ -443,7 +454,7 @@ export class ProfileDialogComponent {
   protected readonly bio = signal(this.current.bio);
 
   protected save() {
-    this.ref.close({emoji: this.emoji(), colour: this.colour(), bio: this.bio().trim()});
+    this.ref.close({name: this.name().trim(), emoji: this.emoji(), colour: this.colour(), bio: this.bio().trim()});
   }
 }
 
