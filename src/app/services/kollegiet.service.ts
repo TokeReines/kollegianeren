@@ -56,6 +56,9 @@ export class KollegietService {
   readonly kitchens$ = this.shared(() => watch<Kitchen>(collection(db, 'kitchens')));
   readonly profiles$ = this.shared(() => watch<Profile>(collection(db, 'profiles')));
   readonly standings$ = this.shared(() => watch<Standing>(collection(db, 'standings')));
+  // The kitchen's own counts, for the badges it wears in the top bar: one document.
+  readonly myStanding$ = whileSignedIn(this.auth.membership$,
+    kid => watchDoc<Standing>(doc(db, 'standings', kid)), null).pipe(shareReplay({bufferSize: 1, refCount: true}));
   readonly posts$ = this.shared(() => watch<Post>(query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(60))));
   // Events that have not been over for a day. Latest ending first: the lower bound is fixed when the
   // listener opens, so on a tablet open for weeks old ones would otherwise fill the limit.

@@ -129,6 +129,46 @@ export interface Standing {
   // Polls won, by title.
   titles?: string[];
   updatedAt: Timestamp;
+  // Kudos up to here are in the counts (ops/league.js --daily); older documents only have updatedAt.
+  kudosThrough?: Timestamp;
+}
+
+export interface KudosSummary {
+  wins: number;
+  highfives: number;
+  badges: Partial<Record<Badge, number>>;
+}
+
+// What each kitchen has been given: the league job's counts, plus the kudos it has not counted yet.
+export function kudosSummary(standings: Standing[], kudos: Kudos[]): Map<string, KudosSummary> {
+  const out = new Map<string, KudosSummary>();
+  const get = (id: string) => out.get(id) ?? out.set(id, {wins: 0, highfives: 0, badges: {}}).get(id)!;
+  const through = new Map<string, number>();
+  for (const s of standings) {
+    const e = get(s.id);
+    e.wins = s.wins ?? 0;
+    e.highfives = s.highfives ?? 0;
+    e.badges = {...(s.badges ?? {})};
+    through.set(s.id, millis(s.kudosThrough ?? s.updatedAt));
+  }
+  for (const k of kudos) {
+    if (k.createdAt && millis(k.createdAt) <= (through.get(k.to) ?? -1)) {
+      continue;
+    }
+    const e = get(k.to);
+    if (k.kind === 'highfive') {
+      e.highfives++;
+    } else if (k.badge) {
+      e.badges[k.badge] = (e.badges[k.badge] ?? 0) + 1;
+    }
+  }
+  return out;
+}
+
+// Badges as [badge, count], in the fixed order.
+export function badgeList(summary: KudosSummary | undefined): [Badge, number][] {
+  const b = summary?.badges ?? {};
+  return BADGES.filter(x => b[x]).map(x => [x, b[x]!]);
 }
 
 // Claimed live by the kitchen's tablet (standings/{kid}/achievements/{code}); the rules check the tally.
@@ -278,6 +318,8 @@ export interface Notice {
   text: string;
   at: number;
   link: {path: string, fragment?: string, query?: Record<string, string>};
+  // Kudos: the badge, or null for a high-five.
+  badge?: Badge | null;
 }
 
 const NOTICE_ORDER: NoticeKind[] = ['maker', 'news', 'invite', 'challenge', 'kudos', 'event'];
@@ -320,7 +362,7 @@ export function kollegietNotices(kitchenId: string, seenAt: number, data: {event
   }
   for (const k of data.kudos) {
     if (k.to === kitchenId && millis(k.createdAt) > seenAt) {
-      notices.push({kind: 'kudos', from: k.from, text: k.reason, at: millis(k.createdAt),
+      notices.push({kind: 'kudos', from: k.from, text: k.reason, at: millis(k.createdAt), badge: k.kind === 'badge' ? k.badge : null,
         link: {path: '/kollegiet', query: {tab: 'kitchens', kitchen: kitchenId}}});
     }
   }

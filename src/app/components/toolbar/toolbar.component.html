@@ -4,6 +4,18 @@
     <mat-icon>{{ sidenav.narrow() || sidenav.railHidden() ? 'menu' : 'menu_open' }}</mat-icon>
   </button>
   <span class="title" [class.kiosk]="sidenav.railHidden()">{{ kitchenName() }}</span>
+  @if (worn(); as w) {
+    <!-- The badges the kitchen has been given, worn next to its name. New ones wiggle. -->
+    <a class="worn" routerLink="/kollegiet" [queryParams]="{tab: 'kitchens', kitchen: w.kitchenId}"
+       [matTooltip]="w.label" [attr.aria-label]="w.label">
+      @for (b of w.badges; track b.badge) {
+        <span class="pin" [class.fresh]="b.fresh">{{ "KOL_BADGE_ICON_" + b.badge | translate }}@if (b.count > 1) {<small>{{ b.count }}</small>}</span>
+      }
+      @if (w.highfives) {
+        <span class="pin" [class.fresh]="w.freshHighfive">🙌<small>{{ w.highfives }}</small></span>
+      }
+    </a>
+  }
   <span class="fill-space"></span>
   @if (notices().length) {
     <button class="message-button" mat-icon-button [matMenuTriggerFor]="noticeMenu"

@@ -1,13 +1,11 @@
-// Fixed places: the posts on the left, three zones on the right. On phones one column: votes,
-// events, posts, kudos.
+// Fixed places: high-fives and badges across the top; under them posts, events, and votes in three
+// columns. Narrower: events and votes share the right column. Phones: one column.
 .board {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
-  grid-template-rows: auto auto 1fr;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
-    "posts votes"
-    "posts events"
-    "posts kudos";
+    "kudos kudos kudos"
+    "posts events votes";
   gap: 24px 20px;
   align-items: start;
   padding-top: 16px;
@@ -219,49 +217,132 @@ header .when {
   color: var(--mat-sys-on-surface-variant);
 }
 
-// A high-five or a badge: one line in the kudos zone.
-.kudos {
+// High-fives and badges: stickers on the board, loud, newest first, in one row that scrolls.
+.wall {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 8px 8px 12px;
-  font: var(--mat-sys-body-medium);
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  // A new sticker comes in on the left, and stays in view.
+  overflow-anchor: none;
+  padding: 6px 4px 12px;
+  scrollbar-width: thin;
+}
 
-  & + .kudos {
-    border-top: 1px solid var(--mat-sys-outline-variant);
+.sticker {
+  flex: none;
+  scroll-snap-align: start;
+  width: 210px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 10px 14px;
+  border-radius: 16px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  box-shadow: var(--mat-sys-level1);
+  transform: rotate(-1.2deg);
+  --chip-size: 30px;
+
+  &:nth-child(even) {
+    transform: rotate(1deg);
+  }
+
+  &.badge {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  .sticker-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    min-height: 48px;
   }
 
   .big {
-    font-size: 20px;
+    font-size: 44px;
+    line-height: 1;
+  }
+
+  .to {
+    font: var(--mat-sys-title-medium);
   }
 
   .what {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 6px;
-    --chip-size: 22px;
+    font: var(--mat-sys-title-small);
   }
 
   .reason {
+    font: var(--mat-sys-body-medium);
     font-style: italic;
-    color: var(--mat-sys-on-surface-variant);
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: var(--mat-sys-body-small);
+    --chip-size: 22px;
+
+    .when {
+      margin-left: auto;
+      color: inherit;
+      opacity: 0.8;
+    }
+  }
+
+  .more {
+    margin: -8px -8px 0 0;
+    color: inherit;
   }
 }
 
-.kudos-list .empty,
+.give .short {
+  display: none;
+}
+
+.wall .empty {
+  margin: 0;
+}
+
 .posts .empty {
   margin: 0;
   padding: 12px 16px;
+}
+
+@media (max-width: 1180px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "kudos kudos"
+      "posts events"
+      "posts votes";
+  }
 }
 
 @media (max-width: 900px) {
   .board {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
-    grid-template-areas: "votes" "events" "posts" "kudos";
+    grid-template-areas: "kudos" "events" "votes" "posts";
+  }
+
+  .sticker {
+    width: 180px;
+  }
+
+  .give {
+    .long { display: none; }
+    .short { display: inline; }
   }
 
   .to {

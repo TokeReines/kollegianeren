@@ -70,6 +70,13 @@ export class NoticeService {
         return this.makerUnread() > 1 ? `${this.makerUnread()} ${this.i18n.t('MESSAGES_FROM_TOKE')}` : this.i18n.t('MESSAGE_FROM_TOKE');
       case 'news':
         return this.i18n.t('NOTICE_news');
+      case 'kudos': {
+        const card = this.kollegiet.card(n.from ?? '');
+        const what = n.badge
+          ? `${this.i18n.t('NOTICE_KUDOS_BADGE')} ${this.i18n.t('KOL_BADGE_ICON_' + n.badge)} ${this.i18n.t('KOL_BADGE_' + n.badge)}`
+          : this.i18n.t('NOTICE_KUDOS_HIGHFIVE');
+        return `${card.emoji} ${card.name} ${what}`;
+      }
       default: {
         const card = this.kollegiet.card(n.from ?? '');
         return `${card.emoji} ${card.name} ${this.i18n.t('NOTICE_' + n.kind)}`;

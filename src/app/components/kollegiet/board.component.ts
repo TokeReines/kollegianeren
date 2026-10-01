@@ -22,7 +22,7 @@ import {TranslateService} from '../../services/translate.service';
 import {millis} from '../../time';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
-import {EventDialogComponent, EventDialogData, PollDialogComponent, PollResult} from './dialogs';
+import {BadgeDialogComponent, BadgeResult, EventDialogComponent, EventDialogData, PollDialogComponent, PollResult} from './dialogs';
 import {KitchenChipComponent} from './kitchen-chip.component';
 import {PollCardComponent} from './poll-card.component';
 
@@ -30,8 +30,8 @@ import {PollCardComponent} from './poll-card.component';
 // board, the results are pinned and achievements are on the kitchens' profiles.
 const SYSTEM = 'kollegiet';
 
-// The board, a pin board with fixed places: posts with the composer on top on the left; votes and
-// results, events, and high-fives and badges on the right, always in that order.
+// The board, a pin board with fixed places: high-fives and badges across the top; under them posts
+// with the composer on top, events, and votes and results.
 @Component({
   selector: 'app-board',
   imports: [DatePipe, NgTemplateOutlet, FormsModule, ReactiveFormsModule, MatButtonModule, MatButtonToggleModule, MatCardModule, MatFormFieldModule, MatIconModule,
@@ -87,8 +87,8 @@ export class BoardComponent {
   // Open votes as cards; decided ones as a line, like a battle won.
   protected readonly livePolls = computed(() => this.openPolls().filter(p => !p.result));
   protected readonly decidedPolls = computed(() => this.openPolls().filter(p => p.result?.winners.length));
-  // The newest high-fives and badges; the rest are on the kitchens' profiles.
-  protected readonly recentKudos = computed(() => this.kudos().slice(0, 8));
+  // The newest high-fives and badges, as a row of stickers; the rest are on the kitchens' profiles.
+  protected readonly recentKudos = computed(() => this.kudos().slice(0, 20));
 
   protected readonly feed = computed<PostThread[]>(() => threads(this.posts().filter(p => p.kitchenId !== SYSTEM))
     .map(t => ({t, at: Math.max(millis(t.post.createdAt), ...t.replies.map(r => millis(r.createdAt)))}))
@@ -142,6 +142,25 @@ export class BoardComponent {
         if (p) {
           this.kollegiet.createPoll(p.title, p.opensAt, p.closesAt)
             .catch(() => this.notify.info(this.i18n.t('KOL_POLL_ONE_A_MONTH')));
+        }
+      });
+  }
+
+  // A high-five or a badge for any kitchen, from the top of the board.
+  protected giveKudos() {
+    this.dialog.open<BadgeDialogComponent, string | null, BadgeResult>(BadgeDialogComponent, {width: '480px', maxWidth: '94vw', data: null})
+      .afterClosed().subscribe(r => {
+        if (!r) {
+          return;
+        }
+        const name = this.kollegiet.card(r.to).name;
+        if (r.badge) {
+          this.kollegiet.giveBadge(r.to, r.badge, r.reason).then(
+            () => this.notify.info(`${this.i18n.t('KOL_BADGE_ICON_' + r.badge)} ${this.i18n.t('KOL_BADGE_SENT')} ${name}`), this.notify.error);
+        } else {
+          this.kollegiet.highfive(r.to).then(
+            () => this.notify.info(`🙌 ${this.i18n.t('KOL_HIGHFIVE_SENT')} ${name}`),
+            () => this.notify.info(this.i18n.t('KOL_HIGHFIVE_DONE')));
         }
       });
   }
