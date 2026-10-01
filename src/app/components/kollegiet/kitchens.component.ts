@@ -57,7 +57,9 @@ export class KitchensComponent {
   protected readonly withoutProfile = computed(() => this.kollegiet.cards().filter(k => !k.profiled && k.id !== this.me()));
   protected readonly canManage = this.auth.canManage;
 
-  protected readonly selectedId = toSignal(this.route.queryParamMap.pipe(map(q => q.get('kitchen'))), {initialValue: null});
+  // Opens on your own kitchen; closing the profile leaves `kitchen=` empty, which shows none.
+  private readonly kitchenParam = toSignal(this.route.queryParamMap.pipe(map(q => q.get('kitchen'))), {initialValue: null});
+  protected readonly selectedId = computed(() => this.kitchenParam() ?? (this.me() || null));
   protected readonly selected = computed(() => {
     const id = this.selectedId();
     return id ? this.kollegiet.card(id) : null;
@@ -80,7 +82,7 @@ export class KitchensComponent {
   }
 
   protected open(id: string | null) {
-    this.router.navigate([], {queryParams: {tab: 'kitchens', kitchen: id}, replaceUrl: !id});
+    this.router.navigate([], {queryParams: {tab: 'kitchens', kitchen: id ?? ''}, replaceUrl: !id});
   }
 
   protected highfive(to: string) {
