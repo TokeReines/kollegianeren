@@ -425,15 +425,11 @@ service cloud.firestore {
       }
     }
 
-    // Reports to the maker, about anything on Kollegiet.
+    // Technical notes to the maker from ops/league.js (admin SDK): a tally that was off, an
+    // achievement taken back. Kitchens do not report each other; they look after their own posts.
     match /reports/{id} {
       allow read, delete: if isAdmin();
-      allow create: if kitchenLogin()
-        && request.resource.data.keys().hasOnly(['kitchenId', 'target', 'text', 'createdAt'])
-        && request.resource.data.kitchenId == myKitchen()
-        && text(request.resource.data.target, 1, 200) && text(request.resource.data.text, 0, 500)
-        && request.resource.data.createdAt == request.time;
-      allow update: if false;
+      allow create, update: if false;
     }
 
     // Hidden things are moved here (and deleted where they were), for the maker. The id is

@@ -1,5 +1,4 @@
 import {Component, computed, effect, inject, signal, untracked} from '@angular/core';
-import {Location} from '@angular/common';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {interval, map, of, switchMap} from 'rxjs';
@@ -8,6 +7,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {BURST_MINUTES, battleState, scoreboard} from '../../interfaces/kollegiet';
 import {KollegietService} from '../../services/kollegiet.service';
 import {LeagueService} from '../../services/league.service';
+import {NavHistory} from '../../services/nav-history.service';
 import {millis} from '../../time';
 import {TranslatePipe} from '../../translate.pipe';
 import {KitchenChipComponent} from './kitchen-chip.component';
@@ -25,9 +25,7 @@ export class ScoreboardComponent {
   private readonly league = inject(LeagueService);
   protected readonly kollegiet = inject(KollegietService);
   private readonly router = inject(Router);
-  private readonly location = inject(Location);
-  // Opened from a page in the app (the buy page's strip, Kollegiet), or straight from a link, as on a TV.
-  private readonly openedInApp = ((this.location.getState() as {navigationId?: number} | null)?.navigationId ?? 1) > 1;
+  private readonly history = inject(NavHistory);
   private readonly id = toSignal(inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id') ?? '')), {initialValue: ''});
 
   protected readonly battle = computed(() => this.league.battles().find(b => b.id === this.id()) ?? null);
@@ -88,8 +86,9 @@ export class ScoreboardComponent {
 
   // Back to the page it was opened from; to Kollegiet's battles when there is none.
   protected back() {
-    if (this.openedInApp) {
-      this.location.back();
+    const previous = this.history.previous;
+    if (previous && !previous.startsWith('/kollegiet/battle/')) {
+      this.router.navigateByUrl(previous);
     } else {
       this.router.navigate(['/kollegiet'], {queryParams: {tab: 'battles'}});
     }

@@ -30,9 +30,6 @@
               <div class="meta">{{ "INBOX_REPORT_GONE" | translate }}</div>
             }
             <div class="report-actions">
-              @if (r.item) {
-                <button mat-flat-button (click)="resolve(r, true)">{{ "KOL_HIDE" | translate }}</button>
-              }
               <button mat-button (click)="resolve(r, false)">{{ "INBOX_REPORT_DONE" | translate }}</button>
             </div>
           </div>

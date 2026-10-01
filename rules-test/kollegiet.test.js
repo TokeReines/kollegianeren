@@ -234,8 +234,8 @@ test('profiles: managers edit their own; tablets and other kitchens do not', asy
   await assertFails(setDoc(doc(as(A), 'profiles', A), { ...p, colour: 'neon' }));
 });
 
-test('reports go to the maker only; standings are written by the job only', async () => {
-  await assertSucceeds(addDoc(collection(as('tabA'), 'reports'), { kitchenId: A, target: 'posts/p1', text: '', createdAt: serverTimestamp() }));
+test('reports come from the league job only, for the maker; standings are written by the job only', async () => {
+  await assertFails(addDoc(collection(as('tabA'), 'reports'), { kitchenId: A, target: 'posts/p1', text: '', createdAt: serverTimestamp() }));
   await assertFails(getDocs(collection(as(A), 'reports')));
   await assertSucceeds(getDocs(collection(as('maker'), 'reports')));
   await assertFails(setDoc(doc(as(A), 'standings', A), { wins: 99 }));
