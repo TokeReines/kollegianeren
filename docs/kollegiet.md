@@ -76,7 +76,7 @@ Every new collection is read with `kitchenLogin()`.
 | `kudos/{id}` | `from`, `to`, `kind` (`highfive` or `badge`), `badge` (from a fixed list), `reason` (≤ 140), `createdAt`, `hidden` | any member of `from`, `to != from` | A high-five's id is `{from}_{to}_{day}`, so one per kitchen pair per day. |
 | `polls/{kid}_{month}` | `kitchenId` (who started it), `title` (≤ 80), `opensAt`, `closesAt`, `result` (written by the job), `hidden` | any member of `kid` | Kitchens start their own polls ("Bedst til genbrug, oktober"). The id gives one poll per kitchen per month; it runs 1 to 31 days. |
 | `votes/{poll}_{kid}` | `poll`, `from`, `choice`, `createdAt` | any member of `from`, not for itself, before `closesAt` | The document id gives one vote per kitchen, changeable until it closes. Secret: a kitchen may read only its own vote, nobody else's, the maker included. Only the job (admin SDK) reads them all, and writes the result. |
-| `standings/{kid}` | `achievements`, `badges` (counts), `wins`, `updatedAt` | ops job only | The kitchen's trophy shelf on its profile. |
+| `standings/{kid}` | `achievements`, `badges` (counts), `highfives`, `wins`, `kudosThrough`, `updatedAt` | ops job only | The kitchen's trophy shelf on its profile and its pins in the top bar. Kudos up to `kudosThrough` are in the counts; the app adds newer ones from the kudos it already has. |
 | `standings/{kid}/achievements/{code}` | `battle`, `at` | members of `kid`, only if the rules' check of the tally passes; or the job | Live achievements (see Battles). |
 | `seen/{kid}` | `kollegietAt`, `aktueltAt`, `lastPostAt` | a kitchen login of `kid` | When the kitchen last opened Kollegiet and Aktuelt, for the badge and the strip; its last post, for the rate limit. |
 | `reports/{id}` | `kitchenId` (`kollegiet`), `target` (path), `text`, `createdAt` | ops/league.js only | Technical notes (a tally that was off, an achievement taken back), in the maker's inbox. |
@@ -112,10 +112,12 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
 ## Screens
 
 - **Kollegiet** (new menu item, everyone). Three tabs:
-  - **Opslagstavle:** pinned at the top: open votes, and one line per battle or vote decided in
-    the last three days. Then a one-line composer (+ for an event or a vote) and the posts with
-    their replies in one panel, newest activity first. Events on the side. High-fives and badges
-    are on the kitchens' profiles and in the notifications, not on the board.
+  - **Opslagstavle:** a pin board with fixed places. Across the top, loud: the newest 20
+    high-fives and badges as stickers in one row that scrolls (newest on the left), with a button
+    to give one to any kitchen. Under it three columns: posts (the composer always on top, then
+    the posts with their replies, newest activity first), events ("Det sker"), and "Kåringer":
+    open votes, and one line per battle or vote decided in the last three days. Narrower screens
+    put events and votes in one column beside the posts; phones stack everything.
   - **Battles:** live battles with their scoreboard and a button to join. Below that, past
     battles, then a "Udfordr" button.
 - **Live ticker.** While the kitchen is in a live battle, a slim bar on the buy page shows the
@@ -128,6 +130,10 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
     buttons for high-five, give a badge and challenge.
 - **Kitchen profile:** opened from a card. Its badges with reasons, achievements, battle wins,
   upcoming events.
+- **Worn badges.** The top bar shows the badges and high-fives the kitchen has been given, as
+  pins after its name, so everyone at the tablet sees them. One given in the last day wiggles.
+  Tapping them opens the kitchen's profile. It costs one listener on `standings/{kid}`, plus the
+  kudos listener the shell already has for the bell.
 - **Votes:** any kitchen starts a poll from the board ("Start en afstemning"). While it is
   open, a card at the top of the board: pick a kitchen, change your vote until it closes. Only
   your own vote is shown, never a running count. The winner is pinned on the board for three days

@@ -8,7 +8,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
-import {Achievement, BADGES, Badge, MAX_LIVE_BATTLES, highfiveId} from '../../interfaces/kollegiet';
+import {Achievement, Badge, MAX_LIVE_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
 import {dayKey} from '../../interfaces/meal';
 import {db, watch} from '../../firebase';
 import {AuthService} from '../../services/auth.service';
@@ -53,32 +53,8 @@ export class KitchensComponent {
     return id ? this.kollegiet.card(id) : null;
   });
 
-  // Badges and high-fives each kitchen got (the newest 60 on the board, plus the job's counts).
-  protected readonly summary = computed(() => {
-    const out = new Map<string, {highfives: number, badges: Partial<Record<Badge, number>>, wins: number}>();
-    const get = (id: string) => out.get(id) ?? out.set(id, {highfives: 0, badges: {}, wins: 0}).get(id)!;
-    for (const s of this.standings()) {
-      const e = get(s.id);
-      e.wins = s.wins ?? 0;
-      e.highfives = s.highfives ?? 0;
-      e.badges = {...(s.badges ?? {})};
-    }
-    // Kudos newer than the job's last count.
-    for (const k of this.kudos()) {
-      const standing = this.standings().find(s => s.id === k.to);
-      if (standing && k.createdAt && k.createdAt.toMillis() <= standing.updatedAt.toMillis()) {
-        continue;
-      }
-      const e = get(k.to);
-      if (k.kind === 'highfive') {
-        e.highfives++;
-      } else if (k.badge) {
-        e.badges[k.badge] = (e.badges[k.badge] ?? 0) + 1;
-      }
-    }
-    return out;
-  });
-  protected readonly badgeOrder = BADGES;
+  // Badges and high-fives each kitchen got (the job's counts, plus the newest kudos).
+  protected readonly summary = computed(() => kudosSummary(this.standings(), this.kudos()));
 
   protected readonly titles = computed(() => this.standings().find(s => s.id === this.selectedId())?.titles ?? []);
   protected readonly selectedKudos = computed(() => this.kudos().filter(k => k.to === this.selectedId() && k.kind === 'badge'));
@@ -90,8 +66,7 @@ export class KitchensComponent {
   });
 
   protected badgeList(id: string): [Badge, number][] {
-    const b = this.summary().get(id)?.badges ?? {};
-    return this.badgeOrder.filter(x => b[x]).map(x => [x, b[x]!]);
+    return badgeList(this.summary().get(id));
   }
 
   protected open(id: string | null) {
@@ -108,9 +83,15 @@ export class KitchensComponent {
     this.dialog.open<BadgeDialogComponent, string, BadgeResult>(BadgeDialogComponent, {width: '480px', maxWidth: '94vw', data: to})
       .afterClosed().subscribe(r => {
         if (r) {
-          this.kollegiet.giveBadge(to, r.badge, r.reason).catch(this.notify.error);
+          this.giveBadge(to, r.badge!, r.reason);
         }
       });
+  }
+
+  private giveBadge(to: string, badge: Badge, reason: string) {
+    this.kollegiet.giveBadge(to, badge, reason).then(
+      () => this.notify.info(`${this.i18n.t('KOL_BADGE_ICON_' + badge)} ${this.i18n.t('KOL_BADGE_SENT')} ${this.kollegiet.card(to).name}`),
+      this.notify.error);
   }
 
   protected challenge(against: string) {

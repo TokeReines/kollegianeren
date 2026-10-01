@@ -14,6 +14,7 @@ import {
   Profile, REASON_MAX, TITLE_MAX,
 } from '../../interfaces/kollegiet';
 import {atTime} from '../../interfaces/meal';
+import {AuthService} from '../../services/auth.service';
 import {EventFields, KollegietService} from '../../services/kollegiet.service';
 import {BattleFields} from '../../services/league.service';
 import {TranslatePipe} from '../../translate.pipe';
@@ -263,47 +264,77 @@ export class BattleDialogComponent {
 }
 
 export interface BadgeResult {
-  badge: Badge;
+  to: string;
+  // null: a high-five.
+  badge: Badge | null;
   reason: string;
 }
 
-// A badge for another kitchen, with why.
+// A badge for another kitchen, with why. Opened without a kitchen (the board), it asks which
+// kitchen first and has a high-five too.
 @Component({
   selector: 'app-badge-dialog',
-  imports: [FormsModule, MatDialogModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, TranslatePipe, KitchenChipComponent],
+  imports: [FormsModule, MatDialogModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule, TranslatePipe, KitchenChipComponent],
   template: `
-    <h2 mat-dialog-title>{{ "KOL_BADGE_GIVE" | translate }} <app-kitchen-chip [kitchenId]="to" /></h2>
+    @if (fixedTo) {
+      <h2 mat-dialog-title>{{ "KOL_BADGE_GIVE" | translate }} <app-kitchen-chip [kitchenId]="fixedTo" /></h2>
+    } @else {
+      <h2 mat-dialog-title>{{ "KOL_GIVE_KUDOS" | translate }}</h2>
+    }
     <div mat-dialog-content class="content">
+      @if (!fixedTo) {
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>{{ "KOL_TO" | translate }}</mat-label>
+          <mat-select [(ngModel)]="to">
+            @for (k of others(); track k.id) {
+              <mat-option [value]="k.id"><app-kitchen-chip [kitchenId]="k.id" /></mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
       <mat-chip-listbox [(ngModel)]="badge" [attr.aria-label]="'KOL_BADGE' | translate">
+        @if (!fixedTo) {
+          <mat-chip-option value="highfive">🙌 {{ "KOL_HIGHFIVE" | translate }}</mat-chip-option>
+        }
         @for (b of badges; track b) {
           <mat-chip-option [value]="b">{{ "KOL_BADGE_ICON_" + b | translate }} {{ "KOL_BADGE_" + b | translate }}</mat-chip-option>
         }
       </mat-chip-listbox>
-      <mat-form-field>
-        <mat-label>{{ "KOL_BADGE_REASON" | translate }}</mat-label>
-        <input matInput [(ngModel)]="reason" [maxlength]="reasonMax" autocomplete="off">
-        <mat-hint align="end">{{ reason().length }}/{{ reasonMax }}</mat-hint>
-      </mat-form-field>
+      @if (badge() !== 'highfive') {
+        <mat-form-field>
+          <mat-label>{{ "KOL_BADGE_REASON" | translate }}</mat-label>
+          <input matInput [(ngModel)]="reason" [maxlength]="reasonMax" autocomplete="off">
+          <mat-hint align="end">{{ reason().length }}/{{ reasonMax }}</mat-hint>
+        </mat-form-field>
+      }
     </div>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
-      <button mat-flat-button [disabled]="!badge() || !reason().trim()" (click)="give()">{{ "KOL_BADGE_SEND" | translate }}</button>
+      <button mat-flat-button [disabled]="!ready()" (click)="give()">
+        {{ (badge() === 'highfive' ? "KOL_HIGHFIVE_SEND" : "KOL_BADGE_SEND") | translate }}
+      </button>
     </mat-dialog-actions>
   `,
-  styles: `.content { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }`,
+  // Room above the kitchen field for its label.
+  styles: `.content { display: flex; flex-direction: column; gap: 16px; padding-top: 12px; }`,
 })
 export class BadgeDialogComponent {
-  protected readonly to = inject<string>(MAT_DIALOG_DATA);
+  protected readonly fixedTo = inject<string | null>(MAT_DIALOG_DATA);
   private readonly ref = inject<MatDialogRef<BadgeDialogComponent, BadgeResult>>(MatDialogRef);
+  private readonly kollegiet = inject(KollegietService);
+  private readonly auth = inject(AuthService);
+  protected readonly others = computed(() => this.kollegiet.cards().filter(c => c.id !== this.auth.membership()?.kitchenId));
   protected readonly badges = BADGES;
   protected readonly reasonMax = REASON_MAX;
-  protected readonly badge = signal<Badge | null>(null);
+  protected readonly to = signal(this.fixedTo ?? '');
+  protected readonly badge = signal<Badge | 'highfive' | null>(null);
   protected readonly reason = signal('');
+  protected readonly ready = computed(() => !!this.to() && !!this.badge() && (this.badge() === 'highfive' || !!this.reason().trim()));
 
   protected give() {
     const badge = this.badge();
-    if (badge && this.reason().trim()) {
-      this.ref.close({badge, reason: this.reason().trim()});
+    if (this.ready() && badge) {
+      this.ref.close({to: this.to(), badge: badge === 'highfive' ? null : badge, reason: badge === 'highfive' ? '' : this.reason().trim()});
     }
   }
 }

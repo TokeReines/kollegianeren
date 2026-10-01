@@ -1,6 +1,6 @@
 import {Timestamp} from 'firebase/firestore';
 import {
-  Battle, KEvent, Kudos, Post, Tally, addTick, battleState, burst, during, earnedAchievements, highfiveId, isInvited, kollegietNotices, newsNotices,
+  Battle, KEvent, Kudos, Post, Standing, Tally, addTick, badgeList, kudosSummary, battleState, burst, during, earnedAchievements, highfiveId, isInvited, kollegietNotices, newsNotices,
   pollId, rsvpCounts, saleUnits, score, scoreboard, sortNotices, threads,
 } from './interfaces/kollegiet';
 
@@ -95,6 +95,23 @@ describe('kollegiet board', () => {
   });
 });
 
+describe('kudos summary', () => {
+  const k = (id: string, to: string, at: number, badge: Kudos['badge'] = null): Kudos =>
+    ({id, from: 'Z', to, kind: badge ? 'badge' : 'highfive', badge, reason: '', createdAt: T(at)});
+  const standing: Standing = {id: 'A', wins: 2, highfives: 3, badges: {bestParty: 1}, updatedAt: T(NOW), kudosThrough: T(NOW - 2 * H)};
+
+  it('adds the kudos newer than the counts, not the ones in them', () => {
+    const s = kudosSummary([standing], [k('old', 'A', NOW - 3 * H, 'bestParty'), k('new', 'A', NOW - H, 'bestParty'), k('hf', 'A', NOW - H), k('b', 'B', NOW, 'cosy')]);
+    expect(s.get('A')).toEqual({wins: 2, highfives: 4, badges: {bestParty: 2}});
+    expect(badgeList(s.get('B'))).toEqual([['cosy', 1]]);
+  });
+
+  it('falls back to updatedAt without kudosThrough', () => {
+    const s = kudosSummary([{...standing, kudosThrough: undefined}], [k('new', 'A', NOW - H)]);
+    expect(s.get('A')?.highfives).toBe(3);
+  });
+});
+
 describe('kollegiet notifications', () => {
   const event = (extra: Partial<KEvent>): KEvent => ({
     id: 'e', kitchenId: 'B', kind: 'party', title: 'Fest', text: '', place: '', startsAt: T(NOW + 24 * H), endsAt: T(NOW + 28 * H),
@@ -109,6 +126,7 @@ describe('kollegiet notifications', () => {
       kudos: [kudos],
     }, NOW);
     expect(sortNotices(notices).map(n => n.kind)).toEqual(['invite', 'challenge', 'kudos', 'event']);
+    expect(notices.find(n => n.kind === 'kudos')?.badge).toBeNull();
   });
 
   it('drops what was seen, answered or joined', () => {

@@ -284,11 +284,11 @@ async function daily(now, kitchenNames, state) {
     if (got.length && !args.dry) {
       if (since) {
         await ref.set({ highfives: FieldValue.increment(highfives), badges: Object.fromEntries(Object.entries(badges)
-          .map(([b, n]) => [b, FieldValue.increment(n)])), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+          .map(([b, n]) => [b, FieldValue.increment(n)])), kudosThrough: Timestamp.fromMillis(now), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
         reads++;
         totalHighfives = (await ref.get()).get('highfives') || highfives;
       } else {
-        await ref.set({ highfives, badges, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        await ref.set({ highfives, badges, kudosThrough: Timestamp.fromMillis(now), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       }
     }
     const earned = [];

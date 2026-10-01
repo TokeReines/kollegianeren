@@ -14,7 +14,7 @@
 
       <div class="stats">
         <span><b>{{ summary().get(k.id)?.wins ?? 0 }}</b> 🏆 {{ "KOL_WINS" | translate }}</span>
-        <span><b>{{ summary().get(k.id)?.highfives ?? 0 }}</b> 🙌 {{ "KOL_HIGHFIVES" | translate }}</span>
+        <span><b>{{ summary().get(k.id)?.highfives ?? 0 }}</b> 🙌 {{ (summary().get(k.id)?.highfives === 1 ? "KOL_HIGHFIVE_ONE" : "KOL_HIGHFIVES") | translate }}</span>
       </div>
 
       @if (k.id !== me()) {

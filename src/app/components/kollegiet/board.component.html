@@ -1,6 +1,36 @@
-<!-- A pin board with fixed places: the posts on the left with the composer always on top, and
-     on the right, always in this order and always shown: votes and results, events, kudos. -->
+<!-- A pin board with fixed places: high-fives and badges across the top, loud, so everyone sees
+     them; under it posts (the composer always on top), events, and votes and results. -->
 <div class="board">
+  <section class="zone kudos-zone" [attr.aria-label]="'KOL_ZONE_KUDOS' | translate">
+    <div class="zone-head">
+      <h2><mat-icon>front_hand</mat-icon> {{ "KOL_ZONE_KUDOS" | translate }}</h2>
+      <button mat-flat-button class="give" (click)="giveKudos()" [attr.aria-label]="'KOL_GIVE_KUDOS' | translate">
+        🙌 <span class="long">{{ "KOL_GIVE_KUDOS" | translate }}</span><span class="short">{{ "KOL_GIVE" | translate }}</span>
+      </button>
+    </div>
+    <div class="wall">
+      @for (k of recentKudos(); track k.id) {
+        <article class="sticker" [class.badge]="k.kind === 'badge'">
+          <div class="sticker-top">
+            <span class="big" aria-hidden="true">{{ k.kind === 'highfive' ? '🙌' : ("KOL_BADGE_ICON_" + k.badge | translate) }}</span>
+            <ng-container *ngTemplateOutlet="menu; context: {collection: 'kudos', item: k, author: k.from}" />
+          </div>
+          <app-kitchen-chip class="to" [kitchenId]="k.to" />
+          <b class="what">{{ (k.kind === 'highfive' ? "KOL_HIGHFIVE" : "KOL_BADGE_" + k.badge) | translate }}</b>
+          @if (k.reason) {
+            <q class="reason">{{ k.reason }}</q>
+          }
+          <footer>
+            {{ "KOL_KUDOS_FROM" | translate }} <app-kitchen-chip [kitchenId]="k.from" />
+            <span class="when">{{ k.createdAt.toDate() | date:'d/M' }}</span>
+          </footer>
+        </article>
+      } @empty {
+        <p class="empty">{{ "KOL_KUDOS_EMPTY" | translate }}</p>
+      }
+    </div>
+  </section>
+
   <section class="zone posts-zone" [attr.aria-label]="'KOL_ZONE_POSTS' | translate">
     <div class="zone-head">
       <h2><mat-icon>forum</mat-icon> {{ "KOL_ZONE_POSTS" | translate }}</h2>
@@ -145,34 +175,6 @@
       } @empty {
         <p class="empty">{{ "KOL_EVENTS_EMPTY" | translate }}</p>
       }
-  </section>
-
-  <section class="zone kudos-zone" [attr.aria-label]="'KOL_ZONE_KUDOS' | translate">
-    <div class="zone-head">
-      <h2><mat-icon>front_hand</mat-icon> {{ "KOL_ZONE_KUDOS" | translate }}</h2>
-    </div>
-    <div class="panel kudos-list">
-      @for (k of recentKudos(); track k.id) {
-        <div class="kudos">
-          <span class="big" aria-hidden="true">{{ k.kind === 'highfive' ? '🙌' : ("KOL_BADGE_ICON_" + k.badge | translate) }}</span>
-          <span class="what">
-            <app-kitchen-chip [kitchenId]="k.from" />
-            {{ (k.kind === 'highfive' ? "KOL_GAVE_HIGHFIVE" : "KOL_GAVE_BADGE") | translate }}
-            <app-kitchen-chip [kitchenId]="k.to" />
-            @if (k.kind === 'badge') {
-              <b>{{ "KOL_BADGE_" + k.badge | translate }}</b>
-            }
-            @if (k.reason) {
-              <span class="reason">"{{ k.reason }}"</span>
-            }
-          </span>
-          <span class="when">{{ k.createdAt.toDate() | date:'d/M' }}</span>
-          <ng-container *ngTemplateOutlet="menu; context: {collection: 'kudos', item: k, author: k.from}" />
-        </div>
-      } @empty {
-        <p class="empty">{{ "KOL_KUDOS_EMPTY" | translate }}</p>
-      }
-    </div>
   </section>
 </div>
 
