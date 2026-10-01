@@ -324,7 +324,7 @@ export function highfiveId(from: string, to: string, day: string): string {
 
 // Notifications, most important first (docs/kollegiet.md, Notifications).
 // 'news' is a post on Aktuelt, for every kitchen.
-export type NoticeKind = 'live' | 'maker' | 'news' | 'invite' | 'challenge' | 'kudos' | 'event';
+export type NoticeKind = 'live' | 'maker' | 'news' | 'proposal' | 'invite' | 'challenge' | 'kudos' | 'event';
 
 export interface Notice {
   kind: NoticeKind;
@@ -337,10 +337,12 @@ export interface Notice {
   badge?: Badge | null;
   // A live call: its event, for "not now" (which answers no).
   eventId?: string;
+  // A proposal that became implemented (not a new one).
+  done?: boolean;
 }
 
 // A live call first: it is now or never.
-const NOTICE_ORDER: NoticeKind[] = ['live', 'maker', 'news', 'invite', 'challenge', 'kudos', 'event'];
+const NOTICE_ORDER: NoticeKind[] = ['live', 'maker', 'news', 'proposal', 'invite', 'challenge', 'kudos', 'event'];
 
 export function sortNotices(notices: Notice[]): Notice[] {
   return [...notices].sort((a, b) => NOTICE_ORDER.indexOf(a.kind) - NOTICE_ORDER.indexOf(b.kind) || b.at - a.at);

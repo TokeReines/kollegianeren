@@ -3,6 +3,7 @@ import {
   Battle, KEvent, Kudos, Post, Standing, Tally, addTick, badgeList, kudosSummary, battleState, burst, during, earnedAchievements, highfiveId, isInvited, kollegietNotices, newsNotices,
   pollId, rsvpCounts, saleUnits, score, scoreboard, sortNotices, threads,
 } from './interfaces/kollegiet';
+import {Proposal, proposalNotices, sortProposals} from './interfaces/proposal';
 
 const T = (ms: number) => Timestamp.fromMillis(ms);
 const NOW = Date.UTC(2026, 9, 2, 20, 0);
@@ -157,3 +158,21 @@ describe('news on Aktuelt', () => {
     expect(sortNotices([invite, ...newsNotices(list, NOW - 2 * H, NOW), maker]).map(n => n.kind)).toEqual(['maker', 'news', 'invite']);
   });
 });
+
+describe('proposals', () => {
+  const p = (id: string, extra: Partial<Proposal>): Proposal => ({id, title: id, body: '', images: [], status: 'open', votes: {},
+    createdAt: T(NOW - 30 * 24 * H), updatedAt: T(NOW - 30 * 24 * H), statusAt: T(NOW - 30 * 24 * H), ...extra});
+
+  it('puts open and planned ones first, most wanted first, then done, then dropped', () => {
+    const list = [p('dropped', {status: 'dropped'}), p('done', {status: 'done'}), p('few', {votes: {A: true}}),
+      p('many', {status: 'planned', votes: {A: true, B: true}})];
+    expect(sortProposals(list).map(x => x.id)).toEqual(['many', 'few', 'done', 'dropped']);
+  });
+
+  it('tells the kitchen about a new one, or one implemented, since it last looked', () => {
+    const list = [p('new', {createdAt: T(NOW - H)}), p('done', {status: 'done', statusAt: T(NOW - H)}), p('old', {})];
+    expect(proposalNotices(list, NOW - 2 * H, NOW).map(n => [n.text, !!n.done])).toEqual([['new', false], ['done', true]]);
+    expect(proposalNotices(list, NOW, NOW)).toEqual([]);
+  });
+});
+

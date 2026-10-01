@@ -1,46 +1,46 @@
 <div class="page">
   <div class="layout">
-    <section class="news">
+    <section class="main">
       <h1>{{ "AKTUELT_TITLE" | translate }}</h1>
+      <!-- Toke's page: news, proposals for the kitchens to weigh in on, and what the app is. -->
+      <mat-tab-group [selectedIndex]="index()" (selectedIndexChange)="go($event)" mat-stretch-tabs="false" animationDuration="0ms">
+        <mat-tab [label]="'AKTUELT_TAB_NEWS' | translate">
+          <div class="news">
+            @if (isAdmin()) {
+              <mat-card class="post-form">
+                <mat-card-title>{{ "AKTUELT_NEW_POST" | translate }}</mat-card-title>
+                <mat-form-field class="full">
+                  <mat-label>{{ "AKTUELT_POST_TITLE" | translate }}</mat-label>
+                  <input matInput [(ngModel)]="title" maxlength="200">
+                </mat-form-field>
+                <mat-form-field class="full">
+                  <mat-label>{{ "AKTUELT_POST_BODY" | translate }}</mat-label>
+                  <textarea matInput [(ngModel)]="body" rows="6" maxlength="5000"></textarea>
+                </mat-form-field>
+                <button mat-flat-button [disabled]="!title().trim() || !body().trim()" (click)="post()">{{ "AKTUELT_PUBLISH" | translate }}</button>
+              </mat-card>
+            }
 
-      <div class="actions">
-        <button mat-button (click)="showReveal()"><mat-icon>auto_awesome</mat-icon> {{ "AKTUELT_SHOW_REVEAL" | translate }}</button>
-        <a mat-button routerLink="/privacy"><mat-icon>privacy_tip</mat-icon> {{ "PRIVACY" | translate }}</a>
-        <a mat-stroked-button [href]="mobilePay.url" target="_blank" rel="noopener">
-          <mat-icon>local_cafe</mat-icon> {{ "AKTUELT_COFFEE" | translate }} (MobilePay Box {{ mobilePay.box }})
-        </a>
-      </div>
-
-      @if (isAdmin()) {
-        <mat-card class="post-form">
-          <mat-card-title>{{ "AKTUELT_NEW_POST" | translate }}</mat-card-title>
-          <mat-form-field class="full">
-            <mat-label>{{ "AKTUELT_POST_TITLE" | translate }}</mat-label>
-            <input matInput [(ngModel)]="title" maxlength="200">
-          </mat-form-field>
-          <mat-form-field class="full">
-            <mat-label>{{ "AKTUELT_POST_BODY" | translate }}</mat-label>
-            <textarea matInput [(ngModel)]="body" rows="6" maxlength="5000"></textarea>
-          </mat-form-field>
-          <button mat-flat-button [disabled]="!title().trim() || !body().trim()" (click)="post()">{{ "AKTUELT_PUBLISH" | translate }}</button>
-        </mat-card>
-      }
-
-      @for (a of announcements(); track a.id) {
-        <mat-card class="announcement" [id]="'news-' + a.id" [class.new]="isNew(a)">
-          <mat-card-title>
-            @if (isNew(a)) { <span class="new-tag">{{ "AKTUELT_NEW" | translate }}</span> }
-            {{ a.title }}
-          </mat-card-title>
-          <mat-card-subtitle>{{ a.createdAt.toDate() | date:'d. MMMM y' }}</mat-card-subtitle>
-          <p class="body">{{ a.body }}</p>
-        </mat-card>
-      } @empty {
-        <p class="empty">{{ "AKTUELT_EMPTY" | translate }}</p>
-      }
+            @for (a of announcements(); track a.id) {
+              <mat-card class="announcement" [id]="'news-' + a.id" [class.new]="isNew(a)">
+                <mat-card-title>
+                  @if (isNew(a)) { <span class="new-tag">{{ "AKTUELT_NEW" | translate }}</span> }
+                  {{ a.title }}
+                </mat-card-title>
+                <mat-card-subtitle>{{ a.createdAt.toDate() | date:'d. MMMM y' }}</mat-card-subtitle>
+                <p class="body">{{ a.body }}</p>
+              </mat-card>
+            } @empty {
+              <p class="empty">{{ "AKTUELT_EMPTY" | translate }}</p>
+            }
+          </div>
+        </mat-tab>
+        <mat-tab [label]="'AKTUELT_TAB_FORSLAG' | translate"><ng-template matTabContent><app-proposals /></ng-template></mat-tab>
+        <mat-tab [label]="'AKTUELT_TAB_ABOUT' | translate"><ng-template matTabContent><app-about /></ng-template></mat-tab>
+      </mat-tab-group>
     </section>
 
-    <!-- Skriv til Toke lives next to the news: one place for everything between the kitchens and the maker. -->
+    <!-- Skriv til Toke lives next to it all: one place for everything between the kitchens and the maker. -->
     <section class="chat" id="chat">
       <app-maker-chat embedded />
     </section>

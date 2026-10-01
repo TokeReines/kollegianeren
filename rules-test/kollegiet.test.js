@@ -276,3 +276,38 @@ test('seen: the kitchen stamps when it last looked at Kollegiet and Aktuelt, wit
   await assertFails(setDoc(doc(asAnonymous('link1'), 'seen', A), { aktueltAt: serverTimestamp() }, { merge: true }));
   await assertFails(setDoc(doc(as(A), 'seen', A), { other: 1 }, { merge: true }));
 });
+
+test('proposals: only the maker writes them; kitchens give their own thumbs up and comment, slowly', async () => {
+  const p = { title: 'Udgifter i madklubben', body: 'Kokken lægger udgifter ind', images: ['dev/x'], status: 'open', votes: {},
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(), statusAt: serverTimestamp() };
+  await assertFails(setDoc(doc(as(A), 'proposals', 'p'), p));
+  await assertSucceeds(setDoc(doc(as('maker'), 'proposals', 'p'), p));
+  await assertSucceeds(getDoc(doc(as('tabA'), 'proposals', 'p')));
+  // Thumbs up: own only, on and off; nothing else.
+  await assertSucceeds(updateDoc(doc(as('tabA'), 'proposals', 'p'), { [`votes.${A}`]: true }));
+  await assertFails(updateDoc(doc(as(B), 'proposals', 'p'), { [`votes.${A}`]: deleteField() }));
+  await assertFails(updateDoc(doc(as(B), 'proposals', 'p'), { [`votes.${B}`]: false }));
+  await assertFails(updateDoc(doc(as(B), 'proposals', 'p'), { status: 'done' }));
+  await assertSucceeds(updateDoc(doc(as(B), 'proposals', 'p'), { [`votes.${B}`]: true }));
+  await assertSucceeds(updateDoc(doc(as(B), 'proposals', 'p'), { [`votes.${B}`]: deleteField() }));
+  // The maker moves it along, but cannot touch the votes.
+  await assertSucceeds(updateDoc(doc(as('maker'), 'proposals', 'p'), { status: 'planned', statusAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(doc(as('maker'), 'proposals', 'p'), { votes: {}, updatedAt: serverTimestamp() }));
+  // Comments: a kitchen's own, text only, with the post rate limit; the maker's with pictures.
+  const comment = (db, kid, extra = {}) => {
+    const batch = writeBatch(db);
+    const ref = doc(collection(db, 'proposals', 'p', 'comments'));
+    batch.set(ref, { from: kid, text: 'Ja tak', images: [], createdAt: serverTimestamp(), ...extra });
+    batch.set(doc(db, 'seen', kid), { lastPostAt: serverTimestamp(), lastPostId: ref.id }, { merge: true });
+    return batch.commit();
+  };
+  await assertFails(comment(as(A), B));
+  await assertFails(comment(as(A), A, { images: ['dev/y'] }));
+  await assertSucceeds(comment(as(A), A));
+  await assertFails(comment(as(A), A));
+  await assertFails(addDoc(collection(as(A), 'proposals', 'p', 'comments'), { from: A, text: 'Uden grænse', images: [], createdAt: serverTimestamp() }));
+  await assertFails(addDoc(collection(as(A), 'proposals', 'p', 'comments'), { from: 'maker', text: 'Toke her', images: [], createdAt: serverTimestamp() }));
+  await assertSucceeds(addDoc(collection(as('maker'), 'proposals', 'p', 'comments'), { from: 'maker', text: 'Tak!', images: ['dev/z'], createdAt: serverTimestamp() }));
+  await assertFails(addDoc(collection(as(B), 'proposals', 'nope', 'comments'), { from: B, text: 'x', images: [], createdAt: serverTimestamp() }));
+});
+
