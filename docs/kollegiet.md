@@ -194,12 +194,12 @@ the same service account. It only writes `battles/{id}.result`, `polls/{id}.resu
 
 - **Every 15 minutes.** If no battle or poll ended since the last run, it stops after one query
   (1 read). So a result and its trophy show up at most 15 minutes after the end.
-- **Settling a battle** uses aggregation queries, at 1 read per 1000 documents:
-  - `sum(amount)` over the kitchen's purchases in the period, filtered by product id for `beer`;
-  - meals in the period, read directly (they are few);
+- **Settling a battle** reads what happened, once, when it has ended:
+  - the kitchen's purchases in the period, added up (for `beer`, only beer products). An
+    aggregation sum over a time range would need a composite index, so it is read instead: one
+    read per purchase, about 400 for a busy Friday battle;
+  - meals in the period (they are few);
   - gym is the tally itself.
-  - The `productId in [...]` + `timestamp` sum needs a composite index. It is created through the
-    Firestore Admin API, like `deploy-rules.js`, because the CLI needs the Service Usage API.
 - **Achievements, once a day (08:15):** the ones that need history: 10/50/100 food club dinners, a
   month with half the meals plant based, first open kitchen party, 10 high-fives. They go to
   `standings/{kid}`, and a new one becomes a post.
@@ -216,9 +216,9 @@ sales:
 | Rule read of the battle per sale | 400 |
 | Each tablet sees each tally change (20 × 400) | 8,000 |
 | Each tablet loading the battle and tallies at start or reload | ~300 |
-| League job (96 runs, settling one battle) | ~150 |
+| League job (96 runs, settling one battle) | ~600 |
 | Board, events and kudos listeners | ~1,000 |
-| **Total on top of today's ~4,000** | **~9,500** |
+| **Total on top of today's ~4,000** | **~10,000** |
 
 That is about a quarter of the free 50k. The bigger risk is many battles at once, so:
 - a kitchen can be in at most 3 live battles;
