@@ -59,9 +59,9 @@
       <h2>{{ p.title }}</h2>
       <div class="text rich-text" appPictureViewer [innerHTML]="asHtml(p.body)"></div>
       @if (p.images.length) {
-        <div class="gallery">
+        <div class="gallery" appPictureViewer>
           @for (i of p.images; track i) {
-            <a [href]="img(i)" target="_blank" rel="noopener"><img [src]="img(i, 'c_limit,w_900,q_auto')" alt="" loading="lazy"></a>
+            <img [src]="img(i, 'c_limit,w_900,q_auto')" alt="" loading="lazy">
           }
         </div>
       }
@@ -99,9 +99,9 @@
             <p class="text">{{ c.text }}</p>
           }
           @if (c.images.length) {
-            <div class="gallery small">
+            <div class="gallery small" appPictureViewer>
               @for (i of c.images; track i) {
-                <a [href]="img(i)" target="_blank" rel="noopener"><img [src]="img(i, 'c_limit,w_600,q_auto')" alt="" loading="lazy"></a>
+                <img [src]="img(i, 'c_limit,w_600,q_auto')" alt="" loading="lazy">
               }
             </div>
           }
