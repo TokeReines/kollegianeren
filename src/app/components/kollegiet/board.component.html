@@ -2,6 +2,9 @@
   <section class="main">
     @if (hasPinned()) {
       <h2 class="pinned"><mat-icon>push_pin</mat-icon> {{ "KOL_PINNED" | translate }}</h2>
+      @for (p of livePolls(); track p.id) {
+        <app-poll-card [poll]="p" />
+      }
       @for (b of recentWins(); track b.id) {
         <div class="pin">
           <span class="pin-icon">🏆</span>
@@ -12,38 +15,45 @@
           </span>
         </div>
       }
-      @for (p of openPolls(); track p.id) {
-        <app-poll-card [poll]="p" />
+      @for (p of decidedPolls(); track p.id) {
+        <div class="pin">
+          <span class="pin-icon">🗳️</span>
+          <span class="pin-text">
+            @for (w of p.result!.winners; track w) { <app-kitchen-chip [kitchenId]="w" /> }
+            {{ "KOL_PIN_WON" | translate }} <b>{{ p.title }}</b>
+            {{ "KOL_PIN_WITH" | translate }} {{ p.result!.votes[p.result!.winners[0]] ?? 0 }} {{ "KOL_VOTES" | translate }}
+          </span>
+        </div>
       }
     }
 
-    <mat-card appearance="outlined" class="composer">
-      <mat-form-field class="grow" subscriptSizing="dynamic">
-        <mat-label>{{ "KOL_WRITE" | translate }}</mat-label>
-        <textarea matInput [formControl]="textControl" rows="2" [maxlength]="postMax"
-                  (keydown.control.enter)="send()"></textarea>
+    <div class="composer">
+      <mat-form-field class="grow" subscriptSizing="dynamic" appearance="outline">
+        <input matInput [formControl]="textControl" [maxlength]="postMax" [placeholder]="'KOL_WRITE' | translate"
+               [attr.aria-label]="'KOL_WRITE' | translate" (keydown.enter)="send()">
       </mat-form-field>
-      <div class="composer-actions">
-        <mat-form-field class="to" subscriptSizing="dynamic">
-          <mat-label>{{ "KOL_TO" | translate }}</mat-label>
-          <mat-select [(ngModel)]="to">
-            <mat-option value="">{{ "KOL_ALL_KITCHENS" | translate }}</mat-option>
-            @for (k of others(); track k.id) {
-              <mat-option [value]="k.id"><app-kitchen-chip [kitchenId]="k.id" /></mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <span class="spacer"></span>
-        <button mat-button (click)="newEvent()"><mat-icon>celebration</mat-icon> {{ "KOL_EVENT_NEW" | translate }}</button>
-        <button mat-button (click)="newPoll()"><mat-icon>how_to_vote</mat-icon> {{ "KOL_POLL_NEW" | translate }}</button>
-        <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
-      </div>
-    </mat-card>
+      <button mat-icon-button [matMenuTriggerFor]="create" [attr.aria-label]="'KOL_CREATE' | translate"><mat-icon>add</mat-icon></button>
+      <mat-menu #create="matMenu" xPosition="before">
+        <button mat-menu-item (click)="newEvent()"><mat-icon>celebration</mat-icon><span>{{ "KOL_EVENT_NEW" | translate }}</span></button>
+        <button mat-menu-item (click)="newPoll()"><mat-icon>how_to_vote</mat-icon><span>{{ "KOL_POLL_NEW" | translate }}</span></button>
+      </mat-menu>
+      <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
+    </div>
+    @if (text().trim()) {
+      <mat-form-field class="to" subscriptSizing="dynamic">
+        <mat-label>{{ "KOL_TO" | translate }}</mat-label>
+        <mat-select [(ngModel)]="to">
+          <mat-option value="">{{ "KOL_ALL_KITCHENS" | translate }}</mat-option>
+          @for (k of others(); track k.id) {
+            <mat-option [value]="k.id"><app-kitchen-chip [kitchenId]="k.id" /></mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
 
-    @for (item of feed(); track item.kind === 'thread' ? item.thread.post.id : item.kudos.id) {
-      @if (item.kind === 'thread') {
-        @let t = item.thread;
-        <mat-card appearance="outlined" class="post">
+    <div class="posts">
+      @for (t of feed(); track t.post.id) {
+        <article class="post">
           <header>
             <app-kitchen-chip [kitchenId]="t.post.kitchenId" />
             @if (t.post.to) {
@@ -72,31 +82,13 @@
               <button mat-flat-button [disabled]="!reply().trim()" (click)="sendReply(t.post.id)">{{ "MAKER_SEND" | translate }}</button>
             </div>
           } @else {
-            <button mat-button class="reply-button" (click)="replyTo.set(t.post.id); replyControl.setValue('')"><mat-icon>reply</mat-icon> {{ "KOL_REPLY" | translate }}</button>
+            <button type="button" class="reply-link" (click)="replyTo.set(t.post.id); replyControl.setValue('')">{{ "KOL_REPLY" | translate }}</button>
           }
-        </mat-card>
-      } @else {
-        @let k = item.kudos;
-        <div class="kudos" [class.badge]="k.kind === 'badge'">
-          <span class="big" aria-hidden="true">{{ k.kind === 'highfive' ? '🙌' : ("KOL_BADGE_ICON_" + k.badge | translate) }}</span>
-          <span class="what">
-            <app-kitchen-chip [kitchenId]="k.from" />
-            {{ (k.kind === 'highfive' ? "KOL_GAVE_HIGHFIVE" : "KOL_GAVE_BADGE") | translate }}
-            <app-kitchen-chip [kitchenId]="k.to" />
-            @if (k.kind === 'badge') {
-              <b>{{ "KOL_BADGE_" + k.badge | translate }}</b>
-            }
-            @if (k.reason) {
-              <span class="reason">"{{ k.reason }}"</span>
-            }
-          </span>
-          <span class="when">{{ k.createdAt.toDate() | date:'d/M HH:mm' }}</span>
-          <ng-container *ngTemplateOutlet="menu; context: {collection: 'kudos', item: k, author: k.from}" />
-        </div>
+        </article>
+      } @empty {
+        <p class="empty">{{ "KOL_BOARD_EMPTY" | translate }}</p>
       }
-    } @empty {
-      <p class="empty">{{ "KOL_BOARD_EMPTY" | translate }}</p>
-    }
+    </div>
   </section>
 
   <aside class="events">

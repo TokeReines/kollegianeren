@@ -25,7 +25,7 @@ const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 
 const args = parseArgs();
 const DAY = 864e5;
-// Posts and kudos from Kollegiet itself, not from a kitchen.
+// Reports and kudos from Kollegiet itself, not from a kitchen.
 const SYSTEM = 'kollegiet';
 // Most reads one run spends on recounting battles; a big battle waits for the next run.
 const MAX_READS = Number(args['max-reads']) || 6000;
@@ -135,10 +135,6 @@ function liveScore(metric, tally) {
   return tally.value || 0;
 }
 
-async function post(text) {
-  if (args.dry) return console.log('  post:', text);
-  await db.collection('posts').add({ kitchenId: SYSTEM, text, to: null, parentId: null, createdAt: FieldValue.serverTimestamp() });
-}
 
 async function report(target, text) {
   if (args.dry) return console.log('  report:', text);
@@ -247,7 +243,6 @@ const ACH_NAMES = {
   dinners10: '10 madklub-middage', dinners50: '50 madklub-middage', dinners100: '100 madklub-middage',
   highfives10: '10 high-fives', firstOpenKitchen: 'Første åbne køkken', plantMonth: 'En måned med halvdelen plantebaseret',
 };
-const ACH_ICONS = { dinners10: '🥄', dinners50: '🍴', dinners100: '👨‍🍳', highfives10: '🙌', firstOpenKitchen: '🚪', plantMonth: '🥦' };
 
 const isPlant = m => (m.get('tags') || []).some(t => t === 'vegetarian' || t === 'vegan');
 // At least four dinners in a month, half of them plant-based.
@@ -258,7 +253,7 @@ async function award(kid, code, kitchenNames) {
   if (args.dry) return console.log(`  ${kitchenNames.get(kid)}: ${code}`);
   const ref = db.collection('standings').doc(kid).collection('achievements').doc(code);
   const created = await ref.create({ battle: null, at: FieldValue.serverTimestamp() }).then(() => true, () => false);
-  if (created) await post(`${ACH_ICONS[code] || '🏅'} ${kitchenNames.get(kid)} har låst op for "${ACH_NAMES[code] || code}"!`);
+  if (created) console.log(`  ${kitchenNames.get(kid)}: ${ACH_NAMES[code] || code}`);
 }
 
 // Once a day. With a state: only kudos and events since the last run, the food club totals as

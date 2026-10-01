@@ -61,33 +61,48 @@ h2 {
 
 }
 
+// One line: the text, + for an event or a vote, Send. Who it is for shows once there is text.
 .composer {
-  padding: 12px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.composer-actions {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
 .to {
-  width: 200px;
-}
-
-.spacer {
-  flex: 1;
+  width: 220px;
+  margin-top: -4px;
 }
 
 .grow {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
-.post,
+// The posts in one panel, a thin line between them.
+.posts {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface);
+  overflow: hidden;
+}
+
+.post {
+  padding: 12px 8px 10px 16px;
+
+  & + .post {
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+}
+
+.reply-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-label-medium);
+  cursor: pointer;
+}
+
 .event {
   padding: 12px 8px 8px 16px;
 }
@@ -133,10 +148,6 @@ header .when {
   }
 }
 
-.reply-button {
-  align-self: flex-start;
-}
-
 .reply-composer {
   display: flex;
   align-items: center;
@@ -144,36 +155,6 @@ header .when {
   margin: 8px 8px 4px 16px;
 }
 
-// A high-five or a badge: a line on the board, a badge a shade stronger.
-.kudos {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 8px 8px 16px;
-  border-radius: 12px;
-  background: var(--mat-sys-surface-container);
-
-  &.badge {
-    background: var(--mat-sys-surface-container-high);
-  }
-
-  .big {
-    font-size: 22px;
-  }
-
-  .what {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .reason {
-    font-style: italic;
-  }
-}
 
 .event {
   .kind {
