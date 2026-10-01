@@ -2,22 +2,19 @@ import {Component, computed, inject, input} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink} from '@angular/router';
 import {switchMap} from 'rxjs';
-import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {Battle, scoreboard} from '../../interfaces/kollegiet';
 import {AuthService} from '../../services/auth.service';
 import {KollegietService} from '../../services/kollegiet.service';
 import {LeagueService} from '../../services/league.service';
-import {Notify} from '../../services/notify.service';
-import {TranslateService} from '../../services/translate.service';
 import {KitchenChipComponent} from './kitchen-chip.component';
 import {liveBoard} from './live-board';
 
-// One live battle on the buy page: the standings in a line, a pop when a kitchen moves, and the
-// gym counter. Only for kitchens in the battle, so only their tablets listen.
+// One live battle on the buy page, to look at: the standings in a line and a pop when a kitchen
+// moves. Gym taps are on the battle's card in Kollegiet. Only for kitchens in the battle, so only their tablets listen.
 @Component({
   selector: 'app-battle-ticker',
-  imports: [RouterLink, MatButtonModule, MatIconModule, KitchenChipComponent],
+  imports: [RouterLink, MatIconModule, KitchenChipComponent],
   template: `
     <div class="ticker">
       <a class="title" [routerLink]="['/kollegiet/battle', battle().id]">
@@ -38,9 +35,6 @@ import {liveBoard} from './live-board';
           <span class="toast">{{ kollegiet.card(x.kitchenId).emoji }} +{{ x.n }}</span>
         }
       }
-      @if (battle().metric === 'gym' && gymButton()) {
-        <button mat-flat-button class="gym" (click)="gym()"><mat-icon>fitness_center</mat-icon> +1</button>
-      }
     </div>
   `,
   styles: `
@@ -59,7 +53,6 @@ import {liveBoard} from './live-board';
     .score { font-variant-numeric: tabular-nums; }
     .toast { flex: none; padding: 4px 12px; border-radius: 14px; background: var(--mat-sys-tertiary); color: var(--mat-sys-on-tertiary);
       font: var(--mat-sys-label-large); animation: pop 400ms ease-out; }
-    .gym { flex: none; }
     @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
     .rows { scrollbar-width: none; }
@@ -70,11 +63,7 @@ export class BattleTickerComponent {
   private readonly league = inject(LeagueService);
   protected readonly kollegiet = inject(KollegietService);
   private readonly auth = inject(AuthService);
-  private readonly notify = inject(Notify);
-  private readonly i18n = inject(TranslateService);
   readonly battle = input.required<Battle>();
-  // Off on the buy page, which has one gym button for all gym battles.
-  readonly gymButton = input(true);
 
   private readonly id = computed(() => this.battle().id);
   private readonly tallies = toSignal(toObservable(this.id).pipe(switchMap(id => this.league.tallies(id))), {initialValue: null});
@@ -83,7 +72,4 @@ export class BattleTickerComponent {
   protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
   protected readonly icon = computed(() => LeagueService.metricIcon(this.battle().metric));
 
-  protected gym() {
-    this.league.gym(this.battle(), 1).catch(() => this.notify.info(this.i18n.t('KOL_GYM_WAIT')));
-  }
 }

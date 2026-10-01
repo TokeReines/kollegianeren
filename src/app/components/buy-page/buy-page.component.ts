@@ -69,18 +69,12 @@ export class BuyPageComponent {
   private timer: ReturnType<typeof setTimeout> | undefined;
 
   // Battles the kitchen is in right now (Kollegiet): one strip above the grid, for the one that
-  // ends first, a link to the rest, and one gym button for all its gym battles.
+  // ends first, and a link to the rest. Only to look at: gym taps are on the Battles tab.
   private readonly league = inject(LeagueService);
   protected readonly liveBattles = this.league.myLive;
   protected readonly featuredBattle = computed(() =>
     [...this.liveBattles()].sort((a, b) => a.to.toMillis() - b.to.toMillis())[0] ?? null);
-  protected readonly gymBattles = computed(() => this.liveBattles().filter(b => b.metric === 'gym'));
 
-  protected gym() {
-    for (const b of this.gymBattles()) {
-      this.league.gym(b, 1).catch(() => this.notify.info(this.i18n.t('KOL_GYM_WAIT')));
-    }
-  }
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
