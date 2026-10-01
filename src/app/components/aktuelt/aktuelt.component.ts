@@ -1,8 +1,14 @@
-import {Component, inject, signal} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, DestroyRef, inject, signal} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {RouterLink} from '@angular/router';
+import {ActivatedRoute, RouterLink} from '@angular/router';
+import {firstValueFrom} from 'rxjs';
+import {showAnchor} from '../../anchor';
+import {NEWS_DAYS} from '../../interfaces/kollegiet';
+import {Announcement} from '../../interfaces/message';
+import {KollegietService} from '../../services/kollegiet.service';
+import {millis} from '../../time';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatDialog} from '@angular/material/dialog';
@@ -38,6 +44,22 @@ export class AktueltComponent {
   protected readonly mobilePay = MOBILEPAY;
   protected readonly title = signal('');
   protected readonly body = signal('');
+
+  // When the kitchen last looked, read before this visit counts: what is newer gets a "new" tag.
+  protected readonly seenBefore = signal(Number.MAX_SAFE_INTEGER);
+
+  constructor() {
+    const kollegiet = inject(KollegietService);
+    const seen = () => kollegiet.markAktueltSeen().catch(() => undefined);
+    firstValueFrom(kollegiet.aktueltSeen$).then(at => this.seenBefore.set(at), () => undefined).finally(seen);
+    inject(DestroyRef).onDestroy(seen);
+    // From a notification: #news-…, once the posts have loaded.
+    inject(ActivatedRoute).fragment.pipe(takeUntilDestroyed()).subscribe(f => f?.startsWith('news-') && showAnchor(f));
+  }
+
+  protected isNew(a: Announcement): boolean {
+    return millis(a.createdAt) > Math.max(this.seenBefore(), Date.now() - NEWS_DAYS * 864e5);
+  }
 
   protected showReveal() {
     openReveal(this.dialog);

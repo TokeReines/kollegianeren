@@ -534,5 +534,7 @@
   "INBOX_REPORTS_HINT": "Fra Kollegiet",
   "INBOX_REPORT_GONE": "Det er allerede væk.",
   "INBOX_REPORT_DONE": "Lad det være",
-  "INBOX_REPORTS_EMPTY": "Ingen anmeldelser."
+  "INBOX_REPORTS_EMPTY": "Ingen anmeldelser.",
+  "NOTICE_news": "Nyt fra Toke på Aktuelt",
+  "AKTUELT_NEW": "Ny"
 }

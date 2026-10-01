@@ -534,5 +534,7 @@
   "INBOX_REPORTS_HINT": "From the dorm board",
   "INBOX_REPORT_GONE": "It is already gone.",
   "INBOX_REPORT_DONE": "Leave it",
-  "INBOX_REPORTS_EMPTY": "No reports."
+  "INBOX_REPORTS_EMPTY": "No reports.",
+  "NOTICE_news": "News from Toke",
+  "AKTUELT_NEW": "New"
 }

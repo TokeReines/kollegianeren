@@ -268,7 +268,8 @@ export function highfiveId(from: string, to: string, day: string): string {
 }
 
 // Notifications, most important first (docs/kollegiet.md, Notifications).
-export type NoticeKind = 'maker' | 'invite' | 'challenge' | 'kudos' | 'event';
+// 'news' is a post on Aktuelt, for every kitchen.
+export type NoticeKind = 'maker' | 'news' | 'invite' | 'challenge' | 'kudos' | 'event';
 
 export interface Notice {
   kind: NoticeKind;
@@ -279,10 +280,21 @@ export interface Notice {
   link: {path: string, fragment?: string, query?: Record<string, string>};
 }
 
-const NOTICE_ORDER: NoticeKind[] = ['maker', 'invite', 'challenge', 'kudos', 'event'];
+const NOTICE_ORDER: NoticeKind[] = ['maker', 'news', 'invite', 'challenge', 'kudos', 'event'];
 
 export function sortNotices(notices: Notice[]): Notice[] {
   return [...notices].sort((a, b) => NOTICE_ORDER.indexOf(a.kind) - NOTICE_ORDER.indexOf(b.kind) || b.at - a.at);
+}
+
+// How far back a post on Aktuelt counts as news, for a kitchen that has never opened Aktuelt.
+export const NEWS_DAYS = 14;
+
+// Posts on Aktuelt since the kitchen last opened it (`seenAt`), each its own notice.
+export function newsNotices(announcements: {id: string, title: string, createdAt: Timestamp}[], seenAt: number,
+                            now = Date.now()): Notice[] {
+  const since = Math.max(seenAt, now - NEWS_DAYS * 864e5);
+  return announcements.filter(a => millis(a.createdAt) > since).map(a => ({kind: 'news' as const, from: null, text: a.title,
+    at: millis(a.createdAt), link: {path: '/aktuelt', fragment: `news-${a.id}`}}));
 }
 
 // What Kollegiet has for a kitchen that it has not seen: invitations and challenges to it, kudos it

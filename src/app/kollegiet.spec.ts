@@ -1,6 +1,6 @@
 import {Timestamp} from 'firebase/firestore';
 import {
-  Battle, KEvent, Kudos, Post, Tally, addTick, battleState, burst, during, earnedAchievements, highfiveId, isInvited, kollegietNotices,
+  Battle, KEvent, Kudos, Post, Tally, addTick, battleState, burst, during, earnedAchievements, highfiveId, isInvited, kollegietNotices, newsNotices,
   pollId, rsvpCounts, saleUnits, score, scoreboard, sortNotices, threads,
 } from './interfaces/kollegiet';
 
@@ -114,5 +114,19 @@ describe('kollegiet notifications', () => {
   it('drops what was seen, answered or joined', () => {
     expect(kollegietNotices('A', NOW, {events: [event({})], battles: [], kudos: [kudos]}, NOW)).toEqual([]);
     expect(kollegietNotices('A', 0, {events: [event({rsvp: {A: 'no'}})], battles: [battle({createdAt: T(NOW)})], kudos: []}, NOW)).toEqual([]);
+  });
+});
+
+describe('news on Aktuelt', () => {
+  const news = (id: string, at: number) => ({id, title: `Nyt ${id}`, createdAt: T(at)});
+
+  it('is each post since the last look, at most two weeks back, after a message from Toke', () => {
+    const list = [news('new', NOW - H), news('seen', NOW - 3 * H), news('old', NOW - 20 * 24 * H)];
+    expect(newsNotices(list, NOW - 2 * H, NOW).map(n => n.text)).toEqual(['Nyt new']);
+    expect(newsNotices(list, 0, NOW).map(n => n.text)).toEqual(['Nyt new', 'Nyt seen']);
+    expect(newsNotices(list, 0, NOW)[0].link).toEqual({path: '/aktuelt', fragment: 'news-new'});
+    const maker = {kind: 'maker' as const, from: null, text: 'Hej', at: NOW - 5 * H, link: {path: '/aktuelt'}};
+    const invite = {kind: 'invite' as const, from: 'B', text: 'Fest', at: NOW, link: {path: '/kollegiet'}};
+    expect(sortNotices([invite, ...newsNotices(list, NOW - 2 * H, NOW), maker]).map(n => n.kind)).toEqual(['maker', 'news', 'invite']);
   });
 });

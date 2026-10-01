@@ -225,7 +225,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // When the kitchen last opened Kollegiet, and its last post (the rate limit).
+    // When the kitchen last opened Kollegiet and Aktuelt, and its last post (the rate limit).
     match /seen/{kid} {
       function stamp(field) {
         return request.resource.data.get(field, null) == null
@@ -234,8 +234,8 @@ service cloud.firestore {
       }
       allow read: if isMember(kid);
       allow create, update: if isMember(kid) && kitchenLogin()
-        && request.resource.data.keys().hasOnly(['kollegietAt', 'lastPostAt'])
-        && stamp('kollegietAt') && stamp('lastPostAt');
+        && request.resource.data.keys().hasOnly(['kollegietAt', 'lastPostAt', 'aktueltAt'])
+        && stamp('kollegietAt') && stamp('lastPostAt') && stamp('aktueltAt');
       allow delete: if false;
     }
 

@@ -27,8 +27,11 @@
       }
 
       @for (a of announcements(); track a.id) {
-        <mat-card class="announcement">
-          <mat-card-title>{{ a.title }}</mat-card-title>
+        <mat-card class="announcement" [id]="'news-' + a.id" [class.new]="isNew(a)">
+          <mat-card-title>
+            @if (isNew(a)) { <span class="new-tag">{{ "AKTUELT_NEW" | translate }}</span> }
+            {{ a.title }}
+          </mat-card-title>
           <mat-card-subtitle>{{ a.createdAt.toDate() | date:'d. MMMM y' }}</mat-card-subtitle>
           <p class="body">{{ a.body }}</p>
         </mat-card>
