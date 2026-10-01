@@ -4,7 +4,7 @@ import {
   Timestamp, addDoc, collection, deleteDoc, deleteField, doc, getDoc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where,
   writeBatch,
 } from 'firebase/firestore';
-import {Observable, map, shareReplay, switchMap} from 'rxjs';
+import {Observable, distinctUntilChanged, map, shareReplay, switchMap} from 'rxjs';
 import {
   Badge, KEvent, Kudos, Poll, Post, Profile, Rsvp, Standing, highfiveId, pollId,
 } from '../interfaces/kollegiet';
@@ -60,11 +60,15 @@ export class KollegietService {
   readonly kudos$ = this.shared(() => watch<Kudos>(query(collection(db, 'kudos'), orderBy('createdAt', 'desc'), limit(60))));
   readonly polls$ = this.shared(() => watch<Poll>(query(collection(db, 'polls'),
     where('closesAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('closesAt'), limit(20))));
-  readonly seen$ = this.auth.kitchenId$.pipe(
-    switchMap(kid => watchDoc<{kollegietAt?: Timestamp}>(doc(db, 'seen', kid))),
-    map(s => millis(s?.kollegietAt)),
+  // When the kitchen last opened Kollegiet and Aktuelt: one document, one listener.
+  private readonly seenDoc$ = this.auth.kitchenId$.pipe(
+    switchMap(kid => watchDoc<{kollegietAt?: Timestamp, aktueltAt?: Timestamp}>(doc(db, 'seen', kid))),
     shareReplay({bufferSize: 1, refCount: true}),
   );
+  readonly seen$ = this.seenDoc$.pipe(map(s => millis(s?.kollegietAt)), distinctUntilChanged(),
+    shareReplay({bufferSize: 1, refCount: true}));
+  readonly aktueltSeen$ = this.seenDoc$.pipe(map(s => millis(s?.aktueltAt)), distinctUntilChanged(),
+    shareReplay({bufferSize: 1, refCount: true}));
 
   // Posts since the kitchen last opened Kollegiet, for the menu badge: only the new ones are read.
   readonly newPosts$ = this.seen$.pipe(
@@ -99,6 +103,10 @@ export class KollegietService {
 
   async markSeen() {
     return setDoc(doc(db, 'seen', this.kitchenId), {kollegietAt: serverTimestamp()}, {merge: true});
+  }
+
+  async markAktueltSeen() {
+    return setDoc(doc(db, 'seen', this.kitchenId), {aktueltAt: serverTimestamp()}, {merge: true});
   }
 
   saveProfile(fields: Pick<Profile, 'emoji' | 'colour' | 'bio'>) {

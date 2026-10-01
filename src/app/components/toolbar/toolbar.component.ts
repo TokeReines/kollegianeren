@@ -19,7 +19,8 @@ import {TranslatePipe} from '../../translate.pipe';
 
 // M3 top app bar: navigation icon, the kitchen as the title, and one account button on the right
 // that holds the kitchen, the login, theme, language and log out. A bell next to it while
-// something is waiting: a message from Toke, or an invitation, challenge or high-five on Kollegiet.
+// something is waiting (a message or news from Toke, an invitation, challenge or high-five on
+// Kollegiet), opening a list of them.
 @Component({
   selector: 'app-toolbar',
   imports: [MatBadgeModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatToolbarModule, MatTooltipModule, RouterLink, TranslatePipe],
@@ -34,7 +35,8 @@ export class ToolbarComponent {
   protected readonly theme = inject(ThemeService);
   protected readonly i18n = inject(TranslateService);
 
-  protected readonly notices = inject(NoticeService).notices;
+  protected readonly notice = inject(NoticeService);
+  protected readonly notices = this.notice.notices;
   protected readonly email = toSignal(this.auth.user$.pipe(map(u => u?.email || '')), {initialValue: ''});
   protected readonly kitchenName = toSignal(this.auth.membership$.pipe(
     map(m => m?.kitchenId || null),

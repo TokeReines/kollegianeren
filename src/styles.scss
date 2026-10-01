@@ -172,6 +172,50 @@ app-root {
   }
 }
 
+// The bell's list: one row per notification, headline and a line of preview.
+.notice-menu {
+  min-width: 300px !important;
+  max-width: min(400px, calc(100vw - 32px)) !important;
+
+  .menu-label {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+    padding: 12px 16px 4px;
+  }
+
+  .notice-item.mat-mdc-menu-item {
+    min-height: 64px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+
+    > .mat-icon {
+      color: var(--mat-sys-tertiary);
+    }
+  }
+
+  .notice-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    b {
+      font: var(--mat-sys-title-small);
+    }
+  }
+
+  .notice-preview {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .notice-item .mat-mdc-menu-item-text {
+    min-width: 0;
+  }
+}
+
 // ---- Tables
 
 // Wide tables scroll sideways inside the page instead of squeezing their columns.

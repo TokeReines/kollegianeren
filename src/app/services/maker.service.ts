@@ -1,8 +1,9 @@
 import {Injectable, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {
-  addDoc, collection, collectionGroup, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, where, writeBatch,
+  Timestamp, addDoc, collection, collectionGroup, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, where, writeBatch,
 } from 'firebase/firestore';
+import {NEWS_DAYS} from '../interfaces/kollegiet';
 import {Observable, combineLatest, from, map, of, shareReplay, switchMap} from 'rxjs';
 import {Kitchen} from '../interfaces/kitchen';
 import {Announcement, Message, Thread, newestFirst, toThreads} from '../interfaces/message';
@@ -26,6 +27,11 @@ export class MakerService {
   announcements(): Observable<Announcement[]> {
     return watchInKitchen<Announcement>(this.auth.kitchenId$, () => query(collection(db, 'announcements'), orderBy('createdAt', 'desc')));
   }
+
+  // The newest posts on Aktuelt, for the notifications. Few and small, one shared listener.
+  readonly recentAnnouncements$: Observable<Announcement[]> = watchInKitchen<Announcement>(this.auth.kitchenId$,
+    () => query(collection(db, 'announcements'), where('createdAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
+      orderBy('createdAt', 'desc'), limit(10))).pipe(shareReplay({bufferSize: 1, refCount: true}));
 
   postAnnouncement(title: string, body: string) {
     return addDoc(collection(db, 'announcements'), {title, body, createdAt: serverTimestamp()});

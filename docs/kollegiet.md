@@ -78,7 +78,7 @@ Every new collection is read with `kitchenLogin()`.
 | `votes/{poll}_{kid}` | `poll`, `from`, `choice`, `createdAt` | any member of `from`, not for itself, before `closesAt` | The document id gives one vote per kitchen, changeable until it closes. Secret: a kitchen may read only its own vote, nobody else's, the maker included. Only the job (admin SDK) reads them all, and writes the result. |
 | `standings/{kid}` | `achievements`, `badges` (counts), `wins`, `updatedAt` | ops job only | The kitchen's trophy shelf on its profile. |
 | `standings/{kid}/achievements/{code}` | `battle`, `at` | members of `kid`, only if the rules' check of the tally passes; or the job | Live achievements (see Battles). |
-| `seen/{kid}` | `kollegietAt` | any member of `kid` | When the kitchen last opened Kollegiet, for the badge and the strip. |
+| `seen/{kid}` | `kollegietAt`, `aktueltAt`, `lastPostAt` | a kitchen login of `kid` | When the kitchen last opened Kollegiet and Aktuelt, for the badge and the strip; its last post, for the rate limit. |
 | `reports/{id}` | `kitchenId` (reporter), `target` (path), `createdAt` | any member | Read by the maker only; shown in the maker's inbox. |
 
 Rate limits without functions:
@@ -97,15 +97,17 @@ PR #143 adds a strip under the top bar and a bell for an unread message from the
 becomes a small notification centre with one source list, shown in this order:
 
 1. a message from the maker (#143);
-2. an invitation or challenge to your kitchen (an event or battle with you in `invited`);
-3. a badge or high-five your kitchen received;
-4. an event for everyone, starting within 3 days;
-5. new posts on the board: only a badge on the Kollegiet menu item, not the strip.
+2. a post on Aktuelt, each its own item: newer than `seen/{kid}.aktueltAt` and at most 14 days old;
+3. an invitation or challenge to your kitchen (an event or battle with you in `invited`);
+4. a badge or high-five your kitchen received;
+5. an event for everyone, starting within 3 days;
+6. new posts on the board: only a badge on the Kollegiet menu item, not the strip.
 
-The strip shows the top item and opens it. Unseen means newer than `seen/{kid}.kollegietAt`,
-worked out from listeners Kollegiet keeps anyway, so no extra queries. Opening Kollegiet updates
-`kollegietAt`. A tablet would otherwise show the strip all evening, so it may also be dismissed.
-Dismissing it updates the same field.
+The strip shows the top item and opens it; the bell opens a list of all of them, each one
+clickable. Unseen means newer than `seen/{kid}.kollegietAt`, worked out from listeners Kollegiet
+keeps anyway, so no extra queries. Opening Kollegiet updates `kollegietAt`, opening Aktuelt
+`aktueltAt` (one more small listener: the newest 10 posts on Aktuelt). A tablet would otherwise
+show the strip all evening, so it may also be dismissed. Dismissing it updates the same field.
 
 ## Screens
 

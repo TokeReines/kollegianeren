@@ -206,3 +206,12 @@ test('reports go to the maker only; standings are written by the job only', asyn
   await assertSucceeds(getDocs(collection(as('maker'), 'reports')));
   await assertFails(setDoc(doc(as(A), 'standings', A), { wins: 99 }));
 });
+
+test('seen: the kitchen stamps when it last looked at Kollegiet and Aktuelt, with the server time', async () => {
+  await assertSucceeds(setDoc(doc(as('tabA'), 'seen', A), { aktueltAt: serverTimestamp() }, { merge: true }));
+  await assertSucceeds(setDoc(doc(as(A), 'seen', A), { kollegietAt: serverTimestamp() }, { merge: true }));
+  await assertFails(setDoc(doc(as(A), 'seen', A), { aktueltAt: ts(Date.now() + 864e5) }, { merge: true }));
+  await assertFails(setDoc(doc(as(B), 'seen', A), { aktueltAt: serverTimestamp() }, { merge: true }));
+  await assertFails(setDoc(doc(asAnonymous('link1'), 'seen', A), { aktueltAt: serverTimestamp() }, { merge: true }));
+  await assertFails(setDoc(doc(as(A), 'seen', A), { other: 1 }, { merge: true }));
+});

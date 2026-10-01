@@ -38,6 +38,21 @@
   margin-bottom: 16px;
 }
 
+.announcement.new {
+  outline: 2px solid var(--mat-sys-tertiary);
+}
+
+.new-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  vertical-align: middle;
+  background: var(--mat-sys-tertiary);
+  color: var(--mat-sys-on-tertiary);
+  font: var(--mat-sys-label-medium);
+}
+
 .body {
   white-space: pre-line;
   margin-top: 12px;

@@ -5,12 +5,24 @@
   </button>
   <span class="title" [class.kiosk]="sidenav.railHidden()">{{ kitchenName() }}</span>
   <span class="fill-space"></span>
-  @if (notices()[0]; as first) {
-    <a class="message-button" mat-icon-button [routerLink]="first.link.path" [fragment]="first.link.fragment" [queryParams]="first.link.query"
+  @if (notices().length) {
+    <button class="message-button" mat-icon-button [matMenuTriggerFor]="noticeMenu"
        [attr.aria-label]="'NOTICES' | translate" [matTooltip]="'NOTICES' | translate" [matBadge]="notices().length">
       <mat-icon>notifications_active</mat-icon>
-    </a>
+    </button>
   }
+  <mat-menu #noticeMenu="matMenu" xPosition="before" class="notice-menu">
+    <div class="menu-label">{{ "NOTICES" | translate }}</div>
+    @for (n of notices(); track $index) {
+      <a mat-menu-item class="notice-item" [routerLink]="n.link.path" [fragment]="n.link.fragment" [queryParams]="n.link.query">
+        <mat-icon>{{ notice.icon(n) }}</mat-icon>
+        <span class="notice-text">
+          <b>{{ notice.title(n) }}</b>
+          @if (n.text) { <span class="notice-preview">{{ n.text }}</span> }
+        </span>
+      </a>
+    }
+  </mat-menu>
   <button class="account-button" mat-icon-button [matMenuTriggerFor]="account" [attr.aria-label]="'ACCOUNT' | translate" [matTooltip]="'ACCOUNT' | translate">
     <img src="assets/img/navbar_logo.jpg" alt="" />
   </button>

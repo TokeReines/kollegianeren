@@ -3,6 +3,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {map} from 'rxjs';
 import {MatTabsModule} from '@angular/material/tabs';
+import {showAnchor} from '../../anchor';
 import {KollegietService} from '../../services/kollegiet.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {BattlesComponent} from './battles.component';
@@ -44,21 +45,10 @@ export class KollegietComponent {
     seen();
     inject(DestroyRef).onDestroy(seen);
     // From the strip: #battle-… or #event-…, once the tab has loaded it.
-    this.route.fragment.pipe(takeUntilDestroyed()).subscribe(fragment => fragment && showAnchor(fragment, 15));
+    this.route.fragment.pipe(takeUntilDestroyed()).subscribe(fragment => fragment && showAnchor(fragment));
   }
 
   protected go(index: number) {
     this.router.navigate([], {queryParams: {tab: TABS[index]}, replaceUrl: true});
-  }
-}
-
-function showAnchor(id: string, tries: number) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({behavior: 'smooth', block: 'center'});
-    el.classList.add('flash');
-    setTimeout(() => el.classList.remove('flash'), 2500);
-  } else if (tries > 0) {
-    setTimeout(() => showAnchor(id, tries - 1), 200);
   }
 }
