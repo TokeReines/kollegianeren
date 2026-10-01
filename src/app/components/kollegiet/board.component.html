@@ -1,5 +1,12 @@
 <div class="board">
   <section class="main">
+    @if (openPolls().length) {
+      <h2 class="pinned"><mat-icon>push_pin</mat-icon> {{ "KOL_PINNED" | translate }}</h2>
+      @for (p of openPolls(); track p.id) {
+        <app-poll-card [poll]="p" />
+      }
+    }
+
     <mat-card appearance="outlined" class="composer">
       <mat-form-field class="grow" subscriptSizing="dynamic">
         <mat-label>{{ "KOL_WRITE" | translate }}</mat-label>
@@ -22,10 +29,6 @@
         <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
       </div>
     </mat-card>
-
-    @for (p of openPolls(); track p.id) {
-      <app-poll-card [poll]="p" />
-    }
 
     @for (item of feed(); track item.kind === 'thread' ? item.thread.post.id : item.kudos.id) {
       @if (item.kind === 'thread') {
