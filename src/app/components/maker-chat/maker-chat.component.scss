@@ -112,3 +112,25 @@
     line-height: 1.3;
   }
 }
+
+// Pictures in a message: small, a tap opens them large.
+.pics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 2px;
+
+  img {
+    max-width: 220px;
+    max-height: 160px;
+    border-radius: 10px;
+    display: block;
+    cursor: zoom-in;
+  }
+}
+
+.hint {
+  margin: 4px 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}

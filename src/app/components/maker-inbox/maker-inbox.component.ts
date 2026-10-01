@@ -12,11 +12,15 @@ import {KollegietService, Report} from '../../services/kollegiet.service';
 import {Thread} from '../../interfaces/message';
 import {Notify} from '../../services/notify.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {clUrl} from '../../services/cloudinary.service';
+import {PictureViewerDirective} from '../aktuelt/picture-viewer';
+import {ChatPicturesComponent} from '../maker-chat/chat-pictures.component';
 
 // The maker's inbox: every kitchen's thread, newest activity first. Admins only.
 @Component({
   selector: 'app-maker-inbox',
-  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatListModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatListModule, TranslatePipe, ChatPicturesComponent,
+    PictureViewerDirective],
   templateUrl: './maker-inbox.component.html',
   styleUrl: './maker-inbox.component.scss',
 })
@@ -29,6 +33,8 @@ export class MakerInboxComponent {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly selected = computed(() => this.threads().find(t => t.kitchenId === this.selectedId()));
   protected readonly text = signal('');
+  protected readonly pictures = signal<string[]>([]);
+  protected readonly uploading = signal(false);
 
   // Notes from ops/league.js: a tally that was off, an achievement taken back.
   private readonly kollegiet = inject(KollegietService);
@@ -58,14 +64,21 @@ export class MakerInboxComponent {
 
   protected reply() {
     const text = this.text().trim();
+    const pictures = this.pictures();
     const kitchenId = this.selectedId();
-    if (!text || !kitchenId) {
+    if ((!text && !pictures.length) || !kitchenId) {
       return;
     }
     this.text.set('');
-    this.maker.reply(kitchenId, text).catch(err => {
+    this.pictures.set([]);
+    this.maker.reply(kitchenId, text, pictures).catch(err => {
       this.text.set(text);
+      this.pictures.set(pictures);
       this.notify.error(err);
     });
+  }
+
+  protected pic(id: string) {
+    return clUrl(id, 'c_limit,w_480,q_auto', 'jpg');
   }
 }
