@@ -74,10 +74,11 @@
     color: var(--mat-sys-on-tertiary-container);
   }
 
-  // A battle or a vote won: gold, the same in light and dark.
+  // A battle or a vote won: the theme's muted colours, set apart by its edge.
   &.gold {
-    background: linear-gradient(135deg, #ffe082, #ffb300);
-    color: #3b2600;
+    background: var(--mat-sys-surface-container-highest);
+    color: var(--mat-sys-on-surface);
+    box-shadow: inset 0 0 0 2px var(--mat-sys-tertiary), var(--mat-sys-level1);
   }
 
   .sticker-top {
