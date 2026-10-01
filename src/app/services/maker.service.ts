@@ -54,9 +54,9 @@ export class MakerService {
     return this.unreadByKitchen$.pipe(map(m => m.length));
   }
 
-  send(text: string) {
+  send(text: string, images: string[] = []) {
     return addDoc(kitchenCollection(this.auth.currentKitchenId, 'messages'),
-      {text, from: 'kitchen', createdAt: serverTimestamp(), seenByMaker: false, seenByKitchen: true});
+      {text, ...(images.length ? {images} : {}), from: 'kitchen', createdAt: serverTimestamp(), seenByMaker: false, seenByKitchen: true});
   }
 
   async markSeenByKitchen(messages: Message[]) {
@@ -72,9 +72,9 @@ export class MakerService {
     );
   }
 
-  reply(kitchenId: string, text: string) {
+  reply(kitchenId: string, text: string, images: string[] = []) {
     return addDoc(kitchenCollection(kitchenId, 'messages'),
-      {text, from: 'maker', createdAt: serverTimestamp(), seenByMaker: true, seenByKitchen: false});
+      {text, ...(images.length ? {images} : {}), from: 'maker', createdAt: serverTimestamp(), seenByMaker: true, seenByKitchen: false});
   }
 
   async markSeenByMaker(thread: Thread) {

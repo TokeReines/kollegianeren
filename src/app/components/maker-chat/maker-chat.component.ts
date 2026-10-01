@@ -9,11 +9,14 @@ import {MatInputModule} from '@angular/material/input';
 import {MakerService} from '../../services/maker.service';
 import {Notify} from '../../services/notify.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {clUrl} from '../../services/cloudinary.service';
+import {PictureViewerDirective} from '../aktuelt/picture-viewer';
+import {ChatPicturesComponent} from './chat-pictures.component';
 
 // The kitchen's side of "Message your maker": one thread per kitchen.
 @Component({
   selector: 'app-maker-chat',
-  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, ChatPicturesComponent, PictureViewerDirective],
   templateUrl: './maker-chat.component.html',
   styleUrl: './maker-chat.component.scss',
 })
@@ -30,6 +33,9 @@ export class MakerChatComponent {
   ];
   protected readonly messages = toSignal(this.maker.thread(), {initialValue: []});
   protected readonly text = signal('');
+  // Pictures with the message: a screenshot helps when something goes wrong.
+  protected readonly pictures = signal<string[]>([]);
+  protected readonly uploading = signal(false);
   private readonly composer = viewChild<ElementRef<HTMLTextAreaElement>>('composer');
 
   constructor() {
@@ -62,14 +68,21 @@ export class MakerChatComponent {
 
   protected send() {
     const text = this.text().trim();
-    if (!text) {
+    const pictures = this.pictures();
+    if (!text && !pictures.length) {
       return;
     }
     this.text.set('');
-    this.maker.send(text).catch(err => {
+    this.pictures.set([]);
+    this.maker.send(text, pictures).catch(err => {
       this.text.set(text);
+      this.pictures.set(pictures);
       this.notify.error(err);
     });
+  }
+
+  protected pic(id: string) {
+    return clUrl(id, 'c_limit,w_480,q_auto', 'jpg');
   }
 }
 

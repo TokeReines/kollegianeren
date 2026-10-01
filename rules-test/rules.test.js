@@ -177,6 +177,12 @@ test('messages: kitchen writes its own side only', async () => {
   await assertFails(addDoc(col, msg('maker')));
   await assertFails(addDoc(col, msg('kitchen', { seenByMaker: true })));
   await assertFails(addDoc(col, msg('kitchen', { text: '' })));
+  // A screenshot with it, or only pictures; up to four.
+  await assertSucceeds(addDoc(col, msg('kitchen', { images: ['dev/shot'] })));
+  await assertSucceeds(addDoc(col, msg('kitchen', { text: '', images: ['dev/shot'] })));
+  await assertFails(addDoc(col, msg('kitchen', { text: '', images: [] })));
+  await assertFails(addDoc(col, msg('kitchen', { images: ['a', 'b', 'c', 'd', 'e'] })));
+  await assertFails(addDoc(col, msg('kitchen', { images: 'dev/shot' })));
   await assertFails(addDoc(collection(asKitchen(A), 'kitchens', B, 'messages'), msg('kitchen')));
   await assertFails(getDocs(collection(asKitchen(A), 'kitchens', B, 'messages')));
   await assertFails(updateDoc(doc(asKitchen(A), 'kitchens', A, 'messages', 'm1'), { text: 'edited' }));

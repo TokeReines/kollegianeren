@@ -108,6 +108,8 @@
   "MAKER_EMPTY": "No messages yet. Write the first one!",
   "MAKER_PLACEHOLDER": "Write a message",
   "MAKER_SEND": "Send",
+  "MAKER_PICTURE": "📷 Picture",
+  "MAKER_PICTURE_HINT": "Something wrong? Paste a screenshot into the message, so Toke can see it.",
   "INBOX_EMPTY": "No messages yet.",
   "INBOX_PICK": "Pick a kitchen on the left.",
   "INBOX_REPLY": "Reply",

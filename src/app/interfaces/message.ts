@@ -13,6 +13,8 @@ export interface Message {
   id: string;
   kitchenId?: string;
   text: string;
+  // Pictures (Cloudinary public ids), e.g. a screenshot of what goes wrong.
+  images?: string[];
   from: 'kitchen' | 'maker';
   createdAt: Timestamp;
   seenByMaker: boolean;
