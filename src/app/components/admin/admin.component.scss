@@ -191,6 +191,14 @@ td {
   }
 }
 
+// Which build a login last opened, under its line.
+.build {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .details > td {
   padding: 16px 12px 20px;
   white-space: normal;
