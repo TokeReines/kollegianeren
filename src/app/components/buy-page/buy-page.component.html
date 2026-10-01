@@ -1,9 +1,6 @@
 @if (featuredBattle(); as b) {
   <div class="battles">
-    <app-battle-ticker [battle]="b" [gymButton]="false" />
-    @if (gymBattles().length) {
-      <button mat-flat-button class="gym" (click)="gym()"><mat-icon>fitness_center</mat-icon> +1</button>
-    }
+    <app-battle-ticker [battle]="b" />
     @if (liveBattles().length > 1) {
       <a mat-stroked-button class="more-battles" routerLink="/kollegiet" [queryParams]="{tab: 'battles'}">
         +{{ liveBattles().length - 1 }} {{ (liveBattles().length === 2 ? "KOL_MORE_BATTLE" : "KOL_MORE_BATTLES") | translate }}

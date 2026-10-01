@@ -27,7 +27,7 @@
   ));
 }
 
-// One battle strip, whatever the number of battles: the gym button and the link beside it.
+// One battle strip, whatever the number of battles, and the link to the rest beside it.
 .battles {
   display: flex;
   align-items: center;
@@ -38,7 +38,6 @@
     min-width: 0;
   }
 
-  .gym,
   .more-battles {
     flex: none;
   }

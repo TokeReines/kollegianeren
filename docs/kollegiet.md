@@ -132,8 +132,9 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   open, a card at the top of the board: pick a kitchen, change your vote until it closes. Only
   your own vote is shown, never a running count. The winner is pinned on the board for three days
   and gets the title on its profile.
-- **Gym counter:** a big "+1 fitness" button (and −1 to undo a slip) on the buy page ticker
-  and the Battles tab while a gym battle runs. Someone back from the gym taps it once.
+- **Gym counter:** "+1" (and −1 to undo a slip) on the battle's card on the Battles tab while a
+  gym battle runs. Someone back from the gym taps it once. Not on the buy page, which is for
+  purchases and an overview.
 - **Maker:** does not play, start polls or battles, and does not moderate: what kitchens write to
   each other is up to them. The inbox shows only the league job's technical notes.
 
@@ -150,7 +151,7 @@ All text goes through `da.json` and `en.json`, with no long dashes.
 | `gym` | someone taps +1 (or −1) | Self-reported, trusted like the rest. |
 
 **How a tally moves.**
-- The page that makes the change (buy page, food club, gym button) adds a tally update for each
+- The page that makes the change (buy page, food club, the gym button on the Battles tab) adds a tally update for each
   live battle the kitchen is in to the batch it writes anyway. It knows them from the same
   `array-contains` listener.
 - The update is an `increment()`. A sale for three people is one update of 3 × amount.
