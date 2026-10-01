@@ -102,7 +102,9 @@ export interface Tick {
 }
 
 export const TICKS_KEPT = 30;
-export const MAX_LIVE_BATTLES = 3;
+// Battles a kitchen may have started that are on or coming (battleSlots/{kid}, checked by the rules).
+export const BATTLE_SLOTS = ['s1', 's2', 's3'] as const;
+export const TOO_MANY_BATTLES = 'three battles at a time';
 export const BATTLE_MAX_DAYS = 31;
 // How long the burst on the scoreboard looks back.
 export const BURST_MINUTES = 20;
@@ -344,8 +346,8 @@ export interface Notice {
   done?: boolean;
 }
 
-// A live call first: it is now or never.
-const NOTICE_ORDER: NoticeKind[] = ['live', 'maker', 'news', 'proposal', 'invite', 'challenge', 'kudos', 'event'];
+// The maker's things first (a message, news, proposals), then a live call, then the rest.
+const NOTICE_ORDER: NoticeKind[] = ['maker', 'news', 'proposal', 'live', 'invite', 'challenge', 'kudos', 'event'];
 
 export function sortNotices(notices: Notice[]): Notice[] {
   return [...notices].sort((a, b) => NOTICE_ORDER.indexOf(a.kind) - NOTICE_ORDER.indexOf(b.kind) || b.at - a.at);

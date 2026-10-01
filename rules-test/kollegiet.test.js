@@ -174,20 +174,49 @@ test('events: the author edits, other kitchens only answer for themselves', asyn
   await assertFails(updateDoc(doc(as(C), 'events', few.id), { [`rsvp.${C}`]: 'yes' }));
 });
 
+// A battle takes one of its kitchen's three places in the same batch.
+function startBattle(db, kid, id, slot, b) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'battles', id), b);
+  batch.set(doc(db, 'battleSlots', kid), { [slot]: id }, { merge: true });
+  return batch.commit();
+}
+
 test('battles: create as yourself, join only yourself, once, while not over', async () => {
   const now = Date.now();
   const b = { kitchenId: C, title: 'Mest madklub', metric: 'mealDiners', from: ts(now + H), to: ts(now + 24 * H), invited: 'all',
     participants: [C], createdAt: serverTimestamp() };
-  const ref = await assertSucceeds(addDoc(collection(as(C), 'battles'), b));
-  await assertFails(addDoc(collection(as(C), 'battles'), { ...b, participants: [C, A] }));
-  await assertFails(addDoc(collection(as(C), 'battles'), { ...b, kitchenId: A, participants: [A] }));
-  await assertFails(addDoc(collection(as(C), 'battles'), { ...b, to: ts(now + 40 * 24 * H) }));
+  await assertFails(addDoc(collection(as(C), 'battles'), b));
+  await assertSucceeds(startBattle(as(C), C, 'mine', 's1', b));
+  const ref = { id: 'mine' };
+  await assertFails(startBattle(as(C), C, 'x1', 's2', { ...b, participants: [C, A] }));
+  await assertFails(startBattle(as(C), C, 'x2', 's2', { ...b, kitchenId: A, participants: [A] }));
+  await assertFails(startBattle(as(C), A, 'x3', 's2', { ...b, kitchenId: A, participants: [A] }));
+  await assertFails(startBattle(as(C), C, 'x4', 's2', { ...b, to: ts(now + 40 * 24 * H) }));
   await assertSucceeds(updateDoc(doc(as('tabA'), 'battles', ref.id), { participants: [C, A] }));
   await assertFails(updateDoc(doc(as(A), 'battles', ref.id), { participants: [C, A, A] }));
   await assertFails(updateDoc(doc(as(A), 'battles', ref.id), { participants: [C, A, B] }));
   await assertFails(updateDoc(doc(as(C), 'battles', 'over'), { participants: [A, B, C] }));
   // Gym was for A only.
   await assertFails(updateDoc(doc(as(C), 'battles', 'gym'), { participants: [B, A, C] }));
+});
+
+test('battles: three on or coming per kitchen that started them', async () => {
+  const now = Date.now();
+  const b = { kitchenId: C, title: 'Fredagsøl', metric: 'beer', from: ts(now + H), to: ts(now + 24 * H), invited: 'all',
+    participants: [C], createdAt: serverTimestamp() };
+  await assertSucceeds(startBattle(as(C), C, 'b1', 's1', b));
+  await assertSucceeds(startBattle(as(C), C, 'b2', 's2', b));
+  await assertSucceeds(startBattle(as(C), C, 'b3', 's3', b));
+  await assertFails(startBattle(as(C), C, 'b4', 's1', b));
+  await assertFails(startBattle(as(C), C, 'b4', 's4', b));
+  // Called off before it started: its place is free.
+  await assertSucceeds(deleteDoc(doc(as(C), 'battles', 'b2')));
+  await assertSucceeds(startBattle(as(C), C, 'b4', 's2', b));
+  // Ended: free as well.
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'battles', 'b3'), { from: ts(now - 3 * H), to: ts(now - H) }));
+  await assertSucceeds(startBattle(as(C), C, 'b5', 's3', b));
+  await assertFails(startBattle(as(C), C, 'b6', 's1', b));
 });
 
 test('tally: own kitchen, while live, at most 400 a write; gym one tap at a time', async () => {

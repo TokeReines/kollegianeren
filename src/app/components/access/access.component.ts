@@ -17,6 +17,7 @@ import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
+import {EXPORT_MAX_PURCHASES, ExportService, download, plain, purchasesCsv} from '../../services/export.service';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -30,7 +31,7 @@ const HANDOVER_ERRORS: Record<string, string> = {
   'auth/too-many-requests': 'HANDOVER_TOO_MANY',
 };
 
-// "Adgang": the kitchen's name, its logins, and invites. Owners and treasurers only.
+// "Adgang": the kitchen's logins and invites, and its data as files. Owners and treasurers only.
 @Component({
   selector: 'app-access',
   imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
@@ -44,6 +45,7 @@ export class AccessComponent {
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
   private readonly confirm = inject(Confirm);
+  private readonly exporter = inject(ExportService);
 
   protected readonly role = this.auth.role;
   protected readonly members = toSignal(this.access.members(), {initialValue: []});
@@ -114,6 +116,38 @@ export class AccessComponent {
     } finally {
       this.handOverPassword.set('');
       this.busy.set(false);
+    }
+  }
+
+  // "Hent jeres data": everything as one file, or the purchases as a spreadsheet, for a period.
+  protected readonly exportMonths = signal<number | null>(12);
+  protected readonly exporting = signal(false);
+  protected readonly exportStatus = signal('');
+
+  protected async export(kind: 'json' | 'csv') {
+    this.exporting.set(true);
+    try {
+      const months = this.exportMonths();
+      const n = await this.exporter.countPurchases(months);
+      if (n > EXPORT_MAX_PURCHASES) {
+        this.exportStatus.set(`${n} ${this.i18n.t('ACCESS_EXPORT_TOO_MANY')}`);
+        return;
+      }
+      this.exportStatus.set(`${this.i18n.t('ACCESS_EXPORT_FETCHING')} ${n} ${this.i18n.t('ACCESS_EXPORT_PURCHASES')}`);
+      const purchases = await this.exporter.purchases(months);
+      const name = `kollegianeren-${(this.kitchenId() || 'kitchen').slice(0, 12)}-${new Date().toISOString().slice(0, 10)}`;
+      if (kind === 'csv') {
+        download(`${name}-koeb.csv`, purchasesCsv(purchases), 'text/csv;charset=utf-8');
+      } else {
+        const all = {exportedAt: new Date().toISOString(), ...(await this.exporter.kitchen()), purchases};
+        download(`${name}.json`, JSON.stringify(plain(all), null, 2), 'application/json');
+      }
+      this.exportStatus.set(this.i18n.t('ACCESS_EXPORT_DONE'));
+    } catch (err) {
+      this.notify.error(err);
+      this.exportStatus.set('');
+    } finally {
+      this.exporting.set(false);
     }
   }
 }
