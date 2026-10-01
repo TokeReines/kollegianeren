@@ -1,3 +1,34 @@
+<!-- A live call from another kitchen ("Kom over nu"): seen when buying, answered with one tap.
+     The kitchen that called sees who is coming. -->
+@if (liveCall(); as e) {
+  @let coming = e.rsvp[me()] === 'yes';
+  <div class="live-call" role="status">
+    <span class="dot" aria-hidden="true"></span>
+    <app-kitchen-chip [kitchenId]="e.kitchenId" />
+    <span class="what"><b>{{ e.title }}</b>
+      <span class="hint">@if (e.place) { {{ e.place }} · }{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span></span>
+    <span class="hint">{{ comingCount(e) }} {{ (comingCount(e) === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}</span>
+    @if (moreCalls()) {
+      <a mat-button routerLink="/kollegiet" [queryParams]="{tab: 'board'}">+{{ moreCalls() }} {{ "KOL_LIVE_MORE" | translate }}</a>
+    }
+    <button mat-flat-button [class.coming]="coming" (click)="come(e)">
+      @if (coming) { <mat-icon>check</mat-icon> {{ "KOL_LIVE_YOU_COME" | translate }} } @else { {{ "KOL_RSVP_yes" | translate }} }
+    </button>
+    @if (!coming) {
+      <button mat-icon-button (click)="notNow(e)" [attr.aria-label]="'NOTICE_DISMISS' | translate"><mat-icon>close</mat-icon></button>
+    }
+  </div>
+}
+@if (myLiveCall(); as e) {
+  <div class="live-call mine" role="status">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="what"><b>📣 {{ "KOL_LIVE_YOURS" | translate }}: {{ e.title }}</b>
+      <span class="hint">{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span></span>
+    <span class="faces">@for (k of comingKitchens(e); track k) { <app-kitchen-chip [kitchenId]="k" [iconOnly]="true" /> }</span>
+    <b>{{ comingCount(e) }} {{ (comingCount(e) === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}</b>
+  </div>
+}
+
 @if (featuredBattle(); as b) {
   <div class="battles">
     <app-battle-ticker [battle]="b" />

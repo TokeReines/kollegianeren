@@ -128,6 +128,33 @@ test('posts: the author takes back for five minutes; managers and the maker hide
   await assertFails(setDoc(doc(as(B), 'hidden', 'x'), { collection: 'posts', kitchenId: A, data: {}, hiddenAt: serverTimestamp() }));
 });
 
+test('events: a live call is one per kitchen, to everyone, three hours, every 6 hours at most', async () => {
+  const now = Date.now();
+  const e = { kitchenId: A, kind: 'live', title: 'Kom over', text: '', place: 'Ny2', startsAt: ts(now), endsAt: ts(now + 2 * H),
+    invited: 'all', rsvp: {}, createdAt: serverTimestamp() };
+  const mine = doc(as(A), 'events', `live_${A}`);
+  // Only as the kitchen's own document, to everyone, starting now, three hours at most.
+  await assertFails(addDoc(collection(as(A), 'events'), e));
+  await assertFails(setDoc(doc(as(A), 'events', `live_${B}`), e));
+  await assertFails(setDoc(mine, { ...e, endsAt: ts(now + 4 * H) }));
+  await assertFails(setDoc(mine, { ...e, invited: [B] }));
+  await assertFails(setDoc(mine, { ...e, startsAt: ts(now + H), endsAt: ts(now + 2 * H) }));
+  await assertFails(setDoc(mine, { ...e, kind: 'party' }));
+  await assertSucceeds(setDoc(mine, e));
+  // Answers, ending early; not longer, not moved, not deleted, not called again soon.
+  await assertSucceeds(updateDoc(doc(as(B), 'events', `live_${A}`), { [`rsvp.${B}`]: 'yes' }));
+  await assertFails(updateDoc(mine, { endsAt: ts(now + 3 * H) }));
+  await assertFails(updateDoc(mine, { startsAt: ts(now + 10 * 60e3) }));
+  await assertSucceeds(updateDoc(mine, { endsAt: ts(now + 1000) }));
+  await assertFails(deleteDoc(mine));
+  await assertFails(setDoc(mine, { ...e, startsAt: ts(Date.now()), endsAt: ts(Date.now() + H) }));
+  // 6 hours after the last one started: a new call, with no answers.
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'events', `live_${A}`),
+    { startsAt: ts(now - 7 * H), endsAt: ts(now - 6 * H) }));
+  await assertFails(setDoc(mine, { ...e, rsvp: { [B]: 'yes' } }));
+  await assertSucceeds(setDoc(mine, { ...e, startsAt: ts(Date.now()), endsAt: ts(Date.now() + H) }));
+});
+
 test('events: the author edits, other kitchens only answer for themselves', async () => {
   const now = Date.now();
   const e = { kitchenId: A, kind: 'openKitchen', title: 'Åbent køkken', text: '', place: 'Ny2', startsAt: ts(now + H), endsAt: ts(now + 4 * H),

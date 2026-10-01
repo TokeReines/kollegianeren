@@ -9,7 +9,7 @@ import {MakerService} from './maker.service';
 import {TranslateService} from './translate.service';
 
 const ICONS: Record<NoticeKind, string> = {
-  maker: 'mark_email_unread', news: 'campaign', invite: 'celebration', challenge: 'sports_kabaddi', kudos: 'front_hand', event: 'event',
+  live: 'nightlife', maker: 'mark_email_unread', news: 'campaign', invite: 'celebration', challenge: 'sports_kabaddi', kudos: 'front_hand', event: 'event',
 };
 
 // Everything waiting for the kitchen, most important first: a message from the maker, news on
@@ -89,13 +89,21 @@ export class NoticeService {
     return n.kind !== 'maker';
   }
 
-  // "Not now": the same as having looked, for Aktuelt or for everything from Kollegiet.
+  // "Not now": the same as having looked, for Aktuelt or for everything from Kollegiet. For a
+  // live call it answers no, so the party sees it, and it stops showing.
   dismiss(n: Notice) {
+    if (n.kind === 'live' && n.eventId) {
+      return this.kollegiet.rsvp({id: n.eventId}, 'no');
+    }
     return n.kind === 'news' ? this.kollegiet.markAktueltSeen() : this.kollegiet.markSeen();
   }
 
-  // Shown on every page except where it leads: Aktuelt for the maker's things, Kollegiet for its own.
+  // Shown on every page except where it leads: Aktuelt for the maker's things, Kollegiet for its
+  // own. A live call has its own bar on the buy page, so not there either.
   hiddenOn(n: Notice, path: string): boolean {
+    if (n.kind === 'live') {
+      return path === '/' || path.startsWith('/kollegiet');
+    }
     return fromKollegiet(n) ? path.startsWith('/kollegiet') : path === '/aktuelt';
   }
 }

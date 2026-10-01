@@ -279,7 +279,11 @@ service cloud.firestore {
       function validEvent(d) {
         return d.keys().hasOnly(['kitchenId', 'kind', 'title', 'text', 'place', 'startsAt', 'endsAt', 'invited', 'rsvp', 'createdAt'])
           && d.keys().hasAll(['kitchenId', 'kind', 'title', 'text', 'place', 'startsAt', 'endsAt', 'invited', 'rsvp', 'createdAt'])
-          && d.kind in ['openKitchen', 'party', 'dinner', 'other']
+          && d.kind in ['openKitchen', 'party', 'dinner', 'other', 'live']
+          // A live call ("Kom over nu") is the kitchen's one document live_{kid}: one at a time.
+          // To everyone, three hours at most.
+          && ((d.kind == 'live') == (id == 'live_' + d.kitchenId))
+          && (d.kind != 'live' || (d.invited == 'all' && d.endsAt <= d.startsAt + duration.value(3, 'h')))
           && text(d.title, 1, 80) && text(d.text, 0, 1000) && text(d.place, 0, 80)
           && d.startsAt is timestamp && d.endsAt is timestamp
           && d.endsAt > d.startsAt && d.endsAt <= d.startsAt + duration.value(7, 'd')
@@ -290,16 +294,34 @@ service cloud.firestore {
         && request.resource.data.kitchenId == myKitchen()
         && request.resource.data.createdAt == request.time
         && request.resource.data.rsvp.size() == 0
-        && request.resource.data.startsAt > request.time - duration.value(1, 'h');
+        && request.resource.data.startsAt > request.time - duration.value(1, 'h')
+        // A live call starts when it is sent.
+        && (request.resource.data.kind != 'live' || request.resource.data.startsAt < request.time + duration.value(5, 'm'));
+      // A new live call over the kitchen's last one: at most every 6 hours, ending early does not
+      // shorten the wait. Starts now, with no answers.
+      function newLiveCall(d) {
+        return resource.data.kind == 'live' && isMember(resource.data.kitchenId)
+          && d.kitchenId == resource.data.kitchenId
+          && d.createdAt == request.time && d.rsvp.size() == 0
+          && d.startsAt > request.time - duration.value(1, 'h') && d.startsAt < request.time + duration.value(5, 'm')
+          && resource.data.startsAt < request.time - duration.value(6, 'h');
+      }
+      // The kitchen may change its call's text or end it early, not move or lengthen it.
+      function sameLiveCall(d) {
+        return resource.data.kind != 'live'
+          || (d.startsAt == resource.data.startsAt && d.endsAt <= resource.data.endsAt);
+      }
+      allow update: if kitchenLogin() && validEvent(request.resource.data) && newLiveCall(request.resource.data);
       allow update: if kitchenLogin() && validEvent(request.resource.data)
         && request.resource.data.kitchenId == resource.data.kitchenId
         && request.resource.data.createdAt == resource.data.createdAt
-        && ((isMember(resource.data.kitchenId) && request.resource.data.rsvp == resource.data.rsvp)
+        && ((isMember(resource.data.kitchenId) && request.resource.data.rsvp == resource.data.rsvp && sameLiveCall(request.resource.data))
           || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rsvp'])
             && (resource.data.invited == 'all' || myKitchen() in resource.data.invited)
             && request.resource.data.rsvp.diff(resource.data.rsvp).affectedKeys().hasOnly([myKitchen()])
             && request.resource.data.rsvp.get(myKitchen(), 'no') in ['yes', 'maybe', 'no']));
-      allow delete: if isMember(resource.data.kitchenId) || moderates(resource.data.kitchenId);
+      // Not a live call: deleting it would reset the 6 hours. It ends instead.
+      allow delete: if resource.data.kind != 'live' && (isMember(resource.data.kitchenId) || moderates(resource.data.kitchenId));
     }
 
     // Battles: kitchen against kitchen. The challenger creates it with itself as the only

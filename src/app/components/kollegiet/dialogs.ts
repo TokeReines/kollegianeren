@@ -10,7 +10,7 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  BADGES, BATTLE_MAX_DAYS, BIO_MAX, Badge, EVENT_KINDS, KEvent, KITCHEN_COLOURS, KITCHEN_EMOJIS, KitchenColour, METRICS, Metric,
+  BADGES, BATTLE_MAX_DAYS, BIO_MAX, Badge, EVENT_KINDS, KEvent, KITCHEN_COLOURS, LIVE_HOURS_MAX, KITCHEN_EMOJIS, KitchenColour, METRICS, Metric,
   Profile, REASON_MAX, TITLE_MAX,
 } from '../../interfaces/kollegiet';
 import {atTime} from '../../interfaces/meal';
@@ -444,5 +444,64 @@ export class ProfileDialogComponent {
 
   protected save() {
     this.ref.close({emoji: this.emoji(), colour: this.colour(), bio: this.bio().trim()});
+  }
+}
+
+export interface LiveCallResult {
+  title: string;
+  place: string;
+  hours: number;
+}
+
+// "Kom over nu": a call to every kitchen to come to the party, right now. Filled in already, so
+// it is one tap at 1 at night.
+@Component({
+  selector: 'app-live-call-dialog',
+  imports: [FormsModule, MatDialogModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  template: `
+    <h2 mat-dialog-title>📣 {{ "KOL_LIVE_CALL" | translate }}</h2>
+    <div mat-dialog-content class="content">
+      <p class="hint">{{ "KOL_LIVE_INTRO" | translate }}</p>
+      <mat-form-field>
+        <mat-label>{{ "KOL_LIVE_WHAT" | translate }}</mat-label>
+        <input matInput [(ngModel)]="title" [maxlength]="titleMax" autocomplete="off">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ "KOL_PLACE" | translate }}</mat-label>
+        <input matInput [(ngModel)]="place" maxlength="80" autocomplete="off">
+      </mat-form-field>
+      <div class="hours">
+        <span>{{ "KOL_LIVE_HOURS" | translate }}</span>
+        <mat-button-toggle-group [(ngModel)]="hours" hideSingleSelectionIndicator [attr.aria-label]="'KOL_LIVE_HOURS' | translate">
+          @for (h of hourOptions; track h) {
+            <mat-button-toggle [value]="h">{{ h }} {{ (h === 1 ? "KOL_HOUR" : "KOL_HOURS") | translate }}</mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      </div>
+    </div>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
+      <button mat-flat-button [disabled]="!title().trim()" (click)="send()">📣 {{ "KOL_LIVE_SEND" | translate }}</button>
+    </mat-dialog-actions>
+  `,
+  styles: `
+    .content { display: flex; flex-direction: column; gap: 12px; }
+    .hint { margin: 8px 0 0; color: var(--mat-sys-on-surface-variant); }
+    .hours { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  `,
+})
+export class LiveCallDialogComponent {
+  private readonly ref = inject<MatDialogRef<LiveCallDialogComponent, LiveCallResult>>(MatDialogRef);
+  private readonly data = inject<{title: string, place: string}>(MAT_DIALOG_DATA);
+  protected readonly titleMax = TITLE_MAX;
+  protected readonly hourOptions = Array.from({length: LIVE_HOURS_MAX}, (_, n) => n + 1);
+  protected readonly title = signal(this.data.title);
+  protected readonly place = signal(this.data.place);
+  protected readonly hours = signal(2);
+
+  protected send() {
+    if (this.title().trim()) {
+      this.ref.close({title: this.title().trim(), place: this.place().trim(), hours: this.hours()});
+    }
   }
 }

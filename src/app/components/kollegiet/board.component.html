@@ -7,12 +7,12 @@
       🙌 <span class="long">{{ "KOL_GIVE_KUDOS" | translate }}</span><span class="short">{{ "KOL_GIVE" | translate }}</span>
     </button>
   </div>
-  <div class="stickers">
+  <div class="stickers" #stickerRow>
     @for (s of stickers(); track s.kind + (s.kind === 'kudos' ? s.kudos.id : s.kind === 'battle' ? s.battle.id : s.poll.id)) {
       @switch (s.kind) {
         @case ('kudos') {
           @let k = s.kudos;
-          <article class="sticker" [class.badge]="k.kind === 'badge'">
+          <article class="sticker" [class.badge]="k.kind === 'badge'" [class.arrive]="arrived(s.at)">
             <div class="sticker-top">
               <span class="big" aria-hidden="true">{{ k.kind === 'highfive' ? '🙌' : ("KOL_BADGE_ICON_" + k.badge | translate) }}</span>
               <ng-container *ngTemplateOutlet="menu; context: {collection: 'kudos', item: k, author: k.from}" />
@@ -30,7 +30,7 @@
         }
         @case ('battle') {
           @let b = s.battle;
-          <article class="sticker gold">
+          <article class="sticker gold" [class.arrive]="arrived(s.at)">
             <div class="sticker-top"><span class="big" aria-hidden="true">🏆</span></div>
             <span class="winners">@for (w of b.result!.winners; track w) { <app-kitchen-chip class="to" [kitchenId]="w" /> }</span>
             <b class="what">{{ "KOL_PIN_WON" | translate }} {{ b.title }}</b>
@@ -40,7 +40,7 @@
         }
         @case ('poll') {
           @let p = s.poll;
-          <article class="sticker gold">
+          <article class="sticker gold" [class.arrive]="arrived(s.at)">
             <div class="sticker-top"><span class="big" aria-hidden="true">🗳️</span></div>
             <span class="winners">@for (w of p.result!.winners; track w) { <app-kitchen-chip class="to" [kitchenId]="w" /> }</span>
             <b class="what">{{ "KOL_PIN_WON" | translate }} {{ p.title }}</b>
@@ -66,19 +66,28 @@
     <div class="write-more">
       <button mat-stroked-button (click)="newEvent()"><mat-icon>event</mat-icon> {{ "KOL_EVENT_NEW" | translate }}</button>
       <button mat-stroked-button (click)="newPoll()"><mat-icon>how_to_vote</mat-icon> {{ "KOL_POLL_NEW" | translate }}</button>
+      <button mat-stroked-button class="live-button" (click)="liveCall()">📣 {{ "KOL_LIVE_CALL" | translate }}</button>
     </div>
   </div>
 
   @for (e of shownEvents(); track e.id) {
     @let counts = rsvpCounts(e);
-    <article class="paper flyer" [id]="'event-' + e.id">
+    @let live = isLive(e);
+    <article class="paper flyer" [class.live]="live" [class.arrive]="arrived(e.createdAt)" [id]="'event-' + e.id">
       <header>
         <span class="kind" aria-hidden="true">{{ "KOL_EVENT_ICON_" + e.kind | translate }}</span>
         <div class="date">
-          <b>{{ e.startsAt.toDate() | date:'EEE d/M' }}</b>
-          <span>{{ e.startsAt.toDate() | date:'HH:mm' }}@if (e.place) { · {{ e.place }} }</span>
+          @if (live) {
+            <b class="now"><span class="dot"></span>{{ "KOL_LIVE_NOW" | translate }}</b>
+            <span>{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}@if (e.place) { · {{ e.place }} }</span>
+          } @else {
+            <b>{{ e.startsAt.toDate() | date:'EEE d/M' }}</b>
+            <span>{{ e.startsAt.toDate() | date:'HH:mm' }}@if (e.place) { · {{ e.place }} }</span>
+          }
         </div>
-        <ng-container *ngTemplateOutlet="menu; context: {collection: 'events', item: e, author: e.kitchenId}" />
+        @if (e.kind !== 'live') {
+          <ng-container *ngTemplateOutlet="menu; context: {collection: 'events', item: e, author: e.kitchenId}" />
+        }
       </header>
       <b class="title">{{ e.title }}</b>
       <div class="by">
@@ -104,7 +113,9 @@
         }
         <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}
           @if (e.kitchenId === me()) { · {{ counts.maybe }} {{ "KOL_RSVP_MAYBE_COUNT" | translate }} }</span>
-        @if (e.kitchenId === me()) {
+        @if (e.kitchenId === me() && live) {
+          <button mat-stroked-button class="edit" (click)="endLive(e)"><mat-icon>stop_circle</mat-icon> {{ "KOL_LIVE_END" | translate }}</button>
+        } @else if (e.kitchenId === me() && e.kind !== 'live') {
           <button mat-stroked-button class="edit" (click)="newEvent(e)"><mat-icon>edit</mat-icon> {{ "EDIT" | translate }}</button>
         }
       </div>
@@ -118,7 +129,7 @@
   }
 
   @for (p of livePolls(); track p.id) {
-    <div class="paper ballot">
+    <div class="paper ballot" [class.arrive]="arrived(p.createdAt)">
       <app-poll-card [poll]="p" [paper]="true" />
     </div>
   }
@@ -127,7 +138,8 @@
     @let t = n.thread;
     <!-- A conversation takes more room than a single post: tall with replies, big when many. -->
     <article class="paper note" role="button" tabindex="0" [attr.data-kitchen-colour]="colour(t.post.kitchenId)"
-             [class.tall]="n.size !== 'small'" [class.big]="n.size === 'big'" [attr.aria-label]="'KOL_OPEN_NOTE' | translate"
+             [class.tall]="n.size !== 'small'" [class.big]="n.size === 'big'" [class.arrive]="arrived(t.post.createdAt)"
+             [attr.aria-label]="'KOL_OPEN_NOTE' | translate"
              (click)="openNote(t.post.id)" (keydown.enter)="openNote(t.post.id)">
       @if (n.fresh) {
         <span class="fresh">{{ "KOL_NEW" | translate }}</span>
