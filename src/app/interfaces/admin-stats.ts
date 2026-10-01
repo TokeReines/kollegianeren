@@ -7,6 +7,8 @@ export interface AdminStats {
   at: Timestamp;
   // Firestore use per quota day (Pacific time), oldest first.
   usage: {day: string, reads: number, writes: number, deletes: number}[];
+  // The deployed build (main bundle hash); null when the site could not be fetched.
+  build?: string | null;
   kitchens: KitchenStats[];
   // What the job itself read.
   reads: number;
@@ -18,7 +20,10 @@ export interface KitchenStats {
   createdAt: Timestamp | null;
   // From the last purchase: the new buy page moves the sold counter, the 2019 build does not.
   app: 'new' | 'old' | null;
-  logins: {role: string, created: Timestamp | null, lastActive: Timestamp | null}[];
+  // build: what the login last opened (null on the 2019 build, which does not report), and whether
+  // that is the deployed one.
+  logins: {role: string, created: Timestamp | null, lastActive: Timestamp | null,
+    build?: string | null, loadedAt?: Timestamp | null, latest?: boolean | null}[];
   residents: {total: number, active: number, movedOut: number, anonymised: number};
   products: {name: string, price: number | null, retailPrice: number | null, stock: number | null, sold: number | null, active: boolean}[];
   purchases: {today: number, last7: number, prev7: number, last30: number, lastAt: Timestamp | null};

@@ -15,6 +15,8 @@ const { Timestamp } = require('firebase-admin/firestore');
 const args = parseArgs();
 const { projectId, db, auth, accessToken } = init(args.project);
 const DAY = 864e5;
+// Where each project's app is hosted, to tell which build is the newest.
+const SITES = { 'firebase-ehp': 'https://ehp.web.app/', kollegianeren: 'https://kollegianeren.web.app/' };
 let reads = 0;
 
 // A count, at 1 read per 1000 documents. (Sums over a date range would need a composite index.)
@@ -89,7 +91,17 @@ async function kitchen(k, now) {
   const [msgCount, [lastMsg]] = await Promise.all([count(messages), get(messages.orderBy('createdAt', 'desc').limit(1))]);
 
   const members = await get(ref.collection('members'));
-  const logins = (await Promise.all([loginInfo(k.id, 'owner'), ...members.map(m => loginInfo(m.id, m.get('role')))])).filter(Boolean);
+  // The build each login last opened (the app reports it on start), against the one deployed now.
+  const versions = new Map((await get(ref.collection('appVersions'))).map(v => [v.id, v]));
+  const withBuild = (uid, info) => {
+    const v = versions.get(uid);
+    return info && { ...info, build: v?.get('build') ?? null, loadedAt: v?.get('loadedAt') ?? null,
+      latest: v && liveBuild ? v.get('build') === liveBuild : null };
+  };
+  const logins = (await Promise.all([
+    loginInfo(k.id, 'owner').then(i => withBuild(k.id, i)),
+    ...members.map(m => loginInfo(m.id, m.get('role')).then(i => withBuild(m.id, i))),
+  ])).filter(Boolean);
 
   const invites = await get(db.collection('invites').where('kitchenId', '==', k.id));
   const links = await count(db.collection('residentLinks').where('kitchenId', '==', k.id));
@@ -116,20 +128,31 @@ async function kitchen(k, now) {
   };
 }
 
+// The deployed build: the main bundle hash in the live index.html, as the app reports it.
+let liveBuild = null;
+async function deployedBuild() {
+  const site = SITES[projectId];
+  if (!site || process.env.FIRESTORE_EMULATOR_HOST) return null;
+  const html = await fetch(site, { headers: { 'cache-control': 'no-cache' } }).then(r => r.text()).catch(() => '');
+  return /main-([\w-]+)\.js/.exec(html)?.[1] ?? null;
+}
+
 (async () => {
   const now = Date.now();
+  liveBuild = await deployedBuild();
   const kitchens = await get(db.collection('kitchens'));
   const rows = [];
   for (const k of kitchens) rows.push(await kitchen(k, now));
   rows.sort((a, b) => b.purchases.last30 - a.purchases.last30 || a.name.localeCompare(b.name, 'da'));
   // Reads and writes per quota day. The emulator has no Monitoring.
   const usage = process.env.FIRESTORE_EMULATOR_HOST ? [] : await dailyUsage(accessToken, projectId, 7).catch(() => []);
-  const stats = { at: Timestamp.fromMillis(now), usage, kitchens: rows, reads };
+  const stats = { at: Timestamp.fromMillis(now), usage, build: liveBuild, kitchens: rows, reads };
 
   for (const r of rows) {
     console.log(`${r.name.padEnd(18)} ${String(r.purchases.last7).padStart(4)} buys/7d  ${String(r.purchases.last30).padStart(5)} buys/30d  ` +
       `app ${r.app ?? '-'}  ${r.logins.length} logins  ${r.residents.active} residents  ${r.meals.eaten30} meals/30d`);
   }
+  console.log(`deployed build ${liveBuild ?? '?'}`);
   console.log(`${rows.length} kitchens, about ${reads} reads`);
   if (args.dry) return;
   await db.doc('adminStats/latest').set(stats);
