@@ -70,7 +70,7 @@
 
   @for (e of shownEvents(); track e.id) {
     @let counts = rsvpCounts(e);
-    <article class="paper flyer" [id]="'event-' + e.id" [style.transform]="tilt(e.id)">
+    <article class="paper flyer" [id]="'event-' + e.id">
       <header>
         <span class="kind" aria-hidden="true">{{ "KOL_EVENT_ICON_" + e.kind | translate }}</span>
         <div class="date">
@@ -117,30 +117,47 @@
   }
 
   @for (p of livePolls(); track p.id) {
-    <div class="paper ballot" [style.transform]="tilt(p.id)">
+    <div class="paper ballot">
       <app-poll-card [poll]="p" [paper]="true" />
     </div>
   }
 
   @for (n of notes(); track n.thread.post.id) {
     @let t = n.thread;
+    <!-- A conversation takes more room than a single post: tall with replies, big when many. -->
     <article class="paper note" role="button" tabindex="0" [attr.data-kitchen-colour]="colour(t.post.kitchenId)"
-             [style.transform]="tilt(t.post.id)" [attr.aria-label]="'KOL_OPEN_NOTE' | translate"
+             [class.tall]="n.size !== 'small'" [class.big]="n.size === 'big'" [attr.aria-label]="'KOL_OPEN_NOTE' | translate"
              (click)="openNote(t.post.id)" (keydown.enter)="openNote(t.post.id)">
       @if (n.fresh) {
         <span class="fresh">{{ "KOL_NEW" | translate }}</span>
       }
-      <p class="note-text">{{ t.post.text }}</p>
-      <footer>
+      <header>
         <app-kitchen-chip [kitchenId]="t.post.kitchenId" />
         @if (t.post.to) {
           <mat-icon class="arrow">arrow_right_alt</mat-icon> <app-kitchen-chip [kitchenId]="t.post.to" [iconOnly]="true" />
         }
-        <span class="when">
-          @if (t.replies.length) { <span class="replies">💬 {{ t.replies.length }}</span> }
-          {{ t.post.createdAt.toDate() | date:'d/M HH:mm' }}
-        </span>
-      </footer>
+        <span class="when">{{ t.post.createdAt.toDate() | date:'d/M HH:mm' }}</span>
+      </header>
+      <p class="note-text">{{ t.post.text }}</p>
+      @if (n.latest.length) {
+        <div class="latest">
+          @if (n.latest.length < t.replies.length) {
+            <span class="earlier">{{ t.replies.length - n.latest.length }} {{ "KOL_EARLIER_REPLIES" | translate }}</span>
+          }
+          @for (r of n.latest; track r.id) {
+            <div class="latest-reply"><app-kitchen-chip [kitchenId]="r.kitchenId" [iconOnly]="true" /><span>{{ r.text }}</span></div>
+          }
+        </div>
+      }
+      @if (t.replies.length) {
+        <footer class="talk">
+          <span class="faces">
+            @for (k of n.kitchens.slice(0, 6); track k) { <app-kitchen-chip [kitchenId]="k" [iconOnly]="true" /> }
+            @if (n.kitchens.length > 6) { <span class="more-faces">+{{ n.kitchens.length - 6 }}</span> }
+          </span>
+          <b>💬 {{ t.replies.length }} {{ (t.replies.length === 1 ? "KOL_REPLY_ONE" : "KOL_REPLIES") | translate }}</b>
+        </footer>
+      }
     </article>
   }
   @if (!notes().length) {
