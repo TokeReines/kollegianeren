@@ -57,7 +57,7 @@
         }
       </div>
       <h2>{{ p.title }}</h2>
-      <div class="text rich-text" [innerHTML]="asHtml(p.body)"></div>
+      <div class="text rich-text" appPictureViewer [innerHTML]="asHtml(p.body)"></div>
       @if (p.images.length) {
         <div class="gallery">
           @for (i of p.images; track i) {
@@ -94,7 +94,7 @@
             }
           </header>
           @if (c.from === maker) {
-            <div class="text rich-text" [innerHTML]="asHtml(c.text)"></div>
+            <div class="text rich-text" appPictureViewer [innerHTML]="asHtml(c.text)"></div>
           } @else {
             <p class="text">{{ c.text }}</p>
           }

@@ -25,6 +25,7 @@ import {millis} from '../../time';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {KitchenChipComponent} from '../kollegiet/kitchen-chip.component';
+import {PictureViewerDirective} from './picture-viewer';
 import {RichEditorComponent} from './rich-editor.component';
 import {asHtml, cleanHtml, firstPicture, textOf} from './rich-text';
 
@@ -34,7 +35,7 @@ import {asHtml, cleanHtml, firstPicture, textOf} from './rich-text';
 @Component({
   selector: 'app-proposals',
   imports: [DatePipe, NgTemplateOutlet, FormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule,
-    MatProgressSpinnerModule, MatSelectModule, TranslatePipe, KitchenChipComponent, RichEditorComponent],
+    MatProgressSpinnerModule, MatSelectModule, TranslatePipe, KitchenChipComponent, RichEditorComponent, PictureViewerDirective],
   templateUrl: './proposals.component.html',
   styleUrl: './proposals.component.scss',
 })

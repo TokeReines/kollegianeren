@@ -302,4 +302,20 @@ app-root {
     margin: 10px 0;
     border-radius: 12px;
   }
+
+  // Shown (not in the editor): a tap opens it large (picture-viewer.ts).
+  &[apppictureviewer] img {
+    cursor: zoom-in;
+  }
+}
+
+// The picture viewer: the whole screen, dark behind the picture.
+.picture-panel .mat-mdc-dialog-surface {
+  background: rgb(0 0 0 / 0.92);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.picture-panel .mat-mdc-dialog-container {
+  --mat-dialog-container-shape: 0;
 }
