@@ -25,6 +25,7 @@ import {KollegietService} from '../../services/kollegiet.service';
 import {LeagueService} from '../../services/league.service';
 import {BattleTickerComponent} from '../kollegiet/battle-ticker.component';
 import {KitchenChipComponent} from '../kollegiet/kitchen-chip.component';
+import {WhoIsComingComponent} from '../kollegiet/who-is-coming.component';
 
 // How long the confirmation of a purchase stays in the bar.
 const CONFIRM_MS = 4000;
@@ -35,7 +36,7 @@ const CONFIRM_MS = 4000;
 @Component({
   selector: 'app-buy-page',
   imports: [DatePipe, DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent,
-    BattleTickerComponent, KitchenChipComponent, RouterLink],
+    BattleTickerComponent, KitchenChipComponent, RouterLink, WhoIsComingComponent],
   templateUrl: './buy-page.component.html',
   styleUrl: './buy-page.component.scss',
 })
@@ -82,7 +83,8 @@ export class BuyPageComponent {
   private readonly auth = inject(AuthService);
   private readonly allEvents = toSignal(this.kollegiet.events$, {initialValue: []});
   protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
-  private readonly liveNow = computed(() => this.allEvents().filter(e => isLiveNow(e, this.league.now())));
+  // The time itself too, not only the app's minute clock: an ended call goes at once.
+  private readonly liveNow = computed(() => this.allEvents().filter(e => isLiveNow(e, Math.max(this.league.now(), Date.now()))));
   // One bar, however many calls: the newest one not said no to, and how many more there are.
   private readonly liveCalls = computed(() => this.liveNow()
     .filter(e => isInvited(e, this.me()) && e.rsvp?.[this.me()] !== 'no')
@@ -90,14 +92,6 @@ export class BuyPageComponent {
   protected readonly liveCall = computed(() => this.liveCalls()[0] ?? null);
   protected readonly moreCalls = computed(() => Math.max(0, this.liveCalls().length - 1));
   protected readonly myLiveCall = computed(() => this.liveNow().find(e => e.kitchenId === this.me()) ?? null);
-
-  protected comingKitchens(e: KEvent) {
-    return Object.entries(e.rsvp ?? {}).filter(([, a]) => a === 'yes').map(([k]) => k);
-  }
-
-  protected comingCount(e: KEvent) {
-    return this.comingKitchens(e).length;
-  }
 
   // "Ikke nu": answers no, so the bar goes and the party sees it.
   protected notNow(e: KEvent) {

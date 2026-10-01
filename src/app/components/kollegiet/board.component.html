@@ -71,7 +71,6 @@
   </div>
 
   @for (e of shownEvents(); track e.id) {
-    @let counts = rsvpCounts(e);
     @let live = isLive(e);
     <article class="paper flyer" [class.live]="live" [class.arrive]="arrived(e.createdAt)" [id]="'event-' + e.id">
       <header>
@@ -111,8 +110,7 @@
             }
           </div>
         }
-        <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}
-          @if (e.kitchenId === me()) { · {{ counts.maybe }} {{ "KOL_RSVP_MAYBE_COUNT" | translate }} }</span>
+        <app-who-is-coming [event]="e" [host]="e.kitchenId === me()" />
         @if (e.kitchenId === me() && live) {
           <button mat-stroked-button class="edit" (click)="endLive(e)"><mat-icon>stop_circle</mat-icon> {{ "KOL_LIVE_END" | translate }}</button>
         } @else if (e.kitchenId === me() && e.kind !== 'live') {

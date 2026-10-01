@@ -47,7 +47,7 @@ export class NoticeService {
     return sortNotices([...maker, ...newsNotices(this.news(), this.aktueltSeenAt()),
       ...proposalNotices(this.proposals(), this.aktueltSeenAt()), ...kollegietNotices(kid, this.seenAt(), {
       events: this.events(), battles: this.league.battles(), kudos: this.kudos(),
-    }, this.league.now())]);
+    }, Math.max(this.league.now(), Date.now()))]);
   });
 
   readonly makerUnread = computed(() => this.unread().length);

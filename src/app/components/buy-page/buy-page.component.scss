@@ -61,9 +61,8 @@
     color: var(--mat-sys-on-secondary-container);
   }
 
-  .faces {
-    display: flex;
-    --chip-size: 26px;
+  app-who-is-coming {
+    flex: none;
   }
 
   &.mine {

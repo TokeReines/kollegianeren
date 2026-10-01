@@ -7,7 +7,7 @@
     <app-kitchen-chip [kitchenId]="e.kitchenId" />
     <span class="what"><b>{{ e.title }}</b>
       <span class="hint">@if (e.place) { {{ e.place }} · }{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span></span>
-    <span class="hint">{{ comingCount(e) }} {{ (comingCount(e) === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}</span>
+    <app-who-is-coming [event]="e" />
     @if (moreCalls()) {
       <a mat-button routerLink="/kollegiet" [queryParams]="{tab: 'board'}">+{{ moreCalls() }} {{ "KOL_LIVE_MORE" | translate }}</a>
     }
@@ -24,8 +24,7 @@
     <span class="dot" aria-hidden="true"></span>
     <span class="what"><b>📣 {{ "KOL_LIVE_YOURS" | translate }}: {{ e.title }}</b>
       <span class="hint">{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span></span>
-    <span class="faces">@for (k of comingKitchens(e); track k) { <app-kitchen-chip [kitchenId]="k" [iconOnly]="true" /> }</span>
-    <b>{{ comingCount(e) }} {{ (comingCount(e) === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}</b>
+    <app-who-is-coming [event]="e" [host]="true" />
   </div>
 }
 
