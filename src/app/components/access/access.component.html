@@ -24,7 +24,7 @@
         }
         @for (m of members(); track m.id) {
           <tr>
-            <td>{{ m.email }}</td>
+            <td>{{ m.id === myUid() ? myEmail() : m.email }}</td>
             <td>{{ ("ROLE_" + m.role.toUpperCase()) | translate }}</td>
             <td>
               @if (role() === 'owner') {
@@ -47,6 +47,30 @@
       </div>
       <p class="muted small">{{ "ACCESS_ROLES_EXPLAINED" | translate }}</p>
     </mat-card>
+
+    @if (role() === 'owner') {
+      <mat-card>
+        <mat-card-title>{{ "HANDOVER_TITLE" | translate }}</mat-card-title>
+        <p class="muted">{{ "HANDOVER_HINT" | translate }}</p>
+        @if (handOverSentTo()) {
+          <p class="sent"><mat-icon>mark_email_read</mat-icon> {{ "HANDOVER_SENT" | translate }} {{ handOverSentTo() }}. {{ "HANDOVER_NEXT" | translate }}</p>
+        }
+        <div class="row">
+          <mat-form-field class="grow">
+            <mat-label>{{ "HANDOVER_EMAIL" | translate }}</mat-label>
+            <input matInput type="email" autocomplete="off" [(ngModel)]="handOverEmail">
+          </mat-form-field>
+          <mat-form-field class="grow">
+            <mat-label>{{ "HANDOVER_PASSWORD" | translate }}</mat-label>
+            <input matInput type="password" autocomplete="current-password" [(ngModel)]="handOverPassword"
+                   (keydown.enter)="canHandOver() && handOver()">
+          </mat-form-field>
+          <button mat-flat-button [disabled]="!canHandOver() || busy()" (click)="handOver()">
+            <mat-icon>key</mat-icon> {{ "HANDOVER_SEND" | translate }}
+          </button>
+        </div>
+      </mat-card>
+    }
 
     <mat-card>
       <mat-card-title>{{ "ACCESS_NEW_KITCHEN" | translate }}</mat-card-title>
