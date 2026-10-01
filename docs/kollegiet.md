@@ -156,7 +156,9 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
     answers no), seen or not;
   - on the board it is the first flyer, with a red edge and "NU".
   No new reads: the events listener is already open for the strip.
-- **Kitchen profile:** opened from a card. A trophy shelf of big tiles (wins and poll titles in
+- **Kitchen profile:** opened from a card. The kitchen's own profile is the one place to change
+  the kitchen: name (the same everywhere), emoji, colour and bio, for its owner and treasurers.
+  Adgang is only logins and invitations; "Jeres køkken" in the account menu leads here. A trophy shelf of big tiles (wins and poll titles in
   gold, high-fives, badges, achievements), the buttons for high-five, badge and challenge, and
   why it got its badges.
 - **Worn badges.** The top bar shows the badges and high-fives the kitchen has been given, as

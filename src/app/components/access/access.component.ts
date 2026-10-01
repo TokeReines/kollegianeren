@@ -2,7 +2,6 @@ import {Component, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {switchMap} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -10,10 +9,10 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import {RouterLink} from '@angular/router';
 import {AuthService, Role} from '../../services/auth.service';
 import {AccessService} from '../../services/access.service';
 import {Invite, Member, inviteLink, isOpen} from '../../interfaces/invite';
-import {KitchenService} from '../../services/kitchen.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
@@ -34,7 +33,7 @@ const HANDOVER_ERRORS: Record<string, string> = {
 // "Adgang": the kitchen's name, its logins, and invites. Owners and treasurers only.
 @Component({
   selector: 'app-access',
-  imports: [DatePipe, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
+  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
     MatSelectModule, MatTooltipModule, TranslatePipe],
   templateUrl: './access.component.html',
   styleUrl: './access.component.scss',
@@ -45,7 +44,6 @@ export class AccessComponent {
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
   private readonly confirm = inject(Confirm);
-  private readonly kitchens = inject(KitchenService);
 
   protected readonly role = this.auth.role;
   protected readonly members = toSignal(this.access.members(), {initialValue: []});
@@ -54,7 +52,7 @@ export class AccessComponent {
   // Open invites only; used and expired ones are history.
   protected readonly invites = computed(() => this.allInvites().filter(i => isOpen(i)));
   protected readonly referrals = computed(() => this.allReferrals().filter(i => isOpen(i)));
-  protected readonly kitchenName = toSignal(this.auth.kitchenId$.pipe(switchMap(kid => this.kitchens.name(kid))), {initialValue: ''});
+  protected readonly kitchenId = toSignal(this.auth.kitchenId$, {initialValue: ''});
   protected readonly isLegacyOwner = computed(() => {
     const m = this.auth.membership();
     return !!m && m.uid === m.kitchenId;
@@ -63,7 +61,6 @@ export class AccessComponent {
   // (it changes when the login is handed over).
   protected readonly myUid = computed(() => this.auth.user()?.uid);
   protected readonly myEmail = computed(() => this.auth.user()?.email ?? '');
-  protected readonly newName = signal('');
   protected readonly inviteRole = signal<Role>('tablet');
   protected readonly handOverEmail = signal('');
   protected readonly handOverPassword = signal('');
@@ -118,9 +115,5 @@ export class AccessComponent {
       this.handOverPassword.set('');
       this.busy.set(false);
     }
-  }
-
-  protected rename() {
-    this.access.rename(this.newName().trim()).then(() => this.newName.set(''), this.notify.error);
   }
 }

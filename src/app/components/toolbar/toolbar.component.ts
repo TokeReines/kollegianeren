@@ -51,6 +51,10 @@ export class ToolbarComponent {
   private readonly kollegiet = inject(KollegietService);
   private readonly myStanding = toSignal(this.kollegiet.myStanding$, {initialValue: null});
   private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
+  protected readonly myKitchen = computed(() => {
+    const kid = this.auth.membership()?.kitchenId;
+    return kid && this.kollegiet.byId().has(kid) ? kid : null;
+  });
   protected readonly worn = computed(() => {
     const kitchenId = this.auth.membership()?.kitchenId;
     if (!kitchenId || !this.kollegiet.byId().has(kitchenId)) {
