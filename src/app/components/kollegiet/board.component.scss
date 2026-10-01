@@ -216,6 +216,22 @@
     }
   }
 
+  // Between the note and the two buttons: either one.
+  .or {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+    }
+  }
+
   .write-more {
     display: flex;
     flex-direction: column;
