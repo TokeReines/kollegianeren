@@ -33,7 +33,9 @@ export class NoticeService {
 
   readonly notices = computed<Notice[]>(() => {
     const kid = this.auth.membership()?.kitchenId;
-    if (!kid) {
+    // Only a login of a real kitchen: the maker's own login has none, and could never mark
+    // anything seen, so the strip would come back on every page.
+    if (!kid || !this.kollegiet.byId().has(kid)) {
       return [];
     }
     const latest = this.unread()[0];
@@ -50,6 +52,9 @@ export class NoticeService {
   private readonly newPosts = toSignal(this.kollegiet.newPosts$, {initialValue: []});
   readonly kollegietBadge = computed(() => {
     const kid = this.auth.membership()?.kitchenId;
+    if (!kid || !this.kollegiet.byId().has(kid)) {
+      return 0;
+    }
     return this.newPosts().filter(p => p.kitchenId !== kid).length
       + this.notices().filter(n => fromKollegiet(n)).length;
   });
