@@ -1,10 +1,10 @@
-import {Injectable, computed, inject} from '@angular/core';
+import {Injectable, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {
   Timestamp, addDoc, collection, deleteDoc, deleteField, doc, getDoc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where,
   writeBatch,
 } from 'firebase/firestore';
-import {Observable, catchError, distinctUntilChanged, map, of, shareReplay, switchMap} from 'rxjs';
+import {Observable, catchError, distinctUntilChanged, firstValueFrom, map, of, shareReplay, switchMap} from 'rxjs';
 import {
   Badge, KEvent, Kudos, Poll, Post, Profile, Rsvp, Standing, highfiveId, pollId,
 } from '../interfaces/kollegiet';
@@ -108,7 +108,12 @@ export class KollegietService {
     return this.auth.currentKitchenId;
   }
 
+  // When the kitchen had last looked, before this visit: what is new on the board. Opening
+  // Kollegiet marks it all seen at once, so the board needs the time from before, read first.
+  readonly seenBefore = signal(Number.MAX_SAFE_INTEGER);
+
   async markSeen() {
+    this.seenBefore.set(await firstValueFrom(this.seen$));
     return setDoc(doc(db, 'seen', this.kitchenId), {kollegietAt: serverTimestamp()}, {merge: true});
   }
 

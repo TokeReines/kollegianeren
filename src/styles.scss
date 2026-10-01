@@ -274,3 +274,14 @@ app-root {
   0%, 30% { box-shadow: 0 0 0 3px var(--mat-sys-tertiary); }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
+
+// Kitchen colours on Kollegiet (post-its): fixed hues, mixed into the surface where they are used.
+[data-kitchen-colour=purple] { --kitchen-hue: #7e57c2; }
+[data-kitchen-colour=blue] { --kitchen-hue: #1e88e5; }
+[data-kitchen-colour=teal] { --kitchen-hue: #00897b; }
+[data-kitchen-colour=green] { --kitchen-hue: #43a047; }
+[data-kitchen-colour=lime] { --kitchen-hue: #c0ca33; }
+[data-kitchen-colour=amber] { --kitchen-hue: #ffb300; }
+[data-kitchen-colour=orange] { --kitchen-hue: #fb8c00; }
+[data-kitchen-colour=red] { --kitchen-hue: #e53935; }
+[data-kitchen-colour=pink] { --kitchen-hue: #d81b60; }

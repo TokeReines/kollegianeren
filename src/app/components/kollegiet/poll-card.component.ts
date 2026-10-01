@@ -19,7 +19,7 @@ import {KitchenChipComponent} from './kitchen-chip.component';
   selector: 'app-poll-card',
   imports: [DatePipe, MatCardModule, MatFormFieldModule, MatIconModule, MatSelectModule, TranslatePipe, KitchenChipComponent],
   template: `
-    <mat-card appearance="outlined" class="poll">
+    <mat-card appearance="outlined" class="poll" [class.paper]="paper()">
       <header>
         <mat-icon class="icon">how_to_vote</mat-icon>
         <div class="head">
@@ -46,7 +46,7 @@ import {KitchenChipComponent} from './kitchen-chip.component';
               }
             </mat-select>
           </mat-form-field>
-          <span class="hint">{{ "KOL_POLL_SECRET" | translate }}</span>
+          <span class="hint">{{ (paper() ? "KOL_POLL_SECRET_SHORT" : "KOL_POLL_SECRET") | translate }}</span>
         </div>
       } @else {
         <p class="hint">{{ "KOL_POLL_COUNTING" | translate }}</p>
@@ -63,12 +63,20 @@ import {KitchenChipComponent} from './kitchen-chip.component';
     .vote { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .vote mat-form-field { width: 260px; max-width: 100%; }
     .vote .hint { flex: 1; min-width: 180px; }
+    /* On the wall: the ballot paper is the card. */
+    .poll.paper { padding: 0; border: none; background: transparent; box-shadow: none; }
+    .poll.paper header { align-items: flex-start; }
+    .poll.paper b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .poll.paper .vote mat-form-field { width: 100%; }
+    .poll.paper .vote .hint { min-width: 0; }
   `,
 })
 export class PollCardComponent {
   private readonly kollegiet = inject(KollegietService);
   private readonly notify = inject(Notify);
   readonly poll = input.required<Poll>();
+  // On the board's wall, inside a ballot paper.
+  readonly paper = input(false);
   protected readonly mine = toSignal(toObservable(this.poll).pipe(switchMap(p => this.kollegiet.myBallot(p))), {initialValue: null});
   protected readonly open = computed(() => Date.now() >= millis(this.poll().opensAt) && Date.now() < millis(this.poll().closesAt));
   protected readonly others = computed(() => this.kollegiet.cards().filter(c => c.id !== this.kollegiet.kitchenId));

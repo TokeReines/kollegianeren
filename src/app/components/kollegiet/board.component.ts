@@ -1,18 +1,17 @@
-import {Component, computed, inject, signal} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, TemplateRef, computed, inject, signal, viewChild} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe, NgTemplateOutlet} from '@angular/common';
+import {ActivatedRoute} from '@angular/router';
 import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {MatDialog} from '@angular/material/dialog';
+import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
-import {MatButtonToggleModule} from '@angular/material/button-toggle';
-import {MatCardModule} from '@angular/material/card';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  KEvent, POST_MAX, PostThread, Rsvp, rsvpCounts, threads,
+  Battle, KEvent, Kudos, POST_MAX, Poll, PostThread, Rsvp, rsvpCounts, threads,
 } from '../../interfaces/kollegiet';
 import {EventFields, HideableCollection, KollegietService} from '../../services/kollegiet.service';
 import {AuthService} from '../../services/auth.service';
@@ -27,14 +26,30 @@ import {KitchenChipComponent} from './kitchen-chip.component';
 import {PollCardComponent} from './poll-card.component';
 
 // Posts from Kollegiet itself (old result and achievement posts from ops/league.js): not on the
-// board, the results are pinned and achievements are on the kitchens' profiles.
+// board, the results are stickers and achievements are on the kitchens' profiles.
 const SYSTEM = 'kollegiet';
+// Flyers shown before "+N more".
+const EVENTS_SHOWN = 4;
 
-// The board, a pin board with fixed places: high-fives and badges across the top; under them posts
-// with the composer on top, events, and votes and results.
+// A sticker in the top row: a high-five or badge, or a battle or vote just won.
+export type Sticker =
+  {kind: 'kudos', at: number, kudos: Kudos} |
+  {kind: 'battle', at: number, battle: Battle} |
+  {kind: 'poll', at: number, poll: Poll};
+
+// A post on the wall: the thread, how many replies, and whether there is something new in it.
+interface Note {
+  thread: PostThread;
+  fresh: boolean;
+}
+
+// The board, a pin board (docs/kollegiet.md). Across the top, loud: high-fives, badges and wins as
+// stickers. Under it one wall of papers, in a fixed order: the note to write on, events as flyers,
+// open votes as ballots, then the posts as post-its in the writer's colour. Space follows how many
+// there are of each. A post-it opens with its replies.
 @Component({
   selector: 'app-board',
-  imports: [DatePipe, NgTemplateOutlet, FormsModule, ReactiveFormsModule, MatButtonModule, MatButtonToggleModule, MatCardModule, MatFormFieldModule, MatIconModule,
+  imports: [DatePipe, NgTemplateOutlet, FormsModule, ReactiveFormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule,
     MatInputModule, MatMenuModule, MatSelectModule, TranslatePipe, KitchenChipComponent, PollCardComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
@@ -61,40 +76,89 @@ export class BoardComponent {
   protected readonly text = toSignal(this.textControl.valueChanges, {initialValue: ''});
   // '' is all kitchens.
   protected readonly to = signal('');
-  protected readonly replyTo = signal<string | null>(null);
   protected readonly replyControl = new FormControl('', {nonNullable: true});
   protected readonly reply = toSignal(this.replyControl.valueChanges, {initialValue: ''});
   protected readonly others = computed(() => this.kollegiet.cards().filter(c => c.id !== this.me()));
 
-  // Events for this kitchen (everyone's, or it is invited, or its own), soonest first.
+  private readonly composeTpl = viewChild.required<TemplateRef<unknown>>('compose');
+  private readonly noteTpl = viewChild.required<TemplateRef<unknown>>('note');
+  private composeRef: MatDialogRef<unknown> | null = null;
+  private noteRef: MatDialogRef<unknown> | null = null;
+  protected readonly openId = signal<string | null>(null);
+
+  // Events for this kitchen (everyone's, or it is invited, or its own), soonest first. The first
+  // few as flyers; all of them after "+N more", or when the strip links to one further down.
   protected readonly events = computed(() => this.allEvents()
     .filter(e => e.invited === 'all' || e.kitchenId === this.me() || e.invited.includes(this.me()))
     .filter(e => millis(e.endsAt) > Date.now())
     .sort((a, b) => millis(a.startsAt) - millis(b.startsAt)));
-  // Pinned above the composer: open votes, closing soonest first, then results from the last three days.
-  protected readonly openPolls = computed(() => this.polls()
-    .filter(p => !p.result || millis(p.closesAt) > Date.now() - 3 * 864e5)
-    .sort((a, b) => Number(!!a.result) - Number(!!b.result)
-      || (a.result ? millis(b.closesAt) - millis(a.closesAt) : millis(a.closesAt) - millis(b.closesAt))));
+  protected readonly allShown = signal(false);
+  protected readonly shownEvents = computed(() => this.allShown() ? this.events() : this.events().slice(0, EVENTS_SHOWN));
+  protected readonly moreEvents = computed(() => this.events().length - this.shownEvents().length);
 
-  // Pinned too: battles won in the last three days.
-  protected readonly recentWins = computed(() => {
+  // Open votes as ballots on the wall.
+  protected readonly livePolls = computed(() => this.polls()
+    .filter(p => !p.result)
+    .sort((a, b) => millis(a.closesAt) - millis(b.closesAt)));
+
+  // Stickers: the newest high-fives and badges, and battles and votes won in the last three days.
+  protected readonly stickers = computed<Sticker[]>(() => {
     const now = this.league.now();
-    return this.league.battles()
-      .filter(b => b.result?.winners.length && b.participants.length > 1 && millis(b.to) > now - 3 * 864e5)
-      .sort((a, b) => millis(b.to) - millis(a.to));
+    const since = now - 3 * 864e5;
+    const at = (t: {toMillis(): number} | null | undefined) => t ? millis(t as never) : Date.now();
+    return [
+      ...this.kudos().slice(0, 20).map(kudos => ({kind: 'kudos' as const, at: at(kudos.createdAt), kudos})),
+      ...this.league.battles()
+        .filter(b => b.result?.winners.length && b.participants.length > 1 && millis(b.to) > since)
+        .map(battle => ({kind: 'battle' as const, at: millis(battle.to), battle})),
+      ...this.polls()
+        .filter(p => p.result?.winners.length && millis(p.closesAt) > since)
+        .map(poll => ({kind: 'poll' as const, at: millis(poll.closesAt), poll})),
+    ].sort((a, b) => b.at - a.at);
   });
-  // Open votes as cards; decided ones as a line, like a battle won.
-  protected readonly livePolls = computed(() => this.openPolls().filter(p => !p.result));
-  protected readonly decidedPolls = computed(() => this.openPolls().filter(p => p.result?.winners.length));
-  // The newest high-fives and badges, as a row of stickers; the rest are on the kitchens' profiles.
-  protected readonly recentKudos = computed(() => this.kudos().slice(0, 20));
 
-  protected readonly feed = computed<PostThread[]>(() => threads(this.posts().filter(p => p.kitchenId !== SYSTEM))
-    .map(t => ({t, at: Math.max(millis(t.post.createdAt), ...t.replies.map(r => millis(r.createdAt)))}))
-    .sort((a, b) => b.at - a.at).map(x => x.t));
+  // When this kitchen last looked, before this visit: what counts as new on a post-it.
+  private readonly seenBefore = this.kollegiet.seenBefore;
+  protected readonly notes = computed<Note[]>(() => threads(this.posts().filter(p => p.kitchenId !== SYSTEM))
+    .map(thread => {
+      const all = [thread.post, ...thread.replies];
+      return {
+        thread,
+        at: Math.max(...all.map(p => millis(p.createdAt))),
+        fresh: all.some(p => p.kitchenId !== this.me() && millis(p.createdAt) > this.seenBefore()),
+      };
+    })
+    .sort((a, b) => b.at - a.at));
+  protected readonly openThread = computed(() => this.notes().find(n => n.thread.post.id === this.openId())?.thread ?? null);
 
   protected rsvpCounts = rsvpCounts;
+
+  constructor() {
+    // The strip links to an event: show them all, so the flyer is there to scroll to.
+    inject(ActivatedRoute).fragment.pipe(takeUntilDestroyed()).subscribe(f => {
+      if (f?.startsWith('event-')) {
+        this.allShown.set(true);
+      }
+    });
+  }
+
+  // A kitchen's colour, for its post-its.
+  protected colour(kitchenId: string) {
+    return this.kollegiet.card(kitchenId).colour;
+  }
+
+  // A small tilt per paper, the same every time, so the wall looks pinned up by hand.
+  protected tilt(id: string) {
+    let h = 0;
+    for (const c of id) {
+      h = (h * 31 + c.charCodeAt(0)) | 0;
+    }
+    return `rotate(${((Math.abs(h) % 7) - 3) * 0.45}deg)`;
+  }
+
+  protected openComposer() {
+    this.composeRef = this.dialog.open(this.composeTpl(), {width: '520px', maxWidth: '94vw'});
+  }
 
   protected send() {
     const text = this.textControl.value.trim();
@@ -102,10 +166,20 @@ export class BoardComponent {
       return;
     }
     this.textControl.setValue('');
+    this.composeRef?.close();
+    // Refused (too soon after the last one): the note comes back, open, with its text.
     this.kollegiet.post(text, {to: this.to() || null}).catch(err => {
       this.textControl.setValue(text);
+      this.openComposer();
       this.tooSoon(err);
     });
+  }
+
+  protected openNote(id: string) {
+    this.openId.set(id);
+    this.replyControl.setValue('');
+    this.noteRef = this.dialog.open(this.noteTpl(), {width: '560px', maxWidth: '94vw', autoFocus: false});
+    this.noteRef.afterClosed().subscribe(() => this.openId.set(null));
   }
 
   protected sendReply(parentId: string) {
@@ -114,10 +188,8 @@ export class BoardComponent {
       return;
     }
     this.replyControl.setValue('');
-    this.replyTo.set(null);
     this.kollegiet.post(text, {parentId}).catch(err => {
       this.replyControl.setValue(text);
-      this.replyTo.set(parentId);
       this.tooSoon(err);
     });
   }
@@ -183,7 +255,11 @@ export class BoardComponent {
     const ok = await this.confirm.ask({title: this.i18n.t(own ? 'KOL_TAKE_BACK' : 'KOL_HIDE'),
       message: this.i18n.t(own ? 'KOL_TAKE_BACK_TEXT' : 'KOL_HIDE_TEXT'), confirm: this.i18n.t(own ? 'KOL_TAKE_BACK' : 'KOL_HIDE'), danger: true});
     if (ok) {
-      (own ? this.kollegiet.takeBack(collection, item.id) : this.kollegiet.hide(collection, item, author)).catch(this.notify.error);
+      (own ? this.kollegiet.takeBack(collection, item.id) : this.kollegiet.hide(collection, item, author)).then(() => {
+        if (item.id === this.openId()) {
+          this.noteRef?.close();
+        }
+      }, this.notify.error);
     }
   }
 

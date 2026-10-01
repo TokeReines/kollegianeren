@@ -315,8 +315,8 @@ export interface BadgeResult {
       </button>
     </mat-dialog-actions>
   `,
-  // Room above the kitchen field for its label.
-  styles: `.content { display: flex; flex-direction: column; gap: 16px; padding-top: 12px; }`,
+  // Room above the first field for its label, inside the scrolling content.
+  styles: `.content { display: flex; flex-direction: column; gap: 16px; } .content > :first-child { margin-top: 8px; }`,
 })
 export class BadgeDialogComponent {
   protected readonly fixedTo = inject<string | null>(MAT_DIALOG_DATA);
