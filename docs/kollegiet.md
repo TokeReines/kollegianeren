@@ -118,7 +118,8 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
     wall of papers of the same size, in a fixed order, so space follows how many there are of
     each:
     1. a blank note to write on, with buttons for an event and a vote;
-    2. events as flyers, soonest first, with yes/maybe/no on them; four, then "+N more";
+    2. events as flyers, soonest first, with yes/maybe/no on them; four, then "+N more" (one
+       that comes while the board is open is shown too, wherever its date puts it);
     3. open votes as ballots;
     4. posts as post-its in the writing kitchen's colour, newest activity first, with "Ny"
        when there is something since the kitchen last looked. A conversation takes more room

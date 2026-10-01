@@ -105,7 +105,10 @@ export class BoardComponent {
     // A live call first, then the soonest.
     .sort((a, b) => Number(this.isLive(b)) - Number(this.isLive(a)) || millis(a.startsAt) - millis(b.startsAt)));
   protected readonly allShown = signal(false);
-  protected readonly shownEvents = computed(() => this.allShown() ? this.events() : this.events().slice(0, EVENTS_SHOWN));
+  // The first few, and any that came while the board is open (one just made is seen arriving,
+  // wherever its date puts it).
+  protected readonly shownEvents = computed(() => this.allShown() ? this.events()
+    : this.events().filter((e, i) => i < EVENTS_SHOWN || this.arrived(e.createdAt)));
   protected readonly moreEvents = computed(() => this.events().length - this.shownEvents().length);
 
   // Open votes as ballots on the wall.
