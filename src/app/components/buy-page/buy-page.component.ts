@@ -2,6 +2,7 @@ import {Component, DestroyRef, computed, effect, inject, signal, untracked} from
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DecimalPipe} from '@angular/common';
 import {map} from 'rxjs';
+import {RouterLink} from '@angular/router';
 import {MatBadgeModule} from '@angular/material/badge';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {MatButtonModule} from '@angular/material/button';
@@ -30,7 +31,7 @@ const CONFIRM_MS = 4000;
 @Component({
   selector: 'app-buy-page',
   imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent,
-    BattleTickerComponent],
+    BattleTickerComponent, RouterLink],
   templateUrl: './buy-page.component.html',
   styleUrl: './buy-page.component.scss',
 })
@@ -67,9 +68,19 @@ export class BuyPageComponent {
   protected readonly confirmation = signal('');
   private timer: ReturnType<typeof setTimeout> | undefined;
 
-  // Battles the kitchen is in right now (Kollegiet): a ticker each above the grid.
+  // Battles the kitchen is in right now (Kollegiet): one strip above the grid, for the one that
+  // ends first, a link to the rest, and one gym button for all its gym battles.
   private readonly league = inject(LeagueService);
   protected readonly liveBattles = this.league.myLive;
+  protected readonly featuredBattle = computed(() =>
+    [...this.liveBattles()].sort((a, b) => a.to.toMillis() - b.to.toMillis())[0] ?? null);
+  protected readonly gymBattles = computed(() => this.liveBattles().filter(b => b.metric === 'gym'));
+
+  protected gym() {
+    for (const b of this.gymBattles()) {
+      this.league.gym(b, 1).catch(() => this.notify.info(this.i18n.t('KOL_GYM_WAIT')));
+    }
+  }
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));

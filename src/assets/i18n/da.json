@@ -481,6 +481,8 @@
   "KOL_ON": "på",
   "KOL_SETTLED": "Tallene er tjekket, og resultatet står fast.",
   "KOL_MAX_BATTLES": "Et køkken kan være med i højst 3 battles ad gangen.",
+  "KOL_MORE_BATTLE": "battle mere",
+  "KOL_MORE_BATTLES": "battles mere",
   "KOL_TAKES_LEAD": "tager føringen!",
   "KOL_NO_PARTICIPANTS": "Ingen køkkener er med endnu.",
   "KOL_BATTLE_GONE": "Den battle findes ikke længere.",

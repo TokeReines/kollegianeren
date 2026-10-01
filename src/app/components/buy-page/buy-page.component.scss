@@ -27,15 +27,20 @@
   ));
 }
 
-// Live battles: side by side when they fit, so two cost one row, not two.
+// One battle strip, whatever the number of battles: the gym button and the link beside it.
 .battles {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
 
   app-battle-ticker {
-    flex: 1 1 440px;
+    flex: 1;
     min-width: 0;
+  }
+
+  .gym,
+  .more-battles {
+    flex: none;
   }
 }
 

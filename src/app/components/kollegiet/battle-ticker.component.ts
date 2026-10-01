@@ -38,7 +38,7 @@ import {liveBoard} from './live-board';
           <span class="toast">{{ kollegiet.card(x.kitchenId).emoji }} +{{ x.n }}</span>
         }
       }
-      @if (battle().metric === 'gym') {
+      @if (battle().metric === 'gym' && gymButton()) {
         <button mat-flat-button class="gym" (click)="gym()"><mat-icon>fitness_center</mat-icon> +1</button>
       }
     </div>
@@ -73,6 +73,8 @@ export class BattleTickerComponent {
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
   readonly battle = input.required<Battle>();
+  // Off on the buy page, which has one gym button for all gym battles.
+  readonly gymButton = input(true);
 
   private readonly id = computed(() => this.battle().id);
   private readonly tallies = toSignal(toObservable(this.id).pipe(switchMap(id => this.league.tallies(id))), {initialValue: null});

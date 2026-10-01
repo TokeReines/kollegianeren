@@ -481,6 +481,8 @@
   "KOL_ON": "in",
   "KOL_SETTLED": "The numbers are checked, and the result stands.",
   "KOL_MAX_BATTLES": "A kitchen can be in at most 3 battles at a time.",
+  "KOL_MORE_BATTLE": "more battle",
+  "KOL_MORE_BATTLES": "more battles",
   "KOL_TAKES_LEAD": "takes the lead!",
   "KOL_NO_PARTICIPANTS": "No kitchens have joined yet.",
   "KOL_BATTLE_GONE": "That battle no longer exists.",
