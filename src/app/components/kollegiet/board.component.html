@@ -1,57 +1,32 @@
+<!-- A pin board with fixed places: the posts on the left with the composer always on top, and
+     on the right, always in this order and always shown: votes and results, events, kudos. -->
 <div class="board">
-  <section class="main">
-    @if (hasPinned()) {
-      <h2 class="pinned"><mat-icon>push_pin</mat-icon> {{ "KOL_PINNED" | translate }}</h2>
-      @for (p of livePolls(); track p.id) {
-        <app-poll-card [poll]="p" />
-      }
-      @for (b of recentWins(); track b.id) {
-        <div class="pin">
-          <span class="pin-icon">🏆</span>
-          <span class="pin-text">
-            @for (w of b.result!.winners; track w) { <app-kitchen-chip [kitchenId]="w" /> }
-            {{ "KOL_PIN_WON" | translate }} <b>{{ b.title }}</b>
-            {{ "KOL_PIN_WITH" | translate }} {{ b.result!.scores[b.result!.winners[0]] }} {{ "KOL_UNIT_" + b.metric | translate }}
-          </span>
-        </div>
-      }
-      @for (p of decidedPolls(); track p.id) {
-        <div class="pin">
-          <span class="pin-icon">🗳️</span>
-          <span class="pin-text">
-            @for (w of p.result!.winners; track w) { <app-kitchen-chip [kitchenId]="w" /> }
-            {{ "KOL_PIN_WON" | translate }} <b>{{ p.title }}</b>
-            {{ "KOL_PIN_WITH" | translate }} {{ p.result!.votes[p.result!.winners[0]] ?? 0 }} {{ "KOL_VOTES" | translate }}
-          </span>
-        </div>
-      }
-    }
-
-    <div class="composer">
-      <mat-form-field class="grow" subscriptSizing="dynamic" appearance="outline">
-        <input matInput [formControl]="textControl" [maxlength]="postMax" [placeholder]="'KOL_WRITE' | translate"
-               [attr.aria-label]="'KOL_WRITE' | translate" (keydown.enter)="send()">
-      </mat-form-field>
-      <button mat-icon-button [matMenuTriggerFor]="create" [attr.aria-label]="'KOL_CREATE' | translate"><mat-icon>add</mat-icon></button>
-      <mat-menu #create="matMenu" xPosition="before">
-        <button mat-menu-item (click)="newEvent()"><mat-icon>celebration</mat-icon><span>{{ "KOL_EVENT_NEW" | translate }}</span></button>
-        <button mat-menu-item (click)="newPoll()"><mat-icon>how_to_vote</mat-icon><span>{{ "KOL_POLL_NEW" | translate }}</span></button>
-      </mat-menu>
-      <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
+  <section class="zone posts-zone" [attr.aria-label]="'KOL_ZONE_POSTS' | translate">
+    <div class="zone-head">
+      <h2><mat-icon>forum</mat-icon> {{ "KOL_ZONE_POSTS" | translate }}</h2>
     </div>
-    @if (text().trim()) {
-      <mat-form-field class="to" subscriptSizing="dynamic">
-        <mat-label>{{ "KOL_TO" | translate }}</mat-label>
-        <mat-select [(ngModel)]="to">
-          <mat-option value="">{{ "KOL_ALL_KITCHENS" | translate }}</mat-option>
-          @for (k of others(); track k.id) {
-            <mat-option [value]="k.id"><app-kitchen-chip [kitchenId]="k.id" /></mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    }
-
-    <div class="posts">
+    <div class="panel">
+      <div class="composer">
+        <div class="composer-row">
+          <mat-form-field class="grow" subscriptSizing="dynamic" appearance="outline">
+            <input matInput [formControl]="textControl" [maxlength]="postMax" [placeholder]="'KOL_WRITE' | translate"
+                   [attr.aria-label]="'KOL_WRITE' | translate" (keydown.enter)="send()">
+          </mat-form-field>
+          <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
+        </div>
+        @if (text().trim()) {
+          <mat-form-field class="to" subscriptSizing="dynamic">
+            <mat-label>{{ "KOL_TO" | translate }}</mat-label>
+            <mat-select [(ngModel)]="to">
+              <mat-option value="">{{ "KOL_ALL_KITCHENS" | translate }}</mat-option>
+              @for (k of others(); track k.id) {
+                <mat-option [value]="k.id"><app-kitchen-chip [kitchenId]="k.id" /></mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      </div>
+      <div class="posts">
       @for (t of feed(); track t.post.id) {
         <article class="post">
           <header>
@@ -88,52 +63,117 @@
       } @empty {
         <p class="empty">{{ "KOL_BOARD_EMPTY" | translate }}</p>
       }
+      </div>
     </div>
   </section>
 
-  <aside class="events">
-    <h2>{{ "KOL_EVENTS" | translate }}</h2>
-    @for (e of events(); track e.id) {
-      @let counts = rsvpCounts(e);
-      <mat-card appearance="outlined" class="event" [id]="'event-' + e.id">
-        <header>
-          <span class="kind">{{ "KOL_EVENT_ICON_" + e.kind | translate }}</span>
-          <div class="head">
-            <b>{{ e.title }}</b>
-            <span class="when">{{ e.startsAt.toDate() | date:'EEE d/M HH:mm' }} @if (e.place) { · {{ e.place }} }</span>
-          </div>
-          <ng-container *ngTemplateOutlet="menu; context: {collection: 'events', item: e, author: e.kitchenId}" />
-        </header>
-        <div class="by">
-          <app-kitchen-chip [kitchenId]="e.kitchenId" />
-          @if (e.invited !== 'all') {
-            <mat-icon class="arrow">arrow_right_alt</mat-icon>
-            @for (k of e.invited; track k) { <app-kitchen-chip [kitchenId]="k" [iconOnly]="true" /> }
-          } @else {
-            <span class="hint">{{ "KOL_FOR_ALL" | translate }}</span>
-          }
-        </div>
-        @if (e.text) {
-          <p class="text">{{ e.text }}</p>
-        }
-        @if (e.kitchenId === me()) {
-          <div class="answers">
-            <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }} · {{ counts.maybe }} {{ "KOL_RSVP_MAYBE_COUNT" | translate }}</span>
-            <button mat-button (click)="newEvent(e)"><mat-icon>edit</mat-icon> {{ "EDIT" | translate }}</button>
-          </div>
-        } @else {
-          <mat-button-toggle-group [value]="e.rsvp[me()]" hideSingleSelectionIndicator class="rsvp" [attr.aria-label]="'KOL_RSVP' | translate">
-            <mat-button-toggle value="yes" (click)="answer(e, 'yes')">{{ "KOL_RSVP_yes" | translate }}</mat-button-toggle>
-            <mat-button-toggle value="maybe" (click)="answer(e, 'maybe')">{{ "KOL_RSVP_maybe" | translate }}</mat-button-toggle>
-            <mat-button-toggle value="no" (click)="answer(e, 'no')">{{ "KOL_RSVP_no" | translate }}</mat-button-toggle>
-          </mat-button-toggle-group>
-          <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}</span>
-        }
-      </mat-card>
-    } @empty {
-      <p class="empty">{{ "KOL_EVENTS_EMPTY" | translate }}</p>
+  <section class="zone votes-zone" [attr.aria-label]="'KOL_ZONE_VOTES' | translate">
+    <div class="zone-head">
+      <h2><mat-icon>how_to_vote</mat-icon> {{ "KOL_ZONE_VOTES" | translate }}</h2>
+      <button mat-button (click)="newPoll()"><mat-icon>add</mat-icon> {{ "KOL_POLL_NEW" | translate }}</button>
+    </div>
+    @for (p of livePolls(); track p.id) {
+      <app-poll-card [poll]="p" />
     }
-  </aside>
+    @for (b of recentWins(); track b.id) {
+      <div class="pin">
+        <span class="pin-icon">🏆</span>
+        <span class="pin-text">
+          @for (w of b.result!.winners; track w) { <app-kitchen-chip [kitchenId]="w" /> }
+          {{ "KOL_PIN_WON" | translate }} <b>{{ b.title }}</b>
+          {{ "KOL_PIN_WITH" | translate }} {{ b.result!.scores[b.result!.winners[0]] }} {{ "KOL_UNIT_" + b.metric | translate }}
+        </span>
+      </div>
+    }
+    @for (p of decidedPolls(); track p.id) {
+      <div class="pin">
+        <span class="pin-icon">🗳️</span>
+        <span class="pin-text">
+          @for (w of p.result!.winners; track w) { <app-kitchen-chip [kitchenId]="w" /> }
+          {{ "KOL_PIN_WON" | translate }} <b>{{ p.title }}</b>
+          {{ "KOL_PIN_WITH" | translate }} {{ p.result!.votes[p.result!.winners[0]] ?? 0 }} {{ "KOL_VOTES" | translate }}
+        </span>
+      </div>
+    }
+    @if (!livePolls().length && !recentWins().length && !decidedPolls().length) {
+      <p class="empty">{{ "KOL_VOTES_EMPTY" | translate }}</p>
+    }
+  </section>
+
+  <section class="zone events-zone" [attr.aria-label]="'KOL_EVENTS' | translate">
+    <div class="zone-head">
+      <h2><mat-icon>event</mat-icon> {{ "KOL_EVENTS" | translate }}</h2>
+      <button mat-button (click)="newEvent()"><mat-icon>add</mat-icon> {{ "KOL_EVENT_NEW" | translate }}</button>
+    </div>
+      @for (e of events(); track e.id) {
+        @let counts = rsvpCounts(e);
+        <mat-card appearance="outlined" class="event" [id]="'event-' + e.id">
+          <header>
+            <span class="kind">{{ "KOL_EVENT_ICON_" + e.kind | translate }}</span>
+            <div class="head">
+              <b>{{ e.title }}</b>
+              <span class="when">{{ e.startsAt.toDate() | date:'EEE d/M HH:mm' }} @if (e.place) { · {{ e.place }} }</span>
+            </div>
+            <ng-container *ngTemplateOutlet="menu; context: {collection: 'events', item: e, author: e.kitchenId}" />
+          </header>
+          <div class="by">
+            <app-kitchen-chip [kitchenId]="e.kitchenId" />
+            @if (e.invited !== 'all') {
+              <mat-icon class="arrow">arrow_right_alt</mat-icon>
+              @for (k of e.invited; track k) { <app-kitchen-chip [kitchenId]="k" [iconOnly]="true" /> }
+            } @else {
+              <span class="hint">{{ "KOL_FOR_ALL" | translate }}</span>
+            }
+          </div>
+          @if (e.text) {
+            <p class="text">{{ e.text }}</p>
+          }
+          @if (e.kitchenId === me()) {
+            <div class="answers">
+              <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }} · {{ counts.maybe }} {{ "KOL_RSVP_MAYBE_COUNT" | translate }}</span>
+              <button mat-button (click)="newEvent(e)"><mat-icon>edit</mat-icon> {{ "EDIT" | translate }}</button>
+            </div>
+          } @else {
+            <mat-button-toggle-group [value]="e.rsvp[me()]" hideSingleSelectionIndicator class="rsvp" [attr.aria-label]="'KOL_RSVP' | translate">
+              <mat-button-toggle value="yes" (click)="answer(e, 'yes')">{{ "KOL_RSVP_yes" | translate }}</mat-button-toggle>
+              <mat-button-toggle value="maybe" (click)="answer(e, 'maybe')">{{ "KOL_RSVP_maybe" | translate }}</mat-button-toggle>
+              <mat-button-toggle value="no" (click)="answer(e, 'no')">{{ "KOL_RSVP_no" | translate }}</mat-button-toggle>
+            </mat-button-toggle-group>
+            <span class="hint">{{ counts.yes }} {{ (counts.yes === 1 ? "KOL_RSVP_COMING_ONE" : "KOL_RSVP_COMING") | translate }}</span>
+          }
+        </mat-card>
+      } @empty {
+        <p class="empty">{{ "KOL_EVENTS_EMPTY" | translate }}</p>
+      }
+  </section>
+
+  <section class="zone kudos-zone" [attr.aria-label]="'KOL_ZONE_KUDOS' | translate">
+    <div class="zone-head">
+      <h2><mat-icon>front_hand</mat-icon> {{ "KOL_ZONE_KUDOS" | translate }}</h2>
+    </div>
+    <div class="panel kudos-list">
+      @for (k of recentKudos(); track k.id) {
+        <div class="kudos">
+          <span class="big" aria-hidden="true">{{ k.kind === 'highfive' ? '🙌' : ("KOL_BADGE_ICON_" + k.badge | translate) }}</span>
+          <span class="what">
+            <app-kitchen-chip [kitchenId]="k.from" />
+            {{ (k.kind === 'highfive' ? "KOL_GAVE_HIGHFIVE" : "KOL_GAVE_BADGE") | translate }}
+            <app-kitchen-chip [kitchenId]="k.to" />
+            @if (k.kind === 'badge') {
+              <b>{{ "KOL_BADGE_" + k.badge | translate }}</b>
+            }
+            @if (k.reason) {
+              <span class="reason">"{{ k.reason }}"</span>
+            }
+          </span>
+          <span class="when">{{ k.createdAt.toDate() | date:'d/M' }}</span>
+          <ng-container *ngTemplateOutlet="menu; context: {collection: 'kudos', item: k, author: k.from}" />
+        </div>
+      } @empty {
+        <p class="empty">{{ "KOL_KUDOS_EMPTY" | translate }}</p>
+      }
+    </div>
+  </section>
 </div>
 
 <ng-template #menu let-collection="collection" let-item="item" let-author="author">
