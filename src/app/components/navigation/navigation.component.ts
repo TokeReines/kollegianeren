@@ -42,14 +42,12 @@ export class NavigationComponent {
     const manage = this.auth.canManage();
     return [
       {path: '/', icon: 'sports_bar', label: 'MENU_BEERSYSTEM', exact: true},
+      ...(manage ? [{path: '/products', icon: 'inventory_2', label: 'MENU_PRODUCTS'}] : []),
       {path: '/food-club', icon: 'restaurant', label: 'MENU_FOOD_CLUB'},
-      ...(manage ? [
-        {path: '/products', icon: 'inventory_2', label: 'MENU_PRODUCTS'},
-        {path: '/users', icon: 'people', label: 'MENU_RESIDENTS'},
-        {path: '/accounting', icon: 'receipt_long', label: 'MENU_ACCOUNTING'},
-      ] : []),
-      {path: '/stats', icon: 'insights', label: 'MENU_STATS'},
+      ...(manage ? [{path: '/users', icon: 'people', label: 'MENU_RESIDENTS'}] : []),
       {path: '/kollegiet', icon: 'groups', label: 'MENU_KOLLEGIET', badge: this.notices.kollegietBadge()},
+      ...(manage ? [{path: '/accounting', icon: 'receipt_long', label: 'MENU_ACCOUNTING'}] : []),
+      {path: '/stats', icon: 'insights', label: 'MENU_STATS'},
       {path: '/aktuelt', icon: 'campaign', label: 'MENU_AKTUELT', badge: this.kitchenUnread()},
       ...(manage ? [{path: '/access', icon: 'key', label: 'MENU_ACCESS'}] : []),
       ...(this.maker.isAdmin() ? [
