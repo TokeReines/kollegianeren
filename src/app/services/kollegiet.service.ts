@@ -1,12 +1,12 @@
 import {Injectable, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, addDoc, collection, deleteDoc, deleteField, doc, getDoc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where,
-  writeBatch,
+  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp,
+  setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import {Observable, catchError, distinctUntilChanged, firstValueFrom, map, of, shareReplay, switchMap} from 'rxjs';
 import {
-  Badge, KEvent, Kudos, LIVE_HOURS_MAX, POLL_SLOTS, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId,
+  Achievement, Badge, KEvent, Kudos, LIVE_HOURS_MAX, POLL_SLOTS, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId,
 } from '../interfaces/kollegiet';
 import {Kitchen} from '../interfaces/kitchen';
 import {dayKey} from '../interfaces/meal';
@@ -56,6 +56,19 @@ export class KollegietService {
   readonly kitchens$ = this.shared(() => watch<Kitchen>(collection(db, 'kitchens')));
   readonly profiles$ = this.shared(() => watch<Profile>(collection(db, 'profiles')));
   readonly standings$ = this.shared(() => watch<Standing>(collection(db, 'standings')));
+  // Every kitchen's achievements, by kitchen: one listener on them all (a read per achievement),
+  // for the cards and the profile on Køkkener.
+  readonly achievements$: Observable<Map<string, Achievement[]>> = whileSignedIn(this.auth.membership$,
+    () => new Observable<Map<string, Achievement[]>>(sub => onSnapshot(collectionGroup(db, 'achievements'), snap => {
+      const by = new Map<string, Achievement[]>();
+      for (const d of snap.docs) {
+        const kid = d.ref.parent.parent?.id;
+        if (kid) {
+          by.set(kid, [...(by.get(kid) ?? []), {id: d.id, ...d.data()} as Achievement]);
+        }
+      }
+      sub.next(by);
+    }, err => sub.error(err))), new Map<string, Achievement[]>()).pipe(shareReplay({bufferSize: 1, refCount: true}));
   // The kitchen's own counts, for the badges it wears in the top bar: one document.
   readonly myStanding$ = whileSignedIn(this.auth.membership$,
     kid => watchDoc<Standing>(doc(db, 'standings', kid)), null).pipe(shareReplay({bufferSize: 1, refCount: true}));

@@ -371,3 +371,9 @@ test('proposals: only the maker writes them; kitchens give their own thumbs up a
   await assertFails(addDoc(collection(as(B), 'proposals', 'nope', 'comments'), { from: B, text: 'x', images: [], createdAt: serverTimestamp() }));
 });
 
+test('achievements: every kitchen login reads all of them at once, for the cards', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'standings', C, 'achievements', 'firstBattle'), { battle: 'live', at: Timestamp.now() }));
+  await assertSucceeds(getDocs(query(collectionGroup(as('tabA'), 'achievements'))));
+  await assertFails(getDocs(query(collectionGroup(asAnonymous('anon'), 'achievements'))));
+});
+
