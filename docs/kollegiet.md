@@ -48,10 +48,10 @@ function kitchenLogin() {
 | | Tablet | Treasurer | Owner | Maker (admin) |
 |---|---|---|---|---|
 | Read Kollegiet | yes | yes | yes | yes |
-| Post, reply, RSVP, high-five, badge, vote, join a battle, gym check-in | yes | yes | yes | yes |
-| Start a battle, create an event | yes | yes | yes | yes |
+| Post, reply, RSVP, high-five, badge, vote, join a battle, tap the gym counter | yes | yes | yes | yes |
+| Start a battle, create an event, start a poll | yes | yes | yes | yes |
 | Hide a post by their own kitchen | no | yes | yes | yes |
-| Hide anything, create polls, end a battle | no | no | no | yes |
+| Hide anything (moderation only, the maker does not play) | no | no | no | yes |
 | Edit the kitchen profile | no | yes | yes | yes |
 
 Every document a kitchen writes carries `kitchenId`, and the rules require
@@ -71,11 +71,11 @@ Every new collection is read with `kitchenLogin()`.
 | `profiles/{kid}` | `emoji`, `colour` (one of a fixed palette), `bio` (≤ 200), `updatedAt` | managers of `kid` | What other kitchens see next to the name. |
 | `posts/{id}` | `kitchenId`, `text` (≤ 1000), `to` (null = everyone, or a kitchen id), `parentId` (null or the post replied to), `createdAt`, `hidden` | any member; `hidden` only by managers of the author kitchen or the maker | The board. Replies are posts with `parentId`, so one listener (newest 50) shows a thread. Deleting your own post is allowed for 5 minutes, like undoing a sale. |
 | `events/{id}` | `kitchenId`, `kind` (`openKitchen`, `party`, `dinner`, `other`), `title`, `text`, `place`, `startsAt`, `endsAt`, `invited` (`all` or a list of kitchen ids), `rsvp` (map kitchen id → `yes`, `maybe`, `no`), `createdAt`, `hidden` | the author kitchen; other kitchens change only their own `rsvp` key | Shown on the board and on the strip under the top bar when it is for you. |
-| `battles/{id}` | `kitchenId` (challenger), `title`, `metric`, `from`, `to`, `perResident` (bool), `invited` (`all` or kitchen ids), `participants` (kitchen ids that joined), `createdAt`, `result` (written by the job) | the challenger creates; another kitchen may only add itself to `participants`, before `to` | See Battles. `participants` is an array so a tablet finds its live battles with one `array-contains` listener. |
+| `battles/{id}` | `kitchenId` (challenger), `title`, `metric`, `from`, `to`, `invited` (`all` or kitchen ids), `participants` (kitchen ids that joined), `createdAt`, `result` (written by the job) | the challenger creates; another kitchen may only add itself to `participants`, before `to` | See Battles. `participants` is an array so a tablet finds its live battles with one `array-contains` listener. |
 | `battles/{id}/tally/{kid}` | `value`, `ticks` (the last 30 increments as `{at, n}`), `updatedAt` | members of `kid`, while the battle is live | The live score. One document per kitchen, so a sale costs each watcher one read. `ticks` is what "20 beers in 20 minutes" is worked out from. |
 | `kudos/{id}` | `from`, `to`, `kind` (`highfive` or `badge`), `badge` (from a fixed list), `reason` (≤ 140), `createdAt`, `hidden` | any member of `from`, `to != from` | A high-five's id is `{from}_{to}_{day}`, so one per kitchen pair per day. |
-| `polls/{id}` | `title`, `category`, `opensAt`, `closesAt`, `result` (written by the job) | maker | "Bedst til genbrug, oktober". |
-| `votes/{poll}_{kid}` | `poll`, `from`, `choice`, `createdAt` | any member of `from`, not for itself, before `closesAt` | The document id gives one vote per kitchen. Readable only by the maker and the job (secret ballot); the job writes the result. |
+| `polls/{kid}_{month}` | `kitchenId` (who started it), `title` (≤ 80), `opensAt`, `closesAt`, `result` (written by the job), `hidden` | any member of `kid` | Kitchens start their own polls ("Bedst til genbrug, oktober"). The id gives one poll per kitchen per month; it runs 1 to 31 days. |
+| `votes/{poll}_{kid}` | `poll`, `from`, `choice`, `createdAt` | any member of `from`, not for itself, before `closesAt` | The document id gives one vote per kitchen, changeable until it closes. Secret: a kitchen may read only its own vote, nobody else's, the maker included. Only the job (admin SDK) reads them all, and writes the result. |
 | `standings/{kid}` | `achievements`, `badges` (counts), `wins`, `updatedAt` | ops job only | The kitchen's trophy shelf on its profile. |
 | `standings/{kid}/achievements/{code}` | `battle`, `at` | members of `kid`, only if the rules' check of the tally passes; or the job | Live achievements (see Battles). |
 | `seen/{kid}` | `kollegietAt` | any member of `kid` | When the kitchen last opened Kollegiet, for the badge and the strip. |
@@ -124,11 +124,13 @@ Dismissing it updates the same field.
     buttons for high-five, give a badge and challenge.
 - **Kitchen profile:** opened from a card. Its badges with reasons, achievements, battle wins,
   upcoming events.
-- **Votes:** a card at the top of the board while a poll is open: pick a kitchen, change your
-  vote until it closes. The result becomes a post and a badge for the winner.
+- **Votes:** any kitchen starts a poll from the board ("Start en afstemning"). While it is
+  open, a card at the top of the board: pick a kitchen, change your vote until it closes. Only
+  your own vote is shown, never a running count. The result becomes a post and a badge for the winner.
 - **Gym counter:** a big "+1 fitness" button (and −1 to undo a slip) on the buy page ticker
   and the Battles tab while a gym battle runs. Someone back from the gym taps it once.
-- **Maker:** a Hide action on everything, reports in the inbox, and poll creation on Aktuelt.
+- **Maker:** only moderation: a Hide action on everything and reports in the inbox. The maker
+  does not play, start polls or battles.
 
 All text goes through `da.json` and `en.json`, with no long dashes.
 
@@ -162,8 +164,8 @@ change it saw. "+20 på 20 min" is the sum of ticks in the last 20 minutes, comp
 
 Battle rules:
 
-- **Scoring is per kitchen.** `perResident` divides by the kitchen's active residents, so a small
-  kitchen can beat a big one. The challenger picks it, and it defaults to on for drinks and beer.
+- **Scoring is per kitchen, plain totals.** No dividing by residents: a small kitchen invites
+  friends over and wins on numbers.
 - **Joining.** A battle is live between `from` and `to` for the kitchens that joined. It is created
   at least 10 minutes ahead and lasts at most 31 days. A kitchen may join while it is live and
   starts from 0.
@@ -264,16 +266,12 @@ Each phase includes:
 - a check on the emulators in light and dark, at tablet and phone sizes;
 - dev first, then prod only when the maker asks.
 
-## Open questions
-
-Decided:
+## Decisions
 
 - Live counters, conservative on reads.
 - Gym is a tap counter.
 - Always kitchen against kitchen; posts have no signatures.
+- Votes are secret: a kitchen sees only its own vote; the job counts.
+- Kitchens start polls themselves; the maker only moderates.
+- Plain totals, never per resident.
 
-Still open:
-
-- **Votes: secret or open?** Proposal: secret, with the tally done by the job.
-- **Who creates polls?** Proposal: the maker, with kitchens suggesting categories on the board.
-- **Per resident by default** for drinks and beer? Proposal: yes, so a small kitchen can win.
