@@ -141,6 +141,11 @@ service cloud.firestore {
       }
     }
 
+    // Every kitchen's achievements at once, for the cards on Køkkener (standings/{kid}/achievements).
+    match /{path=**}/achievements/{code} {
+      allow read: if kitchenLogin() || isAdmin();
+    }
+
     // Forslag counts every proposal's comments live, with one listener on them all.
     match /{path=**}/comments/{cid} {
       allow read: if signedIn();

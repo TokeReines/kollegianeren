@@ -1,16 +1,14 @@
 import {Component, computed, inject} from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
-import {collection} from 'firebase/firestore';
-import {map, of, switchMap} from 'rxjs';
+import {map} from 'rxjs';
 import {MatDialog} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
 import {Achievement, Badge, KitchenColour, TOO_MANY_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
 import {dayKey} from '../../interfaces/meal';
-import {db, watch} from '../../firebase';
 import {AccessService} from '../../services/access.service';
 import {AuthService} from '../../services/auth.service';
 import {KollegietService} from '../../services/kollegiet.service';
@@ -49,7 +47,8 @@ export class KitchensComponent {
   protected readonly withProfile = computed(() => {
     const score = (id: string) => {
       const s = this.summary().get(id);
-      return s ? 3 * s.wins + s.highfives + Object.values(s.badges).reduce((a, n) => a + (n ?? 0), 0) : 0;
+      const won = s ? 3 * s.wins + s.highfives + Object.values(s.badges).reduce((a, n) => a + (n ?? 0), 0) : 0;
+      return won + 3 * this.titlesOf(id).length + this.achievementsOf(id).length;
     };
     return this.kollegiet.cards().filter(k => k.profiled || k.id === this.me())
       .map(k => ({k, score: score(k.id)})).sort((a, b) => b.score - a.score).map(x => x.k);
@@ -70,8 +69,17 @@ export class KitchensComponent {
 
   protected readonly titles = computed(() => this.standings().find(s => s.id === this.selectedId())?.titles ?? []);
   protected readonly selectedKudos = computed(() => this.kudos().filter(k => k.to === this.selectedId() && k.kind === 'badge'));
-  protected readonly achievements = toSignal(toObservable(this.selectedId).pipe(
-    switchMap(id => id ? watch<Achievement>(collection(db, 'standings', id, 'achievements')) : of([]))), {initialValue: []});
+  // Every kitchen's achievements, for the cards and the profile alike.
+  private readonly achievementsBy = toSignal(this.kollegiet.achievements$, {initialValue: new Map<string, Achievement[]>()});
+  protected readonly achievements = computed(() => this.achievementsOf(this.selectedId() ?? ''));
+
+  protected achievementsOf(id: string): Achievement[] {
+    return this.achievementsBy().get(id) ?? [];
+  }
+
+  protected titlesOf(id: string): string[] {
+    return this.standings().find(s => s.id === id)?.titles ?? [];
+  }
   protected readonly highfivedToday = computed(() => {
     const id = this.selectedId();
     return !!id && this.kudos().some(k => k.id === highfiveId(this.me(), id, dayKey(new Date())));

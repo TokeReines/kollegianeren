@@ -72,12 +72,17 @@
           </span>
         </span>
         <span class="pins">
+          <!-- The same as the profile's shelf, small: wins and poll titles (gold), high-fives, badges, achievements. -->
           @if (s?.wins) { <span class="pin gold">🏆<b>{{ s!.wins }}</b></span> }
+          @if (titlesOf(k.id).length) { <span class="pin gold">🗳️<b>{{ titlesOf(k.id).length }}</b></span> }
           @if (s?.highfives) { <span class="pin">🙌<b>{{ s!.highfives }}</b></span> }
           @for (b of badgeList(k.id); track b[0]) {
             <span class="pin">{{ "KOL_BADGE_ICON_" + b[0] | translate }}@if (b[1] > 1) {<b>{{ b[1] }}</b>}</span>
           }
-          @if (!s?.wins && !s?.highfives && !badgeList(k.id).length) {
+          @for (a of achievementsOf(k.id); track a.id) {
+            <span class="pin achievement" [attr.aria-label]="'KOL_ACH_' + a.id | translate">{{ "KOL_ACH_ICON_" + a.id | translate }}</span>
+          }
+          @if (!s?.wins && !s?.highfives && !badgeList(k.id).length && !titlesOf(k.id).length && !achievementsOf(k.id).length) {
             <span class="none">{{ "KOL_NOTHING_YET" | translate }}</span>
           }
         </span>

@@ -157,6 +157,12 @@
   }
 }
 
+// An achievement: the profile's achievement colour.
+.pin.achievement {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
 // Gold is for what was won, the same in light and dark.
 .gold {
   background: linear-gradient(135deg, #ffe082, #ffb300);

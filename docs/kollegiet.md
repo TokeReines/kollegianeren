@@ -138,8 +138,9 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
 - **Scoreboard screen.** `/kollegiet/battle/{id}` full screen for a TV or projector at a party:
   big counters per kitchen, the burst of the last 20 minutes ("+20 på 20 min"), the lead
   changing hands, and confetti when the battle ends.
-  - **Køkkener:** every kitchen as a card with emoji, colour and bio, and its wins, high-fives
-    and badges as big pins (gold for wins). The kitchens with the most on their shelf come
+  - **Køkkener:** every kitchen as a card with emoji, colour and bio, and the same as its
+    profile's shelf as big pins: wins and poll titles (gold), high-fives, badges, achievements.
+    The achievements come from one listener on all kitchens' (a read per achievement). The kitchens with the most on their shelf come
     first: it is fine to brag.
 - **Kom over nu (live call).** For a party still going at 1 at night: "📣 Kom over nu" on the
   board's write note opens a filled-in call (text, place, 1 to 3 hours) and sends it to every
