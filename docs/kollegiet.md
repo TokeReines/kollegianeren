@@ -140,7 +140,9 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   changing hands, and confetti when the battle ends.
   - **Køkkener:** every kitchen as a card with emoji, colour and bio, and the same as its
     profile's shelf as big pins: wins and poll titles (gold), high-fives, badges, achievements.
-    The achievements come from one listener on all kitchens' (a read per achievement). The kitchens with the most on their shelf come
+    The achievements come from one listener on all kitchens' (a read per achievement). With the
+    app's persistent cache, opening the tab again within 30 minutes (also after a reload) reads only
+    what changed since. The kitchens with the most on their shelf come
     first: it is fine to brag.
 - **Kom over nu (live call).** For a party still going at 1 at night: "📣 Kom over nu" on the
   board's write note opens a filled-in call (text, place, 1 to 3 hours) and sends it to every
@@ -162,6 +164,9 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   kitchens coming and how many; tapping them (tablets have no hover) lists them by name, with who
   said maybe, and for the kitchen that made it also who said no.
   No new reads: the events listener is already open for the strip.
+- **Sådan får I dem.** A guide on Køkkener (above the cards and under a profile's shelf): what can
+  be on the shelf and how to get it (wins, titles, high-fives, badges, every achievement, by when
+  it comes), with what the kitchen has ticked off. It must match the rules and ops/league.js.
 - **Kitchen profile:** opened from a card. The kitchen's own profile is the one place to change
   the kitchen: name (the same everywhere), emoji, colour and bio, for its owner and treasurers.
   Adgang is only logins and invitations; "Jeres køkken" in the account menu leads here. A trophy shelf of big tiles (wins and poll titles in
