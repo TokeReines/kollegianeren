@@ -1,6 +1,6 @@
 import {Component, DestroyRef, computed, effect, inject, signal, untracked} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {DecimalPipe} from '@angular/common';
+import {DatePipe, DecimalPipe} from '@angular/common';
 import {map} from 'rxjs';
 import {RouterLink} from '@angular/router';
 import {MatBadgeModule} from '@angular/material/badge';
@@ -19,8 +19,12 @@ import {ProductPictureComponent} from '../shared/product-picture.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {HistoryBottomSheetComponent} from './history-bottom-sheet/history-bottom-sheet.component';
 import {describeSale, productOrder} from './basket';
+import {KEvent, isInvited, isLiveNow} from '../../interfaces/kollegiet';
+import {AuthService} from '../../services/auth.service';
+import {KollegietService} from '../../services/kollegiet.service';
 import {LeagueService} from '../../services/league.service';
 import {BattleTickerComponent} from '../kollegiet/battle-ticker.component';
+import {KitchenChipComponent} from '../kollegiet/kitchen-chip.component';
 
 // How long the confirmation of a purchase stays in the bar.
 const CONFIRM_MS = 4000;
@@ -30,8 +34,8 @@ const CONFIRM_MS = 4000;
 // long-press takes one off. A wrong purchase is taken back under "Seneste køb".
 @Component({
   selector: 'app-buy-page',
-  imports: [DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent,
-    BattleTickerComponent, RouterLink],
+  imports: [DatePipe, DecimalPipe, MatBadgeModule, MatButtonModule, MatIconModule, TranslatePipe, ProductPictureComponent, ResidentAvatarComponent,
+    BattleTickerComponent, KitchenChipComponent, RouterLink],
   templateUrl: './buy-page.component.html',
   styleUrl: './buy-page.component.scss',
 })
@@ -72,6 +76,38 @@ export class BuyPageComponent {
   // ends first, and a link to the rest. Only to look at: gym taps are on the Battles tab.
   private readonly league = inject(LeagueService);
   protected readonly liveBattles = this.league.myLive;
+  // Live calls ("Kom over nu", Kollegiet): other kitchens' to this one, and this kitchen's own.
+  // The events listener is already open for the strip and the bell.
+  private readonly kollegiet = inject(KollegietService);
+  private readonly auth = inject(AuthService);
+  private readonly allEvents = toSignal(this.kollegiet.events$, {initialValue: []});
+  protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
+  private readonly liveNow = computed(() => this.allEvents().filter(e => isLiveNow(e, this.league.now())));
+  // One bar, however many calls: the newest one not said no to, and how many more there are.
+  private readonly liveCalls = computed(() => this.liveNow()
+    .filter(e => isInvited(e, this.me()) && e.rsvp?.[this.me()] !== 'no')
+    .sort((a, b) => b.startsAt.toMillis() - a.startsAt.toMillis()));
+  protected readonly liveCall = computed(() => this.liveCalls()[0] ?? null);
+  protected readonly moreCalls = computed(() => Math.max(0, this.liveCalls().length - 1));
+  protected readonly myLiveCall = computed(() => this.liveNow().find(e => e.kitchenId === this.me()) ?? null);
+
+  protected comingKitchens(e: KEvent) {
+    return Object.entries(e.rsvp ?? {}).filter(([, a]) => a === 'yes').map(([k]) => k);
+  }
+
+  protected comingCount(e: KEvent) {
+    return this.comingKitchens(e).length;
+  }
+
+  // "Ikke nu": answers no, so the bar goes and the party sees it.
+  protected notNow(e: KEvent) {
+    this.kollegiet.rsvp(e, 'no').catch(this.notify.error);
+  }
+
+  protected come(e: KEvent) {
+    this.kollegiet.rsvp(e, e.rsvp?.[this.me()] === 'yes' ? null : 'yes').catch(this.notify.error);
+  }
+
   protected readonly featuredBattle = computed(() =>
     [...this.liveBattles()].sort((a, b) => a.to.toMillis() - b.to.toMillis())[0] ?? null);
 

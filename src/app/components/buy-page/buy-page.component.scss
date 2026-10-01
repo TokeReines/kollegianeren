@@ -27,6 +27,70 @@
   ));
 }
 
+// A live call: a slim bar with a pulsing dot, above everything, while it goes on.
+.live-call {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 4px 8px 4px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--mat-sys-error);
+  background: var(--mat-sys-surface);
+  --chip-size: 30px;
+
+  .what {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hint {
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-small);
+    white-space: nowrap;
+  }
+
+  button.coming {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+
+  .faces {
+    display: flex;
+    --chip-size: 26px;
+  }
+
+  &.mine {
+    border-style: dashed;
+  }
+}
+
+.dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--mat-sys-error);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
+
 // One battle strip, whatever the number of battles, and the link to the rest beside it.
 .battles {
   display: flex;

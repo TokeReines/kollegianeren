@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore';
 import {Observable, catchError, distinctUntilChanged, firstValueFrom, map, of, shareReplay, switchMap} from 'rxjs';
 import {
-  Badge, KEvent, Kudos, Poll, Post, Profile, Rsvp, Standing, highfiveId, pollId,
+  Badge, KEvent, Kudos, LIVE_HOURS_MAX, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId, pollId,
 } from '../interfaces/kollegiet';
 import {Kitchen} from '../interfaces/kitchen';
 import {dayKey} from '../interfaces/meal';
@@ -185,8 +185,27 @@ export class KollegietService {
     return updateDoc(doc(db, 'events', e.id), {...fields});
   }
 
-  rsvp(e: KEvent, answer: Rsvp | null) {
+  rsvp(e: Pick<KEvent, 'id'>, answer: Rsvp | null) {
     return updateDoc(doc(db, 'events', e.id), {[`rsvp.${this.kitchenId}`]: answer ?? deleteField()});
+  }
+
+  // "Kom over nu": a call to every kitchen, from now for a few hours. Each kitchen has one call
+  // document, written over by the next call, at most every LIVE_COOLDOWN_HOURS.
+  startLiveCall(title: string, place: string, hours: number) {
+    const now = Date.now();
+    return setDoc(doc(db, 'events', liveCallId(this.kitchenId)), {kind: 'live', title, text: '', place, invited: 'all',
+      startsAt: Timestamp.fromMillis(now), endsAt: Timestamp.fromMillis(now + Math.min(hours, LIVE_HOURS_MAX) * 3600e3),
+      kitchenId: this.kitchenId, rsvp: {}, createdAt: serverTimestamp()});
+  }
+
+  // The kitchen's last call, ended or not: when it may call again.
+  myLastCall() {
+    return getDoc(doc(db, 'events', liveCallId(this.kitchenId))).then(d => d.exists() ? {id: d.id, ...d.data()} as KEvent : null);
+  }
+
+  // The party is over: the call ends now.
+  endLiveCall(e: KEvent) {
+    return updateDoc(doc(db, 'events', e.id), {endsAt: Timestamp.fromMillis(Math.max(Date.now(), millis(e.startsAt) + 1000))});
   }
 
   highfive(to: string) {

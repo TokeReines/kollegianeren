@@ -327,6 +327,37 @@
   }
 }
 
+// A live call going on now: a red edge and a pulsing dot, at the front of the flyers.
+.flyer.live {
+  border-top-color: var(--mat-sys-error);
+
+  .now {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--mat-sys-error);
+  }
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mat-sys-error);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
+
 // Yes, maybe, no: three small segments, so they fit on the flyer.
 .rsvp {
   display: flex;
@@ -593,5 +624,57 @@
   .give {
     .long { display: none; }
     .short { display: inline; }
+  }
+}
+
+// Arriving while the board is open (Material 3 emphasized decelerate). A sticker slides in at the
+// start of the row and pushes the others along; a paper is pinned up: it drops in a little,
+// settles, then its pin goes in.
+$enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+
+.stickers {
+  --sticker-step: 224px;
+}
+
+.sticker.arrive {
+  animation: sticker-in 550ms $enter both;
+}
+
+@keyframes sticker-in {
+  from { margin-left: calc(-1 * var(--sticker-step)); opacity: 0; transform: scale(0.6); }
+  50% { opacity: 1; }
+  to { margin-left: 0; opacity: 1; transform: none; }
+}
+
+.paper.arrive {
+  animation: pin-up 500ms $enter both;
+
+  &::before {
+    animation: pin-in 300ms 350ms $enter both;
+  }
+}
+
+@keyframes pin-up {
+  from { opacity: 0; transform: translateY(-18px) scale(0.94); box-shadow: 0 18px 28px -10px rgb(0 0 0 / 0.35); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pin-in {
+  from { transform: scale(2.2); opacity: 0; }
+  70% { transform: scale(0.9); opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (max-width: 600px) {
+  .stickers {
+    --sticker-step: 194px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker.arrive,
+  .paper.arrive,
+  .paper.arrive::before {
+    animation: none;
   }
 }

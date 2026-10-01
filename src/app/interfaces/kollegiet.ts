@@ -35,7 +35,22 @@ export interface Post {
 }
 
 export const EVENT_KINDS = ['openKitchen', 'party', 'dinner', 'other'] as const;
-export type EventKind = typeof EVENT_KINDS[number];
+// 'live': a call to every kitchen to come over now ("Kom over nu"), from a party still going. It
+// starts when it is sent, lasts at most LIVE_HOURS_MAX hours, and is not in the event dialog.
+export type EventKind = typeof EVENT_KINDS[number] | 'live';
+export const LIVE_HOURS_MAX = 3;
+// A kitchen's next call: 6 hours after its last one started (the rules check it).
+export const LIVE_COOLDOWN_HOURS = 6;
+
+export function liveCallId(kitchenId: string): string {
+  return `live_${kitchenId}`;
+}
+
+// A live call going on right now. It starts when it is sent (the rules allow 5 minutes), so one
+// starting within 5 minutes counts: the app's clock ticks once a minute, and tablets' clocks differ.
+export function isLiveNow(e: Pick<KEvent, 'kind' | 'startsAt' | 'endsAt'>, now = Date.now()): boolean {
+  return e.kind === 'live' && millis(e.startsAt) <= now + 5 * 60e3 && millis(e.endsAt) > now;
+}
 export type Rsvp = 'yes' | 'maybe' | 'no';
 
 // An event (events/{id}): for everyone or a few kitchens, with one answer per kitchen.
@@ -309,7 +324,7 @@ export function highfiveId(from: string, to: string, day: string): string {
 
 // Notifications, most important first (docs/kollegiet.md, Notifications).
 // 'news' is a post on Aktuelt, for every kitchen.
-export type NoticeKind = 'maker' | 'news' | 'invite' | 'challenge' | 'kudos' | 'event';
+export type NoticeKind = 'live' | 'maker' | 'news' | 'invite' | 'challenge' | 'kudos' | 'event';
 
 export interface Notice {
   kind: NoticeKind;
@@ -320,9 +335,12 @@ export interface Notice {
   link: {path: string, fragment?: string, query?: Record<string, string>};
   // Kudos: the badge, or null for a high-five.
   badge?: Badge | null;
+  // A live call: its event, for "not now" (which answers no).
+  eventId?: string;
 }
 
-const NOTICE_ORDER: NoticeKind[] = ['maker', 'news', 'invite', 'challenge', 'kudos', 'event'];
+// A live call first: it is now or never.
+const NOTICE_ORDER: NoticeKind[] = ['live', 'maker', 'news', 'invite', 'challenge', 'kudos', 'event'];
 
 export function sortNotices(notices: Notice[]): Notice[] {
   return [...notices].sort((a, b) => NOTICE_ORDER.indexOf(a.kind) - NOTICE_ORDER.indexOf(b.kind) || b.at - a.at);
@@ -345,6 +363,14 @@ export function kollegietNotices(kitchenId: string, seenAt: number, data: {event
                                  now = Date.now()): Notice[] {
   const notices: Notice[] = [];
   for (const e of data.events) {
+    // A live call: while it goes on and until the kitchen answers, seen or not.
+    if (e.kind === 'live') {
+      if (isLiveNow(e, now) && isInvited(e, kitchenId) && !e.rsvp?.[kitchenId]) {
+        notices.push({kind: 'live', from: e.kitchenId, text: e.title, at: millis(e.startsAt), eventId: e.id,
+          link: {path: '/kollegiet', query: {tab: 'board'}, fragment: `event-${e.id}`}});
+      }
+      continue;
+    }
     const fresh = millis(e.createdAt) > seenAt && !e.rsvp?.[kitchenId] && millis(e.endsAt) > now;
     if (fresh && isInvited(e, kitchenId)) {
       const soon = e.invited === 'all' && millis(e.startsAt) - now < 3 * 864e5;

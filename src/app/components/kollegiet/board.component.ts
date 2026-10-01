@@ -1,4 +1,4 @@
-import {Component, TemplateRef, computed, inject, signal, viewChild} from '@angular/core';
+import {Component, ElementRef, TemplateRef, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe, NgTemplateOutlet} from '@angular/common';
 import {ActivatedRoute} from '@angular/router';
@@ -11,7 +11,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  Battle, KEvent, Kudos, POST_MAX, Poll, Post, PostThread, Rsvp, rsvpCounts, threads,
+  Battle, KEvent, Kudos, LIVE_COOLDOWN_HOURS, POST_MAX, Poll, Post, PostThread, Rsvp, isLiveNow, rsvpCounts, threads,
 } from '../../interfaces/kollegiet';
 import {EventFields, HideableCollection, KollegietService} from '../../services/kollegiet.service';
 import {AuthService} from '../../services/auth.service';
@@ -21,7 +21,9 @@ import {TranslateService} from '../../services/translate.service';
 import {millis} from '../../time';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
-import {BadgeDialogComponent, BadgeResult, EventDialogComponent, EventDialogData, PollDialogComponent, PollResult} from './dialogs';
+import {
+  BadgeDialogComponent, BadgeResult, EventDialogComponent, EventDialogData, LiveCallDialogComponent, LiveCallResult, PollDialogComponent, PollResult,
+} from './dialogs';
 import {KitchenChipComponent} from './kitchen-chip.component';
 import {PollCardComponent} from './poll-card.component';
 
@@ -98,8 +100,9 @@ export class BoardComponent {
   // few as flyers; all of them after "+N more", or when the strip links to one further down.
   protected readonly events = computed(() => this.allEvents()
     .filter(e => e.invited === 'all' || e.kitchenId === this.me() || e.invited.includes(this.me()))
-    .filter(e => millis(e.endsAt) > Date.now())
-    .sort((a, b) => millis(a.startsAt) - millis(b.startsAt)));
+    .filter(e => millis(e.endsAt) > this.league.now())
+    // A live call first, then the soonest.
+    .sort((a, b) => Number(this.isLive(b)) - Number(this.isLive(a)) || millis(a.startsAt) - millis(b.startsAt)));
   protected readonly allShown = signal(false);
   protected readonly shownEvents = computed(() => this.allShown() ? this.events() : this.events().slice(0, EVENTS_SHOWN));
   protected readonly moreEvents = computed(() => this.events().length - this.shownEvents().length);
@@ -147,6 +150,21 @@ export class BoardComponent {
   protected readonly openThread = computed(() => this.notes().find(n => n.thread.post.id === this.openId())?.thread ?? null);
 
   protected rsvpCounts = rsvpCounts;
+
+  // What arrives while the board is open comes in with a short animation, instead of just being
+  // there: a sticker slides in, a paper is pinned up. Not what is there when it opens.
+  private readonly openedAt = Date.now();
+  private readonly stickerRow = viewChild<ElementRef<HTMLElement>>('stickerRow');
+
+  protected arrived(at: number | {toMillis(): number} | null | undefined) {
+    const ms = typeof at === 'number' ? at : at ? millis(at as never) : Date.now();
+    return ms > this.openedAt;
+  }
+
+  // After giving one: back to the start of the row, where it comes in.
+  private showNewSticker() {
+    this.stickerRow()?.nativeElement.scrollTo({left: 0, behavior: 'smooth'});
+  }
 
   constructor() {
     // The strip links to an event: show them all, so the flyer is there to scroll to.
@@ -233,14 +251,46 @@ export class BoardComponent {
         }
         const name = this.kollegiet.card(r.to).name;
         if (r.badge) {
+          this.showNewSticker();
           this.kollegiet.giveBadge(r.to, r.badge, r.reason).then(
             () => this.notify.info(`${this.i18n.t('KOL_BADGE_ICON_' + r.badge)} ${this.i18n.t('KOL_BADGE_SENT')} ${name}`), this.notify.error);
         } else {
+          this.showNewSticker();
           this.kollegiet.highfive(r.to).then(
             () => this.notify.info(`🙌 ${this.i18n.t('KOL_HIGHFIVE_SENT')} ${name}`),
             () => this.notify.info(this.i18n.t('KOL_HIGHFIVE_DONE')));
         }
       });
+  }
+
+  protected isLive(e: KEvent) {
+    return isLiveNow(e, this.league.now());
+  }
+
+  // "Kom over nu": one call per kitchen, and a new one 6 hours after the last started.
+  protected async liveCall() {
+    const last = await this.kollegiet.myLastCall().catch(() => null);
+    const next = last ? millis(last.startsAt) + LIVE_COOLDOWN_HOURS * 3600e3 : 0;
+    if (next > Date.now()) {
+      const d = new Date(next);
+      const at = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      this.notify.info(`${this.i18n.t(this.isLive(last!) ? 'KOL_LIVE_ALREADY' : 'KOL_LIVE_WAIT')} ${at}.`);
+      return;
+    }
+    const data = {title: this.i18n.t('KOL_LIVE_DEFAULT'), place: this.kollegiet.card(this.me()).name};
+    this.dialog.open<LiveCallDialogComponent, typeof data, LiveCallResult>(LiveCallDialogComponent, {width: '480px', maxWidth: '94vw', data})
+      .afterClosed().subscribe(r => {
+        if (r) {
+          this.kollegiet.startLiveCall(r.title, r.place, r.hours).then(() => this.notify.info(`📣 ${this.i18n.t('KOL_LIVE_SENT')}`), this.notify.error);
+        }
+      });
+  }
+
+  protected async endLive(e: KEvent) {
+    const ok = await this.confirm.ask({title: this.i18n.t('KOL_LIVE_END'), message: this.i18n.t('KOL_LIVE_END_TEXT'), confirm: this.i18n.t('KOL_LIVE_END')});
+    if (ok) {
+      this.kollegiet.endLiveCall(e).catch(this.notify.error);
+    }
   }
 
   protected answer(e: KEvent, answer: Rsvp) {

@@ -129,6 +129,15 @@ describe('kollegiet notifications', () => {
     expect(notices.find(n => n.kind === 'kudos')?.badge).toBeNull();
   });
 
+  it('shows a live call until it ends or is answered, seen or not, first', () => {
+    const live = event({id: 'live', kind: 'live', invited: 'all', startsAt: T(NOW - H), endsAt: T(NOW + H), createdAt: T(NOW - H)});
+    const notices = sortNotices(kollegietNotices('A', NOW, {events: [live], battles: [], kudos: [kudos]}, NOW));
+    expect(notices.map(n => [n.kind, n.eventId])).toEqual([['live', 'live']]);
+    expect(kollegietNotices('A', NOW, {events: [{...live, rsvp: {A: 'no'}}], battles: [], kudos: []}, NOW)).toEqual([]);
+    expect(kollegietNotices('A', NOW, {events: [live], battles: [], kudos: []}, NOW + 2 * H)).toEqual([]);
+    expect(kollegietNotices('B', 0, {events: [live], battles: [], kudos: []}, NOW)).toEqual([]);
+  });
+
   it('drops what was seen, answered or joined', () => {
     expect(kollegietNotices('A', NOW, {events: [event({})], battles: [], kudos: [kudos]}, NOW)).toEqual([]);
     expect(kollegietNotices('A', 0, {events: [event({rsvp: {A: 'no'}})], battles: [battle({createdAt: T(NOW)})], kudos: []}, NOW)).toEqual([]);
