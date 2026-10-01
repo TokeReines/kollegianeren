@@ -18,6 +18,18 @@ import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Firebase error codes when handing over, and what to say instead.
+const HANDOVER_ERRORS: Record<string, string> = {
+  'auth/invalid-credential': 'HANDOVER_WRONG_PASSWORD',
+  'auth/wrong-password': 'HANDOVER_WRONG_PASSWORD',
+  'auth/invalid-email': 'HANDOVER_BAD_EMAIL',
+  'auth/invalid-new-email': 'HANDOVER_BAD_EMAIL',
+  'auth/email-already-in-use': 'HANDOVER_EMAIL_TAKEN',
+  'auth/too-many-requests': 'HANDOVER_TOO_MANY',
+};
+
 // "Adgang": the kitchen's name, its logins, and invites. Owners and treasurers only.
 @Component({
   selector: 'app-access',
@@ -45,7 +57,17 @@ export class AccessComponent {
     const m = this.auth.membership();
     return !!m && m.uid === m.kitchenId;
   });
+  // The list stores the email a login joined with; your own row shows the one you have now
+  // (it changes when the login is handed over).
+  protected readonly myUid = computed(() => this.auth.user()?.uid);
+  protected readonly myEmail = computed(() => this.auth.user()?.email ?? '');
   protected readonly inviteRole = signal<Role>('tablet');
+  protected readonly handOverEmail = signal('');
+  protected readonly handOverPassword = signal('');
+  protected readonly handOverSentTo = signal('');
+  protected readonly busy = signal(false);
+  protected readonly canHandOver = computed(() => EMAIL.test(this.handOverEmail().trim()) && !!this.handOverPassword()
+    && this.handOverEmail().trim().toLowerCase() !== (this.auth.user()?.email ?? '').toLowerCase());
 
   protected link(invite: Invite) {
     return inviteLink(invite.id);
@@ -74,4 +96,24 @@ export class AccessComponent {
     }
   }
 
+  // The owner moving out passes the login on to whoever takes over.
+  protected async handOver() {
+    const t = (k: string) => this.i18n.t(k);
+    const email = this.handOverEmail().trim();
+    if (!await this.confirm.ask({title: `${t('HANDOVER_CONFIRM')} ${email}?`, message: t('HANDOVER_CONFIRM_HINT'), confirm: t('HANDOVER_SEND')})) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await this.auth.handOver(this.handOverPassword(), email);
+      this.handOverSentTo.set(email);
+      this.handOverEmail.set('');
+    } catch (e) {
+      const code = (e as {code?: string}).code ?? '';
+      this.notify.error(HANDOVER_ERRORS[code] ? t(HANDOVER_ERRORS[code]) : e);
+    } finally {
+      this.handOverPassword.set('');
+      this.busy.set(false);
+    }
+  }
 }
