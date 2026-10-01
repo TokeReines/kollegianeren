@@ -112,12 +112,18 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
 ## Screens
 
 - **Kollegiet** (new menu item, everyone). Three tabs:
-  - **Opslagstavle:** a pin board with fixed places. Across the top, loud: the newest 20
-    high-fives and badges as stickers in one row that scrolls (newest on the left), with a button
-    to give one to any kitchen. Under it three columns: posts (the composer always on top, then
-    the posts with their replies, newest activity first), events ("Det sker"), and "Kåringer":
-    open votes, and one line per battle or vote decided in the last three days. Narrower screens
-    put events and votes in one column beside the posts; phones stack everything.
+  - **Opslagstavle:** a pin board. Across the top, loud: stickers in one row that scrolls,
+    newest on the left: the newest 20 high-fives and badges, and battles and votes won in the
+    last three days (gold). A button gives a high-five or a badge to any kitchen. Under it one
+    wall of papers of the same size, in a fixed order, so space follows how many there are of
+    each:
+    1. a blank note to write on, with buttons for an event and a vote;
+    2. events as flyers, soonest first, with yes/maybe/no on them; four, then "+N more";
+    3. open votes as ballots;
+    4. posts as post-its in the writing kitchen's colour, newest activity first, with the
+       number of replies and "Ny" when there is something since the kitchen last looked. A
+       post-it opens with the whole post, its replies and a reply field.
+    Phones: two papers a row.
   - **Battles:** live battles with their scoreboard and a button to join. Below that, past
     battles, then a "Udfordr" button.
 - **Live ticker.** While the kitchen is in a live battle, a slim bar on the buy page shows the
