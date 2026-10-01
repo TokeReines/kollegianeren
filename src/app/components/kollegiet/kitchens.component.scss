@@ -143,3 +143,30 @@
     font: var(--mat-sys-body-small);
   }
 }
+
+// Kitchens without a profile yet: names only.
+.rest-title {
+  margin: 24px 0 8px;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.rest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rest-kitchen {
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: none;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--mat-sys-surface-container);
+  }
+}

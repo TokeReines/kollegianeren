@@ -128,7 +128,8 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   upcoming events.
 - **Votes:** any kitchen starts a poll from the board ("Start en afstemning"). While it is
   open, a card at the top of the board: pick a kitchen, change your vote until it closes. Only
-  your own vote is shown, never a running count. The result becomes a post and a badge for the winner.
+  your own vote is shown, never a running count. The winner is pinned on the board for three days
+  and gets the title on its profile.
 - **Gym counter:** a big "+1 fitness" button (and −1 to undo a slip) on the buy page ticker
   and the Battles tab while a gym battle runs. Someone back from the gym taps it once.
 - **Maker:** does not play, start polls or battles, and does not moderate: what kitchens write to
@@ -174,7 +175,7 @@ Battle rules:
 - **Ending.** At `to` the rules stop accepting increments, so the screen can call the winner on
   the spot. The job then recomputes each kitchen's number from the real purchases, meals and
   ticks, and writes `result`. If it differs from the tallies by more than a sale's worth, the job
-  flags it to the maker and `result` wins. The trophy and the result post come from `result`.
+  flags it to the maker and `result` wins. The trophy and the pinned result on the board come from `result`.
 
 **Live achievements.** Some achievements are claimed by the kitchen's own tablet the moment they
 happen, and the rules check the claim:
@@ -192,7 +193,7 @@ ignores it.
 
 The job is not on the live path. It settles and checks, on tokeserver like `admin-stats.js`, with
 the same service account. It only writes `battles/{id}.result`, `polls/{id}.result`,
-`standings/{kid}` and the result posts.
+`standings/{kid}` and achievement posts (results are pinned on the board, not posted).
 
 - **Every 15 minutes.** A state file on tokeserver (`--state`) keeps how far it has got, so a run
   looks only at battles and polls that ended since the last one: an idle run is 2 reads. A result

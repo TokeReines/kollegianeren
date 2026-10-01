@@ -3,10 +3,10 @@
 // tablets move the live tallies themselves. This settles what has to be checked across kitchens:
 //
 // - an ended battle: each kitchen's number recomputed from its real purchases, meals and taps,
-//   written as the battle's result, a trophy for the winner and a post on the board. A tally that
+//   written as the battle's result (pinned on the board by the app) and a trophy for the winner. A tally that
 //   is off from the real number is reported to the maker, and the result wins; a live achievement
 //   the real number does not reach is taken back;
-// - a closed poll: the secret ballots counted, the result written and posted;
+// - a closed poll: the secret ballots counted and the result written;
 // - once a day (--daily): standings (high-fives, badges) and the achievements that need history
 //   (food club milestones, a plant-based month, the first open kitchen).
 //
@@ -76,8 +76,6 @@ const winnersOf = scores => {
   return top > 0 ? Object.keys(scores).filter(k => scores[k] === top) : [];
 };
 
-// What a battle counts, for the result post: "med 14 øl".
-const UNITS = { drinks: 'drikkevarer', beer: 'øl', mealDiners: 'spisende', plantMeals: '%', gym: 'fitness-ture' };
 
 // Live achievements and what earns them (LIVE_ACHIEVEMENTS in src/app/interfaces/kollegiet.ts,
 // earned() in firestore.rules).
@@ -207,9 +205,8 @@ async function settleBattles(ended, kitchenNames) {
       await takeBackAchievements(b, kid, scores[kid], kitchenNames);
     }
     if (args.dry) continue;
+    // No post: the board pins the result for three days, and the Battles tab keeps it.
     if (winners.length && (b.participants || []).length > 1) {
-      const unit = UNITS[b.metric] ? (b.metric === 'plantMeals' ? ' %' : ` ${UNITS[b.metric]}`) : '';
-      await post(`🏆 ${winners.map(w => kitchenNames.get(w) || w).join(' og ')} vandt "${b.title}" med ${scores[winners[0]]}${unit}!`);
       for (const w of winners) {
         await db.collection('standings').doc(w).set({ wins: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
         await db.collection('standings').doc(w).collection('achievements').doc('firstWin')
@@ -236,8 +233,8 @@ async function settlePolls(closed, kitchenNames) {
       continue;
     }
     if (args.dry) continue;
+    // No post: the poll card shows the winner, pinned on the board for three days.
     if (winners.length) {
-      await post(`🗳️ ${winners.map(w => kitchenNames.get(w) || w).join(' og ')} vandt afstemningen "${doc.get('title')}" med ${votes[winners[0]]} stemmer!`);
       for (const w of winners) {
         await db.collection('standings').doc(w).set({ titles: FieldValue.arrayUnion(doc.get('title')), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       }
