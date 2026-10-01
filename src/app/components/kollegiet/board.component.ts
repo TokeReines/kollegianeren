@@ -67,7 +67,11 @@ export class BoardComponent {
     .filter(e => e.invited === 'all' || e.kitchenId === this.me() || e.invited.includes(this.me()))
     .filter(e => millis(e.endsAt) > Date.now())
     .sort((a, b) => millis(a.startsAt) - millis(b.startsAt)));
-  protected readonly openPolls = computed(() => this.polls().filter(p => !p.result || millis(p.closesAt) > Date.now() - 3 * 864e5));
+  // Pinned above the composer: open votes, closing soonest first, then results from the last three days.
+  protected readonly openPolls = computed(() => this.polls()
+    .filter(p => !p.result || millis(p.closesAt) > Date.now() - 3 * 864e5)
+    .sort((a, b) => Number(!!a.result) - Number(!!b.result)
+      || (a.result ? millis(b.closesAt) - millis(a.closesAt) : millis(a.closesAt) - millis(b.closesAt))));
 
   protected readonly feed = computed<FeedItem[]>(() => [
     ...threads(this.posts()).map(t => ({kind: 'thread' as const, thread: t,

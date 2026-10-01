@@ -19,6 +19,16 @@ h2 {
   font: var(--mat-sys-title-medium);
 }
 
+.pinned {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  mat-icon {
+    color: var(--mat-sys-tertiary);
+  }
+}
+
 .composer {
   padding: 12px;
   display: flex;
