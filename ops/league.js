@@ -14,7 +14,7 @@
 //
 // An idle run is two queries (2 reads). Cron: every 15 minutes, with --daily once at 08:15 UTC.
 const { parseArgs } = require('./lib/firebase');
-const { Timestamp, FieldValue, AggregateField } = require('firebase-admin/firestore');
+const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 
 const args = parseArgs();
 const DAY = 864e5;
@@ -51,11 +51,11 @@ async function realScore(battle, kid, tally) {
   const k = db.collection('kitchens').doc(kid);
   const from = battle.from, to = battle.to;
   switch (battle.metric) {
+    // Read and added up here: a sum over a time range would need a composite index. Once per
+    // battle, when it has ended.
     case 'drinks': {
-      const agg = await k.collection('purchases').where('timestamp', '>=', from).where('timestamp', '<', to)
-        .aggregate({ units: AggregateField.sum('amount') }).get();
-      reads += 1;
-      return agg.data().units || 0;
+      const purchases = await get(k.collection('purchases').where('timestamp', '>=', from).where('timestamp', '<', to));
+      return purchases.reduce((n, p) => n + (Number(p.get('amount')) || 0), 0);
     }
     case 'beer': {
       const beer = new Set((await get(k.collection('products').where('category', '==', 'beer'))).map(d => d.id));

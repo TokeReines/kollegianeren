@@ -84,7 +84,8 @@ On top of the anonymised prod copy (`restore.js --anonymise` into the emulator):
 - `node seed-emulator.js`: the maker login and the launch post.
 - `node seed-demo.js`: extra logins with roles, invites, stock, moved-out residents, a week of purchases, maker threads, a small referred kitchen.
 - `node seed-avatars.js`: illustrated avatars (DiceBear Notionists, CC0, generated locally) for every other resident.
-- `node seed-kollegiet.js`: Kollegiet (docs/kollegiet.md): profiles, product categories, posts, events, a live beer battle, a challenge for Ny2, kudos and polls. Then `node league.js --emulator --daily` settles the ended battle and the closed poll.
+- `node seed-kollegiet.js`: Kollegiet (docs/kollegiet.md): a test case for every feature around Ny2: a message from Toke, profiles, product categories, posts, events, a live beer battle, a challenge, kudos and polls. Then `node league.js --emulator --daily` settles the ended battle and the closed poll.
+- `node seed-kollegiet.js --project dev --kitchen <id>`: the same on dev around one kitchen, against four test kitchens (`test-rival-1` to `4`, "Test Ny2" and so on) with their own products, residents and purchases. Nothing is written to the home kitchen's purchases or residents. `--remove` takes it all out again. Refuses prod.
 
 Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
 
