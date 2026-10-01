@@ -75,10 +75,11 @@ export class KollegietService {
   private readonly kitchenList = toSignal(this.kitchens$, {initialValue: []});
   private readonly profileList = toSignal(this.profiles$, {initialValue: []});
 
-  // Every kitchen with its profile, by name.
+  // Every kitchen with its profile, by name. A kitchen document without a name (an empty one
+  // left behind) is not a kitchen anyone plays with.
   readonly cards = computed<KitchenCard[]>(() => {
     const profiles = new Map(this.profileList().map(p => [p.id, p]));
-    return this.kitchenList().map(k => {
+    return this.kitchenList().filter(k => typeof k.name === 'string' && k.name !== '').map(k => {
       const p = profiles.get(k.id);
       return {id: k.id, name: k.name, emoji: p?.emoji ?? '🏠', colour: p?.colour ?? 'grey', bio: p?.bio ?? ''};
     }).sort((a, b) => a.name.localeCompare(b.name, 'da', {numeric: true}));
