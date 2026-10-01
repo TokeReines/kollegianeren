@@ -1,0 +1,190 @@
+// The board on the left, events on the right; stacked on phones with the events first.
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.main,
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+h2 {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+
+.composer {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.to {
+  width: 200px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.grow {
+  width: 100%;
+}
+
+.post,
+.event {
+  padding: 12px 8px 8px 16px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.when,
+.hint {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+header .when {
+  margin-left: auto;
+}
+
+.more {
+  flex: none;
+}
+
+.arrow {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.text {
+  margin: 8px 8px 4px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reply {
+  margin: 4px 8px 4px 16px;
+  padding: 8px 0 0 12px;
+  border-left: 2px solid var(--mat-sys-outline-variant);
+
+  .text {
+    margin-top: 4px;
+  }
+}
+
+.reply-button {
+  align-self: flex-start;
+}
+
+.reply-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 8px 4px 16px;
+}
+
+// A high-five or a badge: a line on the board, louder for a badge.
+.kudos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container);
+
+  &.badge {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+
+    .when {
+      color: inherit;
+    }
+  }
+
+  .big {
+    font-size: 28px;
+  }
+
+  .what {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .reason {
+    font-style: italic;
+  }
+}
+
+.event {
+  .kind {
+    font-size: 28px;
+  }
+
+  .head {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .by {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 8px 0 4px;
+    --chip-size: 24px;
+  }
+
+  .rsvp {
+    margin: 8px 0 4px;
+  }
+
+  .answers {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+}
+
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (max-width: 900px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .events {
+    order: -1;
+  }
+
+  .to {
+    width: 100%;
+  }
+}

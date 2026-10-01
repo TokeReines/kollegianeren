@@ -1,3 +1,7 @@
+@for (b of liveBattles(); track b.id) {
+  <app-battle-ticker [battle]="b" />
+}
+
 <div class="panes">
   <section class="pane" [attr.aria-label]="'BUY_PRODUCTS' | translate">
     <header>

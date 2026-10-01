@@ -4,12 +4,16 @@ import {Observable} from 'rxjs';
 import {Meal, MealFields, dayKey} from '../interfaces/meal';
 import {db} from '../firebase';
 import {AuthService} from './auth.service';
+import {LeagueService} from './league.service';
+import {isPlantMeal} from '../interfaces/kollegiet';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
 
 // The food club's meals in the signed-in kitchen.
 @Injectable({providedIn: 'root'})
 export class MealService {
   private readonly auth = inject(AuthService);
+  // Food club battles move with bookings and sign-ups (docs/kollegiet.md, Battles).
+  private readonly league = inject(LeagueService);
 
   private meals() {
     return kitchenCollection(this.auth.currentKitchenId, 'meals');
@@ -25,7 +29,9 @@ export class MealService {
   // by the rules (it would be an update of that meal).
   add(fields: MealFields) {
     const day = dayKey(fields.date.toDate());
-    return setDoc(doc(this.meals(), day), {...fields, day, signups: [...fields.cooks], createdAt: serverTimestamp()});
+    const signups = [...new Set(fields.cooks)];
+    return setDoc(doc(this.meals(), day), {...fields, day, signups, createdAt: serverTimestamp()})
+      .then(() => this.league.onMeal({date: fields.date, tags: fields.tags, signups}, 1));
   }
 
   // Resolves false, and changes nothing, when the meal would move onto a day that is taken.
@@ -34,6 +40,8 @@ export class MealService {
     if (day === meal.id) {
       // A cook added here eats too.
       await updateDoc(doc(this.meals(), meal.id), {...fields, signups: arrayUnion(...fields.cooks)});
+      this.league.onDiner(meal, fields.cooks.filter(c => !meal.signups.includes(c)).length);
+      this.league.onRetag(meal, isPlantMeal(meal.tags), isPlantMeal(fields.tags));
       return true;
     }
     const target = doc(this.meals(), day);
@@ -48,16 +56,23 @@ export class MealService {
   }
 
   // Another cook on the same day; cooks eat too.
-  addCook(meal: Meal, residentId: string) {
-    return updateDoc(doc(this.meals(), meal.id), {cooks: arrayUnion(residentId), signups: arrayUnion(residentId)});
+  async addCook(meal: Meal, residentId: string) {
+    await updateDoc(doc(this.meals(), meal.id), {cooks: arrayUnion(residentId), signups: arrayUnion(residentId)});
+    if (!meal.signups.includes(residentId)) {
+      this.league.onDiner(meal, 1);
+    }
   }
 
   // One resident in or out. arrayUnion/arrayRemove, so two tablets signing up at once both count.
-  setSignup(meal: Meal, residentId: string, eats: boolean) {
-    return updateDoc(doc(this.meals(), meal.id), {signups: eats ? arrayUnion(residentId) : arrayRemove(residentId)});
+  async setSignup(meal: Meal, residentId: string, eats: boolean) {
+    await updateDoc(doc(this.meals(), meal.id), {signups: eats ? arrayUnion(residentId) : arrayRemove(residentId)});
+    if (eats !== meal.signups.includes(residentId)) {
+      this.league.onDiner(meal, eats ? 1 : -1);
+    }
   }
 
-  delete(meal: Meal) {
-    return deleteDoc(doc(this.meals(), meal.id));
+  async delete(meal: Meal) {
+    await deleteDoc(doc(this.meals(), meal.id));
+    this.league.onMeal(meal, -1);
   }
 }

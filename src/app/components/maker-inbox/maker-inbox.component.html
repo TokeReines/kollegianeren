@@ -1,6 +1,10 @@
 @if (isAdmin()) {
   <div class="inbox">
     <mat-action-list class="threads">
+      <button mat-list-item [class.active]="selectedId() === 'reports'" (click)="selectedId.set('reports')">
+        <span matListItemTitle>🚩 {{ "INBOX_REPORTS" | translate }} @if (reports().length) { <b>({{ reports().length }})</b> }</span>
+        <span matListItemLine>{{ "INBOX_REPORTS_HINT" | translate }}</span>
+      </button>
       @for (t of threads(); track t.kitchenId) {
         <button mat-list-item [class.active]="t.kitchenId === selectedId()" [attr.aria-current]="t.kitchenId === selectedId()" (click)="open(t)">
           <span matListItemTitle>{{ t.kitchenName }} @if (t.unread) { <b>({{ t.unread }})</b> }</span>
@@ -12,7 +16,30 @@
     </mat-action-list>
 
     <div class="thread">
-      @if (selected(); as t) {
+      @if (selectedId() === 'reports') {
+        <h2>{{ "INBOX_REPORTS" | translate }}</h2>
+        @for (r of reports(); track r.id) {
+          <div class="report">
+            <div class="meta">{{ kitchenName(r.kitchenId) }} · {{ r.createdAt.toDate() | date:'d/M HH:mm' }} · {{ r.target }}</div>
+            @if (r.text) {
+              <div>{{ r.text }}</div>
+            }
+            @if (r.item; as item) {
+              <blockquote>{{ item['text'] ?? item['title'] ?? item['reason'] ?? '' }}</blockquote>
+            } @else if (!r.text) {
+              <div class="meta">{{ "INBOX_REPORT_GONE" | translate }}</div>
+            }
+            <div class="report-actions">
+              @if (r.item) {
+                <button mat-flat-button (click)="resolve(r, true)">{{ "KOL_HIDE" | translate }}</button>
+              }
+              <button mat-button (click)="resolve(r, false)">{{ "INBOX_REPORT_DONE" | translate }}</button>
+            </div>
+          </div>
+        } @empty {
+          <p class="empty">{{ "INBOX_REPORTS_EMPTY" | translate }}</p>
+        }
+      } @else if (selected(); as t) {
         <h2>{{ t.kitchenName }}</h2>
         @for (m of t.messages; track m.id) {
           <div class="bubble" [class.mine]="m.from === 'maker'">

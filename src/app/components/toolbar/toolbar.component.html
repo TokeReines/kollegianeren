@@ -5,9 +5,9 @@
   </button>
   <span class="title" [class.kiosk]="sidenav.railHidden()">{{ kitchenName() }}</span>
   <span class="fill-space"></span>
-  @if (unread()) {
-    <a class="message-button" mat-icon-button routerLink="/aktuelt" fragment="message" [attr.aria-label]="'MESSAGE_FROM_TOKE' | translate"
-       [matTooltip]="'MESSAGE_FROM_TOKE' | translate" [matBadge]="unread()">
+  @if (notices()[0]; as first) {
+    <a class="message-button" mat-icon-button [routerLink]="first.link.path" [fragment]="first.link.fragment" [queryParams]="first.link.query"
+       [attr.aria-label]="'NOTICES' | translate" [matTooltip]="'NOTICES' | translate" [matBadge]="notices().length">
       <mat-icon>notifications_active</mat-icon>
     </a>
   }

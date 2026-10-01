@@ -6,7 +6,9 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
+import {of, switchMap} from 'rxjs';
 import {MakerService} from '../../services/maker.service';
+import {KollegietService, Report} from '../../services/kollegiet.service';
 import {Thread} from '../../interfaces/message';
 import {Notify} from '../../services/notify.service';
 import {TranslatePipe} from '../../translate.pipe';
@@ -27,6 +29,18 @@ export class MakerInboxComponent {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly selected = computed(() => this.threads().find(t => t.kitchenId === this.selectedId()));
   protected readonly text = signal('');
+
+  // Reports from kitchens on Kollegiet, and from ops/league.js when a tally was off.
+  private readonly kollegiet = inject(KollegietService);
+  protected readonly reports = toSignal(this.maker.isAdmin$.pipe(switchMap(admin => admin ? this.kollegiet.reports() : of([]))), {initialValue: []});
+
+  protected kitchenName(id: string) {
+    return this.kollegiet.card(id).name;
+  }
+
+  protected resolve(report: Report, hide: boolean) {
+    this.kollegiet.resolve(report, hide).catch(this.notify.error);
+  }
 
   constructor() {
     // An open thread is read: new messages in it are marked seen as they arrive.

@@ -10,6 +10,8 @@ export const routes: Routes = [
   {path: 'register', loadComponent: () => import('./components/register/register.component').then(m => m.RegisterComponent)},
   {path: 'privacy', loadComponent: () => import('./components/privacy/privacy.component').then(m => m.PrivacyComponent)},
   {path: 'me/:token', loadComponent: () => import('./components/resident-view/resident-view.component').then(m => m.ResidentViewComponent)},
+  // A battle full screen, for a TV at a party: outside the shell, no menu or top bar.
+  {path: 'kollegiet/battle/:id', canActivate: [authGuard], loadComponent: () => import('./components/kollegiet/scoreboard.component').then(m => m.ScoreboardComponent)},
   {
     path: '', component: HomeComponent, canActivate: [authGuard], canActivateChild: [authGuard],
     children: [
@@ -20,6 +22,7 @@ export const routes: Routes = [
       {path: 'access', canActivate: [manageGuard], loadComponent: () => import('./components/access/access.component').then(m => m.AccessComponent)},
       {path: 'food-club', loadComponent: () => import('./components/food-club/food-club.component').then(m => m.FoodClubComponent)},
       {path: 'stats', loadComponent: () => import('./components/stats/stats.component').then(m => m.StatsComponent)},
+      {path: 'kollegiet', loadComponent: () => import('./components/kollegiet/kollegiet.component').then(m => m.KollegietComponent)},
       {path: 'aktuelt', loadComponent: () => import('./components/aktuelt/aktuelt.component').then(m => m.AktueltComponent)},
       {path: 'maker', redirectTo: 'aktuelt'},
       {path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)},
