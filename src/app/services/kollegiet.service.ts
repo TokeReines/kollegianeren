@@ -52,7 +52,7 @@ export class KollegietService {
   private readonly auth = inject(AuthService);
 
   private shared<T>(build: () => Observable<T[]>): Observable<T[]> {
-    return whileSignedIn(this.auth.kitchen$, build, [] as T[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
+    return whileSignedIn(this.auth.viewer$, build, [] as T[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
   }
 
   readonly kitchens$ = this.shared(() => watch<Kitchen>(collection(db, 'kitchens')));
@@ -60,7 +60,7 @@ export class KollegietService {
   readonly standings$ = this.shared(() => watch<Standing>(collection(db, 'standings')));
   // Every kitchen's achievements, by kitchen: one listener on them all (a read per achievement),
   // for the cards and the profile on Køkkener.
-  readonly achievements$: Observable<Map<string, Achievement[]>> = whileSignedIn(this.auth.kitchen$,
+  readonly achievements$: Observable<Map<string, Achievement[]>> = whileSignedIn(this.auth.viewer$,
     () => new Observable<Map<string, Achievement[]>>(sub => onSnapshot(collectionGroup(db, 'achievements'), snap => {
       const by = new Map<string, Achievement[]>();
       for (const d of snap.docs) {
