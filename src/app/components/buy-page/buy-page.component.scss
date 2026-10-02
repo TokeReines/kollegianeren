@@ -310,17 +310,30 @@
   gap: 8px;
 }
 
+// The basket line, Annuller and Køb share one height (48px), so their edges line up in the bar.
 .line {
+  box-sizing: border-box;
+  height: 48px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
   padding: 2px 2px 2px 4px;
   border-radius: 12px;
   background: var(--mat-sys-surface);
   border: 1px solid var(--mat-sys-outline-variant);
 
+  // A long name gets an ellipsis rather than pushing the line out of the bar.
   .what {
+    min-width: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  app-product-picture,
+  button {
+    flex: none;
   }
 }
 
@@ -342,7 +355,12 @@
 
 .actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+
+  button {
+    height: 48px;
+  }
 }
 
 .buy-button {
