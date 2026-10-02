@@ -2,7 +2,7 @@
      fixed order: write a note, events, open votes, posts. -->
 <section class="stickers-zone" [attr.aria-label]="'KOL_ZONE_KUDOS' | translate">
   <div class="zone-head">
-    <h2><mat-icon>front_hand</mat-icon> {{ "KOL_ZONE_KUDOS" | translate }}</h2>
+    <h2><span aria-hidden="true">🙌</span> {{ "KOL_ZONE_KUDOS" | translate }}</h2>
     <button mat-flat-button class="give" (click)="giveKudos()" [attr.aria-label]="'KOL_GIVE_KUDOS' | translate">
       🙌 <span class="long">{{ "KOL_GIVE_KUDOS" | translate }}</span><span class="short">{{ "KOL_GIVE" | translate }}</span>
     </button>
