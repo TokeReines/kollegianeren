@@ -319,3 +319,13 @@ app-root {
 .picture-panel .mat-mdc-dialog-container {
   --mat-dialog-container-shape: 0;
 }
+
+// A row of choices that is wider than a phone scrolls sideways instead of cutting the last ones off.
+mat-button-toggle-group.mat-button-toggle-group {
+  max-width: 100%;
+  overflow-x: auto;
+
+  .mat-button-toggle {
+    flex: none;
+  }
+}

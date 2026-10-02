@@ -263,16 +263,6 @@ td {
   margin-bottom: 12px;
 }
 
-.seg {
-  display: flex;
-  gap: 4px;
-
-  .on {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
-  }
-}
-
 .grid {
   width: auto;
   border-collapse: separate;

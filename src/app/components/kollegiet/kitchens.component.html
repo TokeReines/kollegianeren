@@ -14,7 +14,7 @@
 
       <!-- The trophy shelf: big, it is fine to brag. Gold is for what was won. -->
       <div class="shelf">
-        <div class="tile gold">
+        <div class="tile" [class.gold]="(summary().get(k.id)?.wins ?? 0) > 0">
           <span class="icon">🏆</span><b class="n">{{ summary().get(k.id)?.wins ?? 0 }}</b><span class="label">{{ "KOL_WINS" | translate }}</span>
         </div>
         @for (t of titles(); track t) {

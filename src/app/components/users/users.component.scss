@@ -30,3 +30,8 @@
     white-space: nowrap;
   }
 }
+
+// Short labels stay on one line in the table.
+.nowrap {
+  white-space: nowrap;
+}
