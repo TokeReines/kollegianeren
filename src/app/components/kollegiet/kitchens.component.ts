@@ -43,20 +43,19 @@ export class KitchensComponent {
 
   private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
   private readonly standings = toSignal(this.kollegiet.standings$, {initialValue: []});
-  protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
-  // Kitchens with a profile (and your own) as cards; the rest as a row of names, so a list of
-  // kitchens nobody has set up yet does not fill the page.
-  // The ones with the most on their shelf first: it is fine to brag.
-  protected readonly withProfile = computed(() => {
+  // The signed-in kitchen; empty for the maker, who has none.
+  protected readonly me = computed(() => this.auth.hasKitchen() ? this.auth.membership()?.kitchenId ?? '' : '');
+  // Every kitchen as a card, the ones with the most on their shelf first (it is fine to brag), then
+  // the ones with a profile, then by name.
+  protected readonly cards = computed(() => {
     const score = (id: string) => {
       const s = this.summary().get(id);
       const won = s ? 3 * s.wins + s.highfives + Object.values(s.badges).reduce((a, n) => a + (n ?? 0), 0) : 0;
       return won + 3 * this.titlesOf(id).length + this.achievementsOf(id).length;
     };
-    return this.kollegiet.cards().filter(k => k.profiled || k.id === this.me())
-      .map(k => ({k, score: score(k.id)})).sort((a, b) => b.score - a.score).map(x => x.k);
+    return this.kollegiet.cards().map(k => ({k, score: score(k.id)}))
+      .sort((a, b) => b.score - a.score || Number(b.k.profiled) - Number(a.k.profiled)).map(x => x.k);
   });
-  protected readonly withoutProfile = computed(() => this.kollegiet.cards().filter(k => !k.profiled && k.id !== this.me()));
   protected readonly canManage = this.auth.canManage;
 
   // Opens on your own kitchen; closing the profile leaves `kitchen=` empty, which shows none.
