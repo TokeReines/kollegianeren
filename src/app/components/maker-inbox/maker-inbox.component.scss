@@ -108,3 +108,9 @@
     cursor: zoom-in;
   }
 }
+
+// A kitchen nobody has written with yet.
+.none {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
