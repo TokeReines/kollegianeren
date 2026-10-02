@@ -23,9 +23,21 @@ mat-card {
   border-collapse: collapse;
   margin-top: 8px;
 
+  th,
   td {
     padding: 6px 8px;
     border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  th {
+    text-align: left;
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  // An invite not used yet.
+  .pending td {
+    color: var(--mat-sys-on-surface-variant);
   }
 
   .actions {
@@ -59,4 +71,9 @@ mat-card {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+}
+
+.sub {
+  margin: 16px 0 0;
+  font: var(--mat-sys-title-small);
 }

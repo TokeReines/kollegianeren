@@ -15,21 +15,38 @@
     <mat-card>
       <mat-card-title>{{ "ACCESS_LOGINS" | translate }}</mat-card-title>
       <p class="muted">{{ "ACCESS_LOGINS_HINT" | translate }}</p>
+      <!-- Every login with its email and role, and the invites to a login not used yet. -->
       <table class="list">
-        @if (isLegacyOwner()) {
-          <tr><td>{{ "ACCESS_MAIN_LOGIN" | translate }}</td><td>{{ "ROLE_OWNER" | translate }}</td><td></td></tr>
-        }
-        @for (m of members(); track m.id) {
-          <tr>
-            <td>{{ m.id === myUid() ? myEmail() : m.email }}</td>
-            <td>{{ ("ROLE_" + m.role.toUpperCase()) | translate }}</td>
-            <td>
-              @if (role() === 'owner') {
-                <button mat-icon-button (click)="remove(m)" [attr.aria-label]="'ACCESS_REMOVE' | translate"><mat-icon>person_remove</mat-icon></button>
-              }
-            </td>
-          </tr>
-        }
+        <thead>
+          <tr><th>{{ "ACCESS_LOGIN" | translate }}</th><th>{{ "ACCESS_ROLE" | translate }}</th><th></th></tr>
+        </thead>
+        <tbody>
+          @if (isLegacyOwner()) {
+            <tr><td>{{ myEmail() }} <span class="muted">({{ "ACCESS_YOU" | translate }})</span></td><td>{{ "ROLE_OWNER" | translate }}</td><td></td></tr>
+          }
+          @for (m of members(); track m.id) {
+            <tr>
+              <td>{{ m.id === myUid() ? myEmail() : m.email }}@if (m.id === myUid()) { <span class="muted">({{ "ACCESS_YOU" | translate }})</span> }</td>
+              <td>{{ ("ROLE_" + m.role.toUpperCase()) | translate }}</td>
+              <td class="actions">
+                @if (role() === 'owner' && m.id !== myUid()) {
+                  <button mat-icon-button (click)="remove(m)" [attr.aria-label]="'ACCESS_REMOVE' | translate"><mat-icon>person_remove</mat-icon></button>
+                }
+              </td>
+            </tr>
+          }
+          @for (i of invites(); track i.id) {
+            <tr class="pending">
+              <td>{{ "ACCESS_INVITED" | translate }} <code>{{ i.id }}</code>
+                <span class="muted"> · {{ "ACCESS_EXPIRES" | translate | lowercase }} {{ i.expiresAt.toDate() | date:'d. MMM' }}</span></td>
+              <td>{{ ("ROLE_" + i.role.toUpperCase()) | translate }}</td>
+              <td class="actions">
+                <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
+                <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>
+              </td>
+            </tr>
+          }
+        </tbody>
       </table>
 
       <div class="row">
@@ -73,6 +90,24 @@
       <mat-card-title>{{ "ACCESS_NEW_KITCHEN" | translate }}</mat-card-title>
       <p class="muted">{{ "ACCESS_NEW_KITCHEN_HINT" | translate }}</p>
       <button mat-stroked-button (click)="invite(true)"><mat-icon>add_home</mat-icon> {{ "ACCESS_INVITE_KITCHEN" | translate }}</button>
+
+      <h3 class="sub">{{ "ACCESS_OPEN_INVITES" | translate }}</h3>
+      @if (referrals().length) {
+        <table class="list">
+          @for (i of referrals(); track i.id) {
+            <tr>
+              <td><code>{{ i.id }}</code></td>
+              <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt.toDate() | date:'d. MMM' }}</td>
+              <td class="actions">
+                <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
+                <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>
+              </td>
+            </tr>
+          }
+        </table>
+      } @else {
+        <p class="muted">{{ "ACCESS_NO_OPEN_INVITES" | translate }}</p>
+      }
     </mat-card>
 
     <!-- The kitchen's own data as files, whenever it wants (docs: the About page promises it). -->
@@ -96,32 +131,5 @@
       }
     </mat-card>
 
-    <mat-card>
-      <mat-card-title>{{ "ACCESS_OPEN_INVITES" | translate }}</mat-card-title>
-      <table class="list">
-        @for (i of invites(); track i.id) {
-          <tr>
-            <td><code>{{ i.id }}</code></td>
-            <td>{{ ("ROLE_" + i.role.toUpperCase()) | translate }}</td>
-            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt.toDate() | date:'d. MMM' }}</td>
-            <td class="actions">
-              <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
-              <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>
-            </td>
-          </tr>
-        }
-        @for (i of referrals(); track i.id) {
-          <tr>
-            <td><code>{{ i.id }}</code></td>
-            <td>{{ "ACCESS_NEW_KITCHEN" | translate }}</td>
-            <td>{{ "ACCESS_EXPIRES" | translate }} {{ i.expiresAt.toDate() | date:'d. MMM' }}</td>
-            <td class="actions">
-              <button mat-icon-button (click)="copy(link(i))" [attr.aria-label]="'ACCESS_COPY' | translate"><mat-icon>content_copy</mat-icon></button>
-              <button mat-icon-button (click)="revoke(i)" [attr.aria-label]="'ACCESS_REVOKE' | translate"><mat-icon>delete</mat-icon></button>
-            </td>
-          </tr>
-        }
-      </table>
-    </mat-card>
   }
 </div>

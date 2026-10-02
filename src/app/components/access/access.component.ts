@@ -1,6 +1,6 @@
 import {Component, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {DatePipe} from '@angular/common';
+import {DatePipe, LowerCasePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
@@ -35,7 +35,7 @@ const HANDOVER_ERRORS: Record<string, string> = {
 // "Adgang": the kitchen's logins and invites, and its data as files. Owners and treasurers only.
 @Component({
   selector: 'app-access',
-  imports: [RouterLink, DatePipe, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
+  imports: [RouterLink, DatePipe, LowerCasePipe, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule,
     MatSelectModule, MatTooltipModule, TranslatePipe],
   templateUrl: './access.component.html',
   styleUrl: './access.component.scss',
