@@ -1,9 +1,10 @@
 import {initializeApp} from 'firebase/app';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {
-  DocumentReference, Query, SnapshotOptions, connectFirestoreEmulator, initializeFirestore, onSnapshot,
+  DocumentReference, Query, SnapshotOptions, connectFirestoreEmulator, initializeFirestore,
   persistentLocalCache, persistentMultipleTabManager,
 } from 'firebase/firestore';
+import {onSnapshot} from './read-meter';
 import {Observable} from 'rxjs';
 import {environment} from '../environments/environment';
 

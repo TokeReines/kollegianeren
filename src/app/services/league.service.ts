@@ -1,9 +1,9 @@
 import {Injectable, computed, inject, signal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, arrayUnion, collection, deleteDoc, doc, getDoc, increment, limit, orderBy, query, serverTimestamp, setDoc,
-  updateDoc, where, writeBatch,
+  Timestamp, arrayUnion, collection, deleteDoc, doc, increment, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
+import {getDoc} from '../read-meter';
 import {Observable, catchError, combineLatest, interval, map, of, shareReplay, startWith, switchMap} from 'rxjs';
 import {
   Achievement, BATTLE_SLOTS, Battle, Metric, TOO_MANY_BATTLES, Tally, addTick, during, earnedAchievements, isPlantMeal, liveFor,

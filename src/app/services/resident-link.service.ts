@@ -1,6 +1,7 @@
 import {Injectable, inject} from '@angular/core';
 import {signInAnonymously} from 'firebase/auth';
-import {collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where} from 'firebase/firestore';
+import {collection, deleteDoc, doc, query, serverTimestamp, setDoc, where} from 'firebase/firestore';
+import {getDoc, getDocs} from '../read-meter';
 import {AuthService} from './auth.service';
 import {newCode} from '../interfaces/invite';
 import {User} from '../interfaces/user';

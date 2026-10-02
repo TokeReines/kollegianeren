@@ -1,5 +1,6 @@
 import {Injectable, inject} from '@angular/core';
-import {doc, getDocs, query, serverTimestamp, updateDoc, where, writeBatch} from 'firebase/firestore';
+import {doc, query, serverTimestamp, updateDoc, where, writeBatch} from 'firebase/firestore';
+import {getDocs} from '../read-meter';
 import {AuthService} from './auth.service';
 import {User} from '../interfaces/user';
 import {Purchase} from '../interfaces/purchase';

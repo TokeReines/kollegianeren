@@ -59,11 +59,12 @@ const dayKey = ms => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'Europ
 const USAGE_KEEP_DAYS = 92;
 
 // What the app counted (src/app/interfaces/usage.ts), summed per kind of login (t: tablet, m:
-// managers) over 7 and 30 days, the hours of the 30 days, and each day's total.
+// managers) over 7 and 30 days: views, actions and reads; the hours of the 30 days, and each day's
+// total of views and actions.
 function usageOf(docs, now) {
   const d7 = dayKey(now - 6 * DAY);
   const d30 = dayKey(now - 29 * DAY);
-  const empty = () => ({ t: { v: {}, a: {} }, m: { v: {}, a: {} } });
+  const empty = () => ({ t: { v: {}, a: {}, r: {} }, m: { v: {}, a: {}, r: {} } });
   const out = { d7: empty(), d30: empty(), hours: new Array(24).fill(0), days: {} };
   const add = (c, k, n) => { c[k] = (c[k] || 0) + n; };
   for (const d of docs) {
@@ -71,11 +72,12 @@ function usageOf(docs, now) {
     let total = 0;
     for (const who of ['t', 'm']) {
       const x = d.get(who) || {};
-      for (const kind of ['v', 'a']) {
+      for (const kind of ['v', 'a', 'r']) {
         for (const [k, n] of Object.entries(x[kind] || {})) {
           add(out.d30[who][kind], k, n);
           if (d.id >= d7) add(out.d7[who][kind], k, n);
-          total += n;
+          // A day's total is what people did; reads are counted apart.
+          if (kind !== 'r') total += n;
         }
       }
       for (const [h, n] of Object.entries(x.h || {})) out.hours[+h] += n;
