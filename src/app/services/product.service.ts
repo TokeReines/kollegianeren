@@ -4,9 +4,11 @@ import {Observable} from 'rxjs';
 import {EditableProduct, Product, ProductFields} from '../interfaces/product';
 import {AuthService} from './auth.service';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 @Injectable({providedIn: 'root'})
 export class ProductService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
   private products() {
@@ -18,24 +20,29 @@ export class ProductService {
   }
 
   add(product: ProductFields) {
+    this.usage.act('product-add');
     return addDoc(this.products(), product);
   }
 
   // Only the given fields: writing the whole product back could undo sales made meanwhile.
   update(product: Product, fields: Partial<EditableProduct>) {
+    this.usage.act('product-edit');
     return updateDoc(doc(this.products(), product.id), fields);
   }
 
   delete(product: Product) {
+    this.usage.act('product-delete');
     return deleteDoc(doc(this.products(), product.id));
   }
 
   // Receiving stock. Sales move stock and the sold counter in PurchaseService.sell.
   adjustStock(productId: string, delta: number) {
+    this.usage.act('stock');
     return updateDoc(doc(this.products(), productId), {stock: increment(delta)});
   }
 
   setStock(productId: string, stock: number | null) {
+    this.usage.act('stock');
     return updateDoc(doc(this.products(), productId), {stock});
   }
 }

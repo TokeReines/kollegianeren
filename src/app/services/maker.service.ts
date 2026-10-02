@@ -1,27 +1,26 @@
 import {Injectable, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, addDoc, collection, collectionGroup, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, where, writeBatch,
+  Timestamp, addDoc, collection, collectionGroup, doc, limit, onSnapshot, orderBy, query, serverTimestamp, where, writeBatch,
 } from 'firebase/firestore';
 import {NEWS_DAYS} from '../interfaces/kollegiet';
-import {Observable, combineLatest, from, map, of, shareReplay, switchMap} from 'rxjs';
+import {Observable, combineLatest, map, of, shareReplay, switchMap} from 'rxjs';
 import {Kitchen} from '../interfaces/kitchen';
 import {Announcement, Message, Thread, newestFirst, toThreads} from '../interfaces/message';
 import {AuthService} from './auth.service';
 import {db, snapshotOptions, watch} from '../firebase';
 import {kitchenCollection, watchInKitchen, whileSignedIn} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 // Everything between the kitchens and the maker: announcements ("Aktuelt"), one message
 // thread per kitchen, and the maker's inbox. Admins are users with an admins/{uid} document,
 // which only the Firebase console can create.
 @Injectable({providedIn: 'root'})
 export class MakerService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
-  readonly isAdmin$: Observable<boolean> = this.auth.user$.pipe(
-    switchMap(user => user ? from(getDoc(doc(db, 'admins', user.uid)).then(d => d.exists(), () => false)) : of(false)),
-    shareReplay(1),
-  );
+  readonly isAdmin$: Observable<boolean> = this.auth.isAdmin$;
   readonly isAdmin = toSignal(this.isAdmin$, {initialValue: false});
 
   announcements(): Observable<Announcement[]> {
@@ -29,7 +28,7 @@ export class MakerService {
   }
 
   // The newest posts on Aktuelt, for the notifications. Few and small, one shared listener.
-  readonly recentAnnouncements$: Observable<Announcement[]> = whileSignedIn(this.auth.kitchen$,
+  readonly recentAnnouncements$: Observable<Announcement[]> = whileSignedIn(this.auth.viewer$,
     () => watch<Announcement>(query(collection(db, 'announcements'), where('createdAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
       orderBy('createdAt', 'desc'), limit(10))), [] as Announcement[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
 
@@ -55,6 +54,7 @@ export class MakerService {
   }
 
   send(text: string, images: string[] = []) {
+    this.usage.act('message');
     return addDoc(kitchenCollection(this.auth.currentKitchenId, 'messages'),
       {text, ...(images.length ? {images} : {}), from: 'kitchen', createdAt: serverTimestamp(), seenByMaker: false, seenByKitchen: true});
   }

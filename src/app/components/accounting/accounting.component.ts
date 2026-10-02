@@ -21,6 +21,7 @@ import {sortValue} from '../../table-sort';
 import {TranslatePipe} from '../../translate.pipe';
 import type {SheetData} from 'write-excel-file/browser';
 import {AccountRow, Period, accounts, periodRange, toCsv, toTable} from './accounting';
+import {UsageService} from '../../services/usage.service';
 
 // Product columns get a prefix, so a product called "name" or "total" cannot clash.
 const PRODUCT = 'p:';
@@ -34,6 +35,7 @@ const PRODUCT = 'p:';
   styleUrl: './accounting.component.scss',
 })
 export class AccountingComponent {
+  private readonly usage = inject(UsageService);
   private readonly i18n = inject(TranslateService);
   private readonly notify = inject(Notify);
   private readonly purchaseService = inject(PurchaseService);
@@ -111,6 +113,7 @@ export class AccountingComponent {
   }
 
   protected exportCsv() {
+    this.usage.act('accounting-csv');
     const blob = new Blob([toCsv(this.sheet())], {type: 'text/csv;charset=utf-8'});
     const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: this.fileName('csv')});
     a.click();
@@ -118,6 +121,7 @@ export class AccountingComponent {
   }
 
   protected async exportXlsx() {
+    this.usage.act('accounting-xlsx');
     const {header, rows, footer} = this.sheet();
     const bold = (value: string | number | null) => ({value: value ?? '', fontWeight: 'bold' as const});
     const data: SheetData = [header.map(bold), ...rows, footer.map(bold)];

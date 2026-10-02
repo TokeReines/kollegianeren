@@ -19,14 +19,14 @@
   <span class="fill-space"></span>
   @if (notices().length) {
     <button class="message-button" mat-icon-button [matMenuTriggerFor]="noticeMenu"
-       [attr.aria-label]="'NOTICES' | translate" [matTooltip]="'NOTICES' | translate" [matBadge]="notices().length">
+       [attr.aria-label]="'NOTICES' | translate" [matTooltip]="'NOTICES' | translate" [matBadge]="notices().length" (menuOpened)="usage.act('bell')">
       <mat-icon>notifications_active</mat-icon>
     </button>
   }
   <mat-menu #noticeMenu="matMenu" xPosition="before" class="notice-menu">
     <div class="menu-label">{{ "NOTICES" | translate }}</div>
     @for (n of notices(); track $index) {
-      <a mat-menu-item class="notice-item" [routerLink]="n.link.path" [fragment]="n.link.fragment" [queryParams]="n.link.query">
+      <a mat-menu-item class="notice-item" (click)="usage.act('notice-open')" [routerLink]="n.link.path" [fragment]="n.link.fragment" [queryParams]="n.link.query">
         <mat-icon>{{ notice.icon(n) }}</mat-icon>
         <span class="notice-text">
           <b>{{ notice.title(n) }}</b>
@@ -56,7 +56,7 @@
     }
     <div class="menu-label">{{ "THEME_TITLE" | translate }}</div>
     @for (m of themes; track m.mode) {
-      <button mat-menu-item role="menuitemradio" [attr.aria-checked]="theme.mode() === m.mode" (click)="theme.mode.set(m.mode)">
+      <button mat-menu-item role="menuitemradio" [attr.aria-checked]="theme.mode() === m.mode" (click)="theme.mode.set(m.mode); usage.act('theme')">
         <mat-icon>{{ m.icon }}</mat-icon>
         <span>{{ m.label | translate }}</span>
         @if (theme.mode() === m.mode) { <span class="check material-icons" aria-hidden="true">check</span> }
@@ -65,7 +65,7 @@
     <mat-divider />
     <div class="menu-label">{{ "LANGUAGE" | translate }}</div>
     @for (l of languages; track l.code) {
-      <button mat-menu-item role="menuitemradio" [attr.aria-checked]="i18n.language() === l.code" (click)="i18n.use(l.code)">
+      <button mat-menu-item role="menuitemradio" [attr.aria-checked]="i18n.language() === l.code" (click)="i18n.use(l.code); usage.act('language')">
         <mat-icon>translate</mat-icon>
         <span>{{ l.label }}</span>
         @if (i18n.language() === l.code) { <span class="check material-icons" aria-hidden="true">check</span> }

@@ -6,10 +6,12 @@ import {Purchase} from '../interfaces/purchase';
 import {db} from '../firebase';
 import {ANONYMOUS_NAME, ResidentSummary, summarise} from './residency';
 import {kitchenCollection} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 // Moving residents in and out, and anonymising them after they have left (privacy note: /privacy).
 @Injectable({providedIn: 'root'})
 export class ResidencyService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
   private resident(user: User) {
@@ -27,16 +29,19 @@ export class ResidencyService {
   }
 
   moveOut(user: User) {
+    this.usage.act('move-out');
     return updateDoc(this.resident(user), {active: false, movedOutAt: serverTimestamp()});
   }
 
   moveIn(user: User) {
+    this.usage.act('move-in');
     return updateDoc(this.resident(user), {active: true, movedOutAt: null});
   }
 
   // Replaces the resident's name, room and photo, also on the purchases that copy them.
   // Amounts and dates stay, so the kitchen's accounts still add up.
   async anonymise(user: User): Promise<number> {
+    this.usage.act('anonymise');
     const docs = await this.purchasesOf(user);
     for (let i = 0; i < docs.length; i += 400) {
       const batch = writeBatch(db);

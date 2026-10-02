@@ -13,6 +13,7 @@ import {TranslatePipe} from '../../translate.pipe';
 import {DayRow, ProductRow, Stats, heatLevel} from './stats';
 import {StatsService} from './stats.service';
 import {FoodDayRow, FoodStats, WeekdayRow} from './food-stats';
+import {UsageService} from '../../services/usage.service';
 
 const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']};
 
@@ -25,6 +26,7 @@ const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: [
   styleUrl: './stats.component.scss',
 })
 export class StatsComponent {
+  protected readonly usage = inject(UsageService);
   private readonly statsService = inject(StatsService);
   private readonly i18n = inject(TranslateService);
   private readonly users = inject(UserService);
@@ -78,6 +80,9 @@ export class StatsComponent {
   protected readonly weekdays = computed(() => WEEKDAYS[this.i18n.language()]);
 
   protected setView(view: 'beer' | 'food') {
+    if (view === 'food') {
+      this.usage.act('stats-food');
+    }
     this.view.set(view);
     if (!this.periods().includes(this.days())) {
       this.days.set(30);

@@ -6,6 +6,7 @@ import {AuthService, Role} from './auth.service';
 import {INVITE_DAYS, Invite, Member, newCode} from '../interfaces/invite';
 import {auth, db, watch} from '../firebase';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 function signedInUser(): User {
   if (!auth.currentUser) {
@@ -18,6 +19,7 @@ function signedInUser(): User {
 // let someone create a new kitchen. The rules (firestore.rules) are what actually enforce this.
 @Injectable({providedIn: 'root'})
 export class AccessService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
   members(): Observable<Member[]> {
@@ -36,6 +38,7 @@ export class AccessService {
 
   // role 'owner' with kitchenId null is a referral: the holder creates a new kitchen.
   async createInvite(role: Role, forNewKitchen = false): Promise<string> {
+    this.usage.act('invite');
     const code = newCode();
     await setDoc(doc(db, 'invites', code), {
       kitchenId: forNewKitchen ? null : this.auth.currentKitchenId,
@@ -50,10 +53,12 @@ export class AccessService {
   }
 
   revoke(invite: Invite) {
+    this.usage.act('invite-revoke');
     return deleteDoc(doc(db, 'invites', invite.id));
   }
 
   removeMember(member: Member) {
+    this.usage.act('member-remove');
     const batch = writeBatch(db);
     batch.delete(doc(kitchenCollection(this.auth.currentKitchenId, 'members'), member.id));
     batch.delete(doc(db, 'memberships', member.id));
@@ -61,6 +66,7 @@ export class AccessService {
   }
 
   rename(name: string) {
+    this.usage.act('kitchen-rename');
     const kid = this.auth.currentKitchenId;
     return setDoc(doc(db, 'kitchens', kid), {id: kid, name});
   }

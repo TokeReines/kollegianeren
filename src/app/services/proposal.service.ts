@@ -9,6 +9,7 @@ import {NEWS_DAYS} from '../interfaces/kollegiet';
 import {MAKER, Proposal, ProposalComment, ProposalStatus} from '../interfaces/proposal';
 import {AuthService} from './auth.service';
 import {watchInKitchen, whileSignedIn} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 export type ProposalFields = Pick<Proposal, 'title' | 'body' | 'images' | 'status'>;
 
@@ -17,13 +18,14 @@ export type ProposalFields = Pick<Proposal, 'title' | 'body' | 'images' | 'statu
 // counted live on the list.
 @Injectable({providedIn: 'root'})
 export class ProposalService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
   list(): Observable<Proposal[]> {
     return watchInKitchen<Proposal>(this.auth.kitchenId$, () => query(collection(db, 'proposals'), orderBy('createdAt', 'desc'), limit(50)));
   }
 
-  readonly recent$: Observable<Proposal[]> = whileSignedIn(this.auth.kitchen$,
+  readonly recent$: Observable<Proposal[]> = whileSignedIn(this.auth.viewer$,
     () => watch<Proposal>(query(collection(db, 'proposals'), where('updatedAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
       orderBy('updatedAt', 'desc'), limit(10))), [] as Proposal[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
 
@@ -74,6 +76,7 @@ export class ProposalService {
 
   // A kitchen's comment, text only. Shares the 30 second limit with posts on the board.
   comment(p: Proposal, text: string) {
+    this.usage.act('proposal-comment');
     const kid = this.auth.currentKitchenId;
     const batch = writeBatch(db);
     const ref = doc(collection(db, 'proposals', p.id, 'comments'));
@@ -89,6 +92,7 @@ export class ProposalService {
 
   // A kitchen's thumbs up, on or off.
   vote(p: Proposal, on: boolean) {
+    this.usage.act('proposal-vote');
     return updateDoc(doc(db, 'proposals', p.id), {[`votes.${this.auth.currentKitchenId}`]: on ? true : deleteField()});
   }
 }

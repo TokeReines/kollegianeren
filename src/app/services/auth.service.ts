@@ -1,11 +1,11 @@
 import {Injectable, computed} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {Observable, catchError, filter, map, of, shareReplay, distinctUntilChanged, switchMap} from 'rxjs';
+import {Observable, catchError, combineLatest, filter, from, map, of, shareReplay, distinctUntilChanged, switchMap} from 'rxjs';
 import {
   EmailAuthProvider, User, createUserWithEmailAndPassword, onAuthStateChanged, reauthenticateWithCredential,
   sendPasswordResetEmail, signInWithEmailAndPassword, signOut, verifyBeforeUpdateEmail,
 } from 'firebase/auth';
-import {doc, onSnapshot} from 'firebase/firestore';
+import {doc, getDoc, onSnapshot} from 'firebase/firestore';
 import {auth, db, watchDoc} from '../firebase';
 
 export type Role = 'owner' | 'treasurer' | 'tablet';
@@ -44,6 +44,18 @@ export class AuthService {
     shareReplay({bufferSize: 1, refCount: false}),
   );
   readonly hasKitchen = toSignal(this.kitchen$.pipe(map(m => !!m)), {initialValue: false});
+  // The maker: users with an admins/{uid} document, which only the Firebase console can create.
+  readonly isAdmin$: Observable<boolean> = this.user$.pipe(
+    switchMap(user => user ? from(getDoc(doc(db, 'admins', user.uid)).then(d => d.exists(), () => false)) : of(false)),
+    shareReplay(1),
+  );
+  // Who may look at Kollegiet and Aktuelt: a kitchen, or the maker (who has none). For the shared
+  // listeners; the kitchen's own ones (seen, standing) use kitchen$.
+  readonly viewer$: Observable<Membership | null> = combineLatest([this.membership$, this.kitchen$, this.isAdmin$]).pipe(
+    map(([m, kitchen, admin]) => kitchen ?? (admin ? m : null)),
+    distinctUntilChanged(),
+    shareReplay({bufferSize: 1, refCount: false}),
+  );
   readonly role$: Observable<Role> = this.membership$.pipe(
     filter((m): m is Membership => !!m), map(m => m.role), distinctUntilChanged(), shareReplay(1));
 

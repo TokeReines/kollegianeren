@@ -12,7 +12,7 @@
 
   <div class="filters">
     @for (d of periods(); track d) {
-      <button mat-stroked-button [attr.aria-pressed]="days() === d" [class.on]="days() === d" (click)="days.set(d)">
+      <button mat-stroked-button [attr.aria-pressed]="days() === d" [class.on]="days() === d" (click)="days.set(d); usage.act('stats-period')">
         {{ d }} {{ "STATS_DAYS" | translate }}
       </button>
     }

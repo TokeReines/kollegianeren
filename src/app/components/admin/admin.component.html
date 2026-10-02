@@ -46,6 +46,83 @@
       <p class="hint">{{ "ADMIN_READS_HINT" | translate }} {{ readCap | number }}. {{ "ADMIN_JOB_READS" | translate }} {{ s.reads }}.</p>
     }
 
+    <h2>{{ "ADMIN_USAGE_TITLE" | translate }}</h2>
+    @if (counted().length) {
+      @let g = grid();
+      <div class="filters">
+        <div class="seg" role="group">
+          <button mat-stroked-button [class.on]="usageKind() === 'v'" [attr.aria-pressed]="usageKind() === 'v'" (click)="usageKind.set('v')">{{ "ADMIN_USAGE_PAGES" | translate }}</button>
+          <button mat-stroked-button [class.on]="usageKind() === 'a'" [attr.aria-pressed]="usageKind() === 'a'" (click)="usageKind.set('a')">{{ "ADMIN_USAGE_ACTIONS" | translate }}</button>
+        </div>
+        <div class="seg" role="group">
+          <button mat-stroked-button [class.on]="usagePeriod() === 'd7'" [attr.aria-pressed]="usagePeriod() === 'd7'" (click)="usagePeriod.set('d7')">{{ "ADMIN_7_DAYS" | translate }}</button>
+          <button mat-stroked-button [class.on]="usagePeriod() === 'd30'" [attr.aria-pressed]="usagePeriod() === 'd30'" (click)="usagePeriod.set('d30')">{{ "ADMIN_30_DAYS" | translate }}</button>
+        </div>
+        <div class="seg" role="group">
+          <button mat-stroked-button [class.on]="usageWho() === 'all'" [attr.aria-pressed]="usageWho() === 'all'" (click)="usageWho.set('all')">{{ "ADMIN_USAGE_ALL" | translate }}</button>
+          <button mat-stroked-button [class.on]="usageWho() === 't'" [attr.aria-pressed]="usageWho() === 't'" (click)="usageWho.set('t')">{{ "ADMIN_USAGE_TABLET" | translate }}</button>
+          <button mat-stroked-button [class.on]="usageWho() === 'm'" [attr.aria-pressed]="usageWho() === 'm'" (click)="usageWho.set('m')">{{ "ADMIN_USAGE_MANAGERS" | translate }}</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th></th>
+              @for (k of counted(); track k.id) { <th class="num">{{ k.name }}</th> }
+              <th class="num">{{ "ADMIN_USAGE_TOTAL" | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of g.rows; track r.key) {
+              <tr>
+                <th class="key">{{ label(r.key) | translate }}</th>
+                @for (c of r.cells; track $index) {
+                  <td class="num cell" [attr.data-level]="c.level" [matTooltip]="cellTip(counted()[$index], c)">{{ c.n || '' }}</td>
+                }
+                <td class="num total">{{ r.total | number }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">{{ "ADMIN_USAGE_HINT" | translate }}</p>
+      @if (g.unused.length) {
+        <h3>{{ "ADMIN_USAGE_UNUSED" | translate }}</h3>
+        <div class="unused">
+          @for (key of g.unused; track key) { <span class="chip">{{ label(key) | translate }}</span> }
+        </div>
+      }
+
+      <div class="when">
+        <section>
+          <h3>{{ "ADMIN_USAGE_HOURS" | translate }}</h3>
+          <div class="hours">
+            @for (n of hours(); track $index) {
+              <div class="hcol" [matTooltip]="$index + ':00 · ' + (n | number)">
+                <span class="slot"><span class="bar" [style.height.%]="n / maxHour() * 100"></span></span>
+                <span class="d">{{ $index % 3 === 0 ? $index : '' }}</span>
+              </div>
+            }
+          </div>
+        </section>
+        <section>
+          <h3>{{ "ADMIN_USAGE_DAYS" | translate }}</h3>
+          <div class="hours days">
+            @for (d of days(); track d.day) {
+              <div class="hcol" [matTooltip]="d.day.slice(8) + '/' + d.day.slice(5, 7) + ' · ' + (d.n | number)">
+                <span class="slot"><span class="bar" [style.height.%]="d.n / maxDay() * 100"></span></span>
+                <span class="d">{{ $first || $last ? d.day.slice(8) + '/' + d.day.slice(5, 7) : '' }}</span>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+      <p class="hint">{{ "ADMIN_USAGE_SINCE" | translate }} {{ days()[0]?.day | date:'d. MMMM' }}.</p>
+    } @else {
+      <p class="muted">{{ "ADMIN_USAGE_NONE" | translate }}</p>
+    }
+
     <h2>{{ "ADMIN_KITCHENS_TITLE" | translate }}</h2>
     <div class="table-scroll">
       <table class="kitchens">
@@ -130,6 +207,19 @@
                       <p class="muted">{{ "ADMIN_SINCE" | translate }} {{ k.createdAt?.toDate() | date:'d. MMM y' }}</p>
                     </section>
                   </div>
+
+                  @if (kitchenHours(k).length) {
+                    @let kh = kitchenHours(k);
+                    <h3>{{ "ADMIN_USAGE_HOURS" | translate }}</h3>
+                    <div class="hours small">
+                      @for (n of kh; track $index) {
+                        <div class="hcol" [matTooltip]="$index + ':00 · ' + (n | number)">
+                          <span class="slot"><span class="bar" [style.height.%]="n / maxOf(kh) * 100"></span></span>
+                          <span class="d">{{ $index % 3 === 0 ? $index : '' }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
 
                   <h3>{{ "MENU_PRODUCTS" | translate }}</h3>
                   <table class="products">
