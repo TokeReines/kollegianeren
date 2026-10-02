@@ -50,19 +50,19 @@
     @if (counted().length) {
       @let g = grid();
       <div class="filters">
-        <div class="seg" role="group">
-          <button mat-stroked-button [class.on]="usageKind() === 'v'" [attr.aria-pressed]="usageKind() === 'v'" (click)="usageKind.set('v')">{{ "ADMIN_USAGE_PAGES" | translate }}</button>
-          <button mat-stroked-button [class.on]="usageKind() === 'a'" [attr.aria-pressed]="usageKind() === 'a'" (click)="usageKind.set('a')">{{ "ADMIN_USAGE_ACTIONS" | translate }}</button>
-        </div>
-        <div class="seg" role="group">
-          <button mat-stroked-button [class.on]="usagePeriod() === 'd7'" [attr.aria-pressed]="usagePeriod() === 'd7'" (click)="usagePeriod.set('d7')">{{ "ADMIN_7_DAYS" | translate }}</button>
-          <button mat-stroked-button [class.on]="usagePeriod() === 'd30'" [attr.aria-pressed]="usagePeriod() === 'd30'" (click)="usagePeriod.set('d30')">{{ "ADMIN_30_DAYS" | translate }}</button>
-        </div>
-        <div class="seg" role="group">
-          <button mat-stroked-button [class.on]="usageWho() === 'all'" [attr.aria-pressed]="usageWho() === 'all'" (click)="usageWho.set('all')">{{ "ADMIN_USAGE_ALL" | translate }}</button>
-          <button mat-stroked-button [class.on]="usageWho() === 't'" [attr.aria-pressed]="usageWho() === 't'" (click)="usageWho.set('t')">{{ "ADMIN_USAGE_TABLET" | translate }}</button>
-          <button mat-stroked-button [class.on]="usageWho() === 'm'" [attr.aria-pressed]="usageWho() === 'm'" (click)="usageWho.set('m')">{{ "ADMIN_USAGE_MANAGERS" | translate }}</button>
-        </div>
+        <mat-button-toggle-group [value]="usageKind()" (change)="usageKind.set($event.value)" hideSingleSelectionIndicator>
+          <mat-button-toggle value="v">{{ "ADMIN_USAGE_PAGES" | translate }}</mat-button-toggle>
+          <mat-button-toggle value="a">{{ "ADMIN_USAGE_ACTIONS" | translate }}</mat-button-toggle>
+        </mat-button-toggle-group>
+        <mat-button-toggle-group [value]="usagePeriod()" (change)="usagePeriod.set($event.value)" hideSingleSelectionIndicator>
+          <mat-button-toggle value="d7">{{ "ADMIN_7_DAYS" | translate }}</mat-button-toggle>
+          <mat-button-toggle value="d30">{{ "ADMIN_30_DAYS" | translate }}</mat-button-toggle>
+        </mat-button-toggle-group>
+        <mat-button-toggle-group [value]="usageWho()" (change)="usageWho.set($event.value)" hideSingleSelectionIndicator>
+          <mat-button-toggle value="all">{{ "ADMIN_USAGE_ALL" | translate }}</mat-button-toggle>
+          <mat-button-toggle value="t">{{ "ADMIN_USAGE_TABLET" | translate }}</mat-button-toggle>
+          <mat-button-toggle value="m">{{ "ADMIN_USAGE_MANAGERS" | translate }}</mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
       <div class="table-scroll">
         <table class="grid">

@@ -42,3 +42,8 @@
   min-width: 2ch;
   text-align: right;
 }
+
+// Short labels stay on one line in the table.
+.nowrap {
+  white-space: nowrap;
+}

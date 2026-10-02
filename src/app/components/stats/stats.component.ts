@@ -14,6 +14,7 @@ import {DayRow, ProductRow, Stats, heatLevel} from './stats';
 import {StatsService} from './stats.service';
 import {FoodDayRow, FoodStats, WeekdayRow} from './food-stats';
 import {UsageService} from '../../services/usage.service';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']};
 
@@ -21,7 +22,7 @@ const WEEKDAYS = {da: ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'], en: [
 // people drink, on purpose; the food club does show who cooks, since cooking is what it is about.
 @Component({
   selector: 'app-stats',
-  imports: [DatePipe, DecimalPipe, MatButtonModule, MatIconModule, TranslatePipe],
+  imports: [MatButtonToggleModule, DatePipe, DecimalPipe, MatButtonModule, MatIconModule, TranslatePipe],
   templateUrl: './stats.component.html',
   styleUrl: './stats.component.scss',
 })

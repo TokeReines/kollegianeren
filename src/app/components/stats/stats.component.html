@@ -2,20 +2,19 @@
   <h1>{{ "STATS_TITLE" | translate }}</h1>
 
   <div class="filters views">
-    <button mat-stroked-button [attr.aria-pressed]="view() === 'beer'" [class.on]="view() === 'beer'" (click)="setView('beer')">
-      <mat-icon>sports_bar</mat-icon> {{ "MENU_BEERSYSTEM" | translate }}
-    </button>
-    <button mat-stroked-button [attr.aria-pressed]="view() === 'food'" [class.on]="view() === 'food'" (click)="setView('food')">
-      <mat-icon>restaurant</mat-icon> {{ "MENU_FOOD_CLUB" | translate }}
-    </button>
+    <mat-button-toggle-group [value]="view()" (change)="setView($event.value)" hideSingleSelectionIndicator [attr.aria-label]="'STATS_TITLE' | translate">
+      <mat-button-toggle value="beer"><mat-icon>sports_bar</mat-icon> {{ "MENU_BEERSYSTEM" | translate }}</mat-button-toggle>
+      <mat-button-toggle value="food"><mat-icon>restaurant</mat-icon> {{ "MENU_FOOD_CLUB" | translate }}</mat-button-toggle>
+    </mat-button-toggle-group>
   </div>
 
   <div class="filters">
-    @for (d of periods(); track d) {
-      <button mat-stroked-button [attr.aria-pressed]="days() === d" [class.on]="days() === d" (click)="days.set(d); usage.act('stats-period')">
-        {{ d }} {{ "STATS_DAYS" | translate }}
-      </button>
-    }
+    <mat-button-toggle-group [value]="days()" (change)="days.set($event.value); usage.act('stats-period')" hideSingleSelectionIndicator
+                             [attr.aria-label]="'ACCOUNTING_PERIOD' | translate">
+      @for (d of periods(); track d) {
+        <mat-button-toggle [value]="d">{{ d }} {{ "STATS_DAYS" | translate }}</mat-button-toggle>
+      }
+    </mat-button-toggle-group>
     <span class="grow"></span>
     <button mat-button (click)="showTable.set(!showTable())">
       <mat-icon>{{ showTable() ? 'bar_chart' : 'table_rows' }}</mat-icon>
