@@ -29,7 +29,7 @@ export class LeagueService {
 
   // Battles that have not been over for more than two weeks: a handful of documents. Latest ending
   // first, so new battles keep coming in on a tablet that stays open for weeks.
-  readonly battles$: Observable<Battle[]> = whileSignedIn(this.auth.membership$,
+  readonly battles$: Observable<Battle[]> = whileSignedIn(this.auth.kitchen$,
     () => watch<Battle>(query(collection(db, 'battles'), where('to', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)),
       orderBy('to', 'desc'), limit(40))), [] as Battle[],
   ).pipe(shareReplay({bufferSize: 1, refCount: true}));
@@ -54,7 +54,7 @@ export class LeagueService {
     map(entries => new Map<string, Tally | undefined>(entries)),
   ), {initialValue: new Map<string, Tally | undefined>()});
 
-  private readonly myAchievements = toSignal(whileSignedIn(this.auth.membership$,
+  private readonly myAchievements = toSignal(whileSignedIn(this.auth.kitchen$,
     kid => watch<Achievement>(collection(db, 'standings', kid, 'achievements')), [] as Achievement[]).pipe(
     map(list => new Set(list.map(a => a.id))),
   ), {initialValue: new Set<string>()});
