@@ -1,6 +1,15 @@
 // Bar colours as on Statistik (validated against the M3 surfaces).
 :host {
   --bar: light-dark(#6f43c0, #895edb);
+  // The heat ramp from Statistik, with ink that reads on each step.
+  --heat-0: light-dark(#a478f7, #6f43c0);
+  --heat-1: light-dark(#895edb, #895edb);
+  --heat-2: light-dark(#6f43c0, #a478f7);
+  --heat-3: light-dark(#4b169b, #bc99ff);
+  --heat-4: light-dark(#250059, #ebddff);
+  --ink-0: light-dark(#1d1b20, #fff);
+  --ink-1: light-dark(#fff, #15121a);
+  --ink-hi: light-dark(#fff, #15121a);
 }
 
 .page {
@@ -243,5 +252,128 @@ td {
   .off {
     margin-left: 4px;
     font: var(--mat-sys-body-small);
+  }
+}
+
+// How the app is used.
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.seg {
+  display: flex;
+  gap: 4px;
+
+  .on {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+}
+
+.grid {
+  width: auto;
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+
+  th {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+    padding: 4px 6px;
+    white-space: nowrap;
+  }
+
+  .key {
+    position: sticky;
+    left: 0;
+    text-align: left;
+    font: var(--mat-sys-body-medium);
+    color: var(--mat-sys-on-surface);
+    background: var(--mat-sys-surface);
+  }
+
+  .cell {
+    min-width: 40px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: var(--mat-sys-surface-container-low);
+
+    &[data-level="0"] { background: var(--heat-0); color: var(--ink-0); }
+    &[data-level="1"] { background: var(--heat-1); color: var(--ink-1); }
+    &[data-level="2"] { background: var(--heat-2); color: var(--ink-hi); }
+    &[data-level="3"] { background: var(--heat-3); color: var(--ink-hi); }
+    &[data-level="4"] { background: var(--heat-4); color: var(--ink-hi); }
+  }
+
+  .total {
+    padding: 4px 8px;
+    font-weight: 500;
+  }
+}
+
+.unused {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+
+  .chip {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.when {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px 32px;
+  margin-top: 16px;
+}
+
+.hours {
+  display: flex;
+  gap: 2px;
+  height: 96px;
+
+  // One column per day, at most 30: narrow, from the left.
+  &.days .hcol {
+    flex: 0 1 18px;
+  }
+
+  &.small {
+    max-width: 420px;
+    height: 56px;
+    margin-bottom: 16px;
+  }
+}
+
+.hcol {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  .slot {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .bar {
+    width: 100%;
+    min-height: 1px;
+    background: var(--bar);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .d {
+    height: 14px;
+    font-size: 11px;
+    color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
   }
 }

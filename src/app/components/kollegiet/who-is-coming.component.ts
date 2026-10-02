@@ -1,8 +1,9 @@
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, input, inject} from '@angular/core';
 import {MatMenuModule} from '@angular/material/menu';
 import {KEvent, Rsvp} from '../../interfaces/kollegiet';
 import {TranslatePipe} from '../../translate.pipe';
 import {KitchenChipComponent} from './kitchen-chip.component';
+import {UsageService} from '../../services/usage.service';
 
 // Who is coming to an event: the faces of the kitchens coming, and how many; a tap (tablets have
 // no hover) opens the list by name, also who said maybe, and for the host who said no.
@@ -10,7 +11,7 @@ import {KitchenChipComponent} from './kitchen-chip.component';
   selector: 'app-who-is-coming',
   imports: [MatMenuModule, TranslatePipe, KitchenChipComponent],
   template: `
-    <button type="button" class="who" [matMenuTriggerFor]="list" [disabled]="!yes().length && !maybe().length && !(host() && no().length)"
+    <button type="button" class="who" [matMenuTriggerFor]="list" (menuOpened)="usage.act('who-is-coming')" [disabled]="!yes().length && !maybe().length && !(host() && no().length)"
             [attr.aria-label]="'KOL_WHO_COMING' | translate">
       @if (yes().length) {
         <span class="faces">
@@ -47,6 +48,7 @@ import {KitchenChipComponent} from './kitchen-chip.component';
   `,
 })
 export class WhoIsComingComponent {
+  protected readonly usage = inject(UsageService);
   readonly event = input.required<Pick<KEvent, 'rsvp'>>();
   // The kitchen that made it also sees who said no.
   readonly host = input(false);

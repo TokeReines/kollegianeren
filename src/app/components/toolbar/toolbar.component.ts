@@ -19,6 +19,7 @@ import {SidenavService} from '../../services/sidenav.service';
 import {ThemeMode, ThemeService} from '../../services/theme.service';
 import {Language, TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {UsageService} from '../../services/usage.service';
 
 // M3 top app bar: navigation icon, the kitchen as the title, and one account button on the right
 // that holds the kitchen, the login, theme, language and log out. A bell next to it while
@@ -32,6 +33,7 @@ import {TranslatePipe} from '../../translate.pipe';
   styleUrl: './toolbar.component.scss',
 })
 export class ToolbarComponent {
+  protected readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly kitchens = inject(KitchenService);

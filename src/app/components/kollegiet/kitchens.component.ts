@@ -19,6 +19,7 @@ import {TranslatePipe} from '../../translate.pipe';
 import {BadgeDialogComponent, BadgeResult, BattleDialogComponent, BattleDialogData, ProfileDialogComponent, ProfileFields} from './dialogs';
 import {KitchenChipComponent} from './kitchen-chip.component';
 import {ShelfGuideComponent} from './shelf-guide.component';
+import {UsageService} from '../../services/usage.service';
 
 // Every kitchen as a card; one opened as its profile, with its badges, trophies and achievements,
 // and buttons for a high-five, a badge or a challenge.
@@ -29,6 +30,7 @@ import {ShelfGuideComponent} from './shelf-guide.component';
   styleUrl: './kitchens.component.scss',
 })
 export class KitchensComponent {
+  private readonly usage = inject(UsageService);
   protected readonly kollegiet = inject(KollegietService);
   private readonly league = inject(LeagueService);
   private readonly auth = inject(AuthService);
@@ -127,6 +129,7 @@ export class KitchensComponent {
 
   // What can be on the shelf and how to get it; what this kitchen has ticked off.
   protected guide() {
+    this.usage.act('shelf-guide');
     this.dialog.open(ShelfGuideComponent, {width: '600px', maxWidth: '94vw', data: this.achievementsOf(this.me()).map(a => a.id)});
   }
 

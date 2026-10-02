@@ -10,7 +10,7 @@
 // mostly the product lists and the last 30 days of meals. Runs once a day from cron.
 const { init, parseArgs } = require('./lib/firebase');
 const { dailyUsage } = require('./lib/quota');
-const { Timestamp } = require('firebase-admin/firestore');
+const { FieldPath, Timestamp } = require('firebase-admin/firestore');
 
 const args = parseArgs();
 const { projectId, db, auth, accessToken } = init(args.project);
@@ -51,6 +51,38 @@ function danishMidnight(now = new Date()) {
   const day = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Copenhagen' });
   const offset = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Copenhagen' })) - new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
   return new Date(Date.parse(`${day}T00:00:00Z`) - offset);
+}
+
+// A Danish day as the app names it ("2026-10-02").
+const dayKey = ms => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'Europe/Copenhagen' });
+// Kept this long; older days are deleted.
+const USAGE_KEEP_DAYS = 92;
+
+// What the app counted (src/app/interfaces/usage.ts), summed per kind of login (t: tablet, m:
+// managers) over 7 and 30 days, the hours of the 30 days, and each day's total.
+function usageOf(docs, now) {
+  const d7 = dayKey(now - 6 * DAY);
+  const d30 = dayKey(now - 29 * DAY);
+  const empty = () => ({ t: { v: {}, a: {} }, m: { v: {}, a: {} } });
+  const out = { d7: empty(), d30: empty(), hours: new Array(24).fill(0), days: {} };
+  const add = (c, k, n) => { c[k] = (c[k] || 0) + n; };
+  for (const d of docs) {
+    if (d.id < d30) continue;
+    let total = 0;
+    for (const who of ['t', 'm']) {
+      const x = d.get(who) || {};
+      for (const kind of ['v', 'a']) {
+        for (const [k, n] of Object.entries(x[kind] || {})) {
+          add(out.d30[who][kind], k, n);
+          if (d.id >= d7) add(out.d7[who][kind], k, n);
+          total += n;
+        }
+      }
+      for (const [h, n] of Object.entries(x.h || {})) out.hours[+h] += n;
+    }
+    out.days[d.id] = total;
+  }
+  return out;
 }
 
 async function kitchen(k, now) {
@@ -103,6 +135,13 @@ async function kitchen(k, now) {
     ...members.map(m => loginInfo(m.id, m.get('role')).then(i => withBuild(m.id, i))),
   ])).filter(Boolean);
 
+  const usage = ref.collection('usage');
+  const usageDays = await get(usage.where(FieldPath.documentId(), '>=', dayKey(now - 29 * DAY)));
+  if (!args.dry) {
+    const old = await get(usage.where(FieldPath.documentId(), '<', dayKey(now - USAGE_KEEP_DAYS * DAY)).limit(100));
+    await Promise.all(old.map(d => d.ref.delete()));
+  }
+
   const invites = await get(db.collection('invites').where('kitchenId', '==', k.id));
   const links = await count(db.collection('residentLinks').where('kitchenId', '==', k.id));
 
@@ -125,6 +164,7 @@ async function kitchen(k, now) {
       used: invites.filter(i => i.get('usedBy')).length,
     },
     residentLinks: links,
+    usage: usageOf(usageDays, now),
   };
 }
 
@@ -150,7 +190,8 @@ async function deployedBuild() {
 
   for (const r of rows) {
     console.log(`${r.name.padEnd(18)} ${String(r.purchases.last7).padStart(4)} buys/7d  ${String(r.purchases.last30).padStart(5)} buys/30d  ` +
-      `app ${r.app ?? '-'}  ${r.logins.length} logins  ${r.residents.active} residents  ${r.meals.eaten30} meals/30d`);
+      `app ${r.app ?? '-'}  ${r.logins.length} logins  ${r.residents.active} residents  ${r.meals.eaten30} meals/30d  ` +
+      `${Object.values(r.usage.days).reduce((n, x) => n + x, 0)} counted/30d`);
   }
   console.log(`deployed build ${liveBuild ?? '?'}`);
   console.log(`${rows.length} kitchens, about ${reads} reads`);

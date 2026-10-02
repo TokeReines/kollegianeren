@@ -627,6 +627,15 @@ service cloud.firestore {
           && request.resource.data.loadedAt == request.time;
       }
 
+      // How the kitchen uses the app, counted by the app (services/usage.service.ts): one document a
+      // day with counts per kind of login, read by ops/admin-stats.js with the admin SDK.
+      match /usage/{day} {
+        allow read: if false;
+        allow create, update: if isMember(kid) && day.matches('^20[0-9]{2}-[01][0-9]-[0-3][0-9]$')
+          && request.resource.data.keys().hasOnly(['t', 'm'])
+          && request.resource.data.get('t', {}) is map && request.resource.data.get('m', {}) is map;
+      }
+
       // Tablets buy and may take back a purchase within a minute; managers may do anything.
       match /purchases/{purchaseId} {
         allow read: if isMember(kid) || viewsResident(kid, resource.data.userId);
@@ -701,12 +710,12 @@ service cloud.firestore {
         allow get: if viewsResident(kid, userId);
       }
 
-      // users (residents): every member reads, managers write. Purchases, messages, meals, members and
-      // appVersions are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
+      // users (residents): every member reads, managers write. Purchases, messages, meals, members,
+      // appVersions and usage are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions']);
-        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions']);
+        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions', 'usage']);
+        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions', 'usage']);
       }
     }
   }

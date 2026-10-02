@@ -10,12 +10,14 @@ import {Announcement, Message, Thread, newestFirst, toThreads} from '../interfac
 import {AuthService} from './auth.service';
 import {db, snapshotOptions, watch} from '../firebase';
 import {kitchenCollection, watchInKitchen, whileSignedIn} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 // Everything between the kitchens and the maker: announcements ("Aktuelt"), one message
 // thread per kitchen, and the maker's inbox. Admins are users with an admins/{uid} document,
 // which only the Firebase console can create.
 @Injectable({providedIn: 'root'})
 export class MakerService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
   readonly isAdmin$: Observable<boolean> = this.auth.user$.pipe(
@@ -55,6 +57,7 @@ export class MakerService {
   }
 
   send(text: string, images: string[] = []) {
+    this.usage.act('message');
     return addDoc(kitchenCollection(this.auth.currentKitchenId, 'messages'),
       {text, ...(images.length ? {images} : {}), from: 'kitchen', createdAt: serverTimestamp(), seenByMaker: false, seenByKitchen: true});
   }

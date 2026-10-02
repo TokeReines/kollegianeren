@@ -15,6 +15,7 @@ import {db, watch, watchDoc} from '../firebase';
 import {millis} from '../time';
 import {AuthService} from './auth.service';
 import {whileSignedIn} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 const DAY = 864e5;
 
@@ -25,6 +26,7 @@ export type BattleFields = Pick<Battle, 'title' | 'metric' | 'from' | 'to' | 'in
 // from the sale, so a battle ending mid-sale never blocks the sale; ops/league.js settles the end.
 @Injectable({providedIn: 'root'})
 export class LeagueService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
   // Battles that have not been over for more than two weeks: a handful of documents. Latest ending
@@ -69,6 +71,7 @@ export class LeagueService {
   // Three on or coming per kitchen that started them: the battle takes a free place in
   // battleSlots/{kid} in the same batch (the rules check the place's last battle has ended).
   async create(fields: BattleFields) {
+    this.usage.act('battle');
     const kid = this.auth.currentKitchenId;
     const slotsRef = doc(db, 'battleSlots', kid);
     const slots = (await getDoc(slotsRef)).data() ?? {};
@@ -92,10 +95,12 @@ export class LeagueService {
   }
 
   join(battle: Battle) {
+    this.usage.act('battle-join');
     return updateDoc(doc(db, 'battles', battle.id), {participants: arrayUnion(this.auth.currentKitchenId)});
   }
 
   callOff(battle: Battle) {
+    this.usage.act('battle-calloff');
     return deleteDoc(doc(db, 'battles', battle.id));
   }
 
@@ -125,6 +130,7 @@ export class LeagueService {
 
   // Someone back from the gym: one tap, one more.
   gym(battle: Battle, n: 1 | -1) {
+    this.usage.act('gym');
     return this.write(battle, n, 0);
   }
 

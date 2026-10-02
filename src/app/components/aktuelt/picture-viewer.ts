@@ -3,6 +3,7 @@ import {MAT_DIALOG_DATA, MatDialog, MatDialogModule} from '@angular/material/dia
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {TranslatePipe} from '../../translate.pipe';
+import {UsageService} from '../../services/usage.service';
 
 // A Cloudinary picture as large as the screen allows (no smaller copy).
 function large(src: string): string {
@@ -33,10 +34,12 @@ export class PictureDialogComponent {
 // On rich text: a tapped picture opens large.
 @Directive({selector: '[appPictureViewer]'})
 export class PictureViewerDirective {
+  private readonly usage = inject(UsageService);
   private readonly dialog = inject(MatDialog);
 
   @HostListener('click', ['$event'])
   protected open(e: MouseEvent) {
+    this.usage.act('picture');
     const t = e.target;
     if (t instanceof HTMLImageElement) {
       this.dialog.open(PictureDialogComponent, {data: t.src, maxWidth: '100vw', maxHeight: '100dvh', width: '100vw', height: '100dvh',
