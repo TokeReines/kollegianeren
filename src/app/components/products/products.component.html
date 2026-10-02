@@ -1,3 +1,5 @@
+<h1>{{ "MENU_PRODUCTS" | translate }}</h1>
+
 @if (lowStock().length) {
   <div class="low-stock" role="status">
     <mat-icon>inventory_2</mat-icon>
@@ -48,7 +50,7 @@
             <button mat-icon-button (click)="stopTracking(product)" [attr.aria-label]="'PRODUCTS_STOCK_STOP' | translate" [matTooltip]="'PRODUCTS_STOCK_STOP' | translate"><mat-icon>block</mat-icon></button>
           </span>
         } @else {
-          <button mat-button (click)="trackStock(product)">{{ "PRODUCTS_STOCK_TRACK" | translate }}</button>
+          <button mat-button class="nowrap" (click)="trackStock(product)">{{ "PRODUCTS_STOCK_TRACK" | translate }}</button>
         }
       </td>
     </ng-container>

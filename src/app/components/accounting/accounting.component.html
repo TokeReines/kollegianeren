@@ -2,11 +2,11 @@
   <h1>{{ "MENU_ACCOUNTING" | translate }}</h1>
 
   <div class="periods">
-    <mat-chip-listbox [value]="period()" (change)="$event.value && choose($event.value)" [attr.aria-label]="'ACCOUNTING_PERIOD' | translate" hideSingleSelectionIndicator>
+    <mat-button-toggle-group [value]="period()" (change)="choose($event.value)" [attr.aria-label]="'ACCOUNTING_PERIOD' | translate" hideSingleSelectionIndicator>
       @for (p of periods; track p.id) {
-        <mat-chip-option [value]="p.id">{{ p.label | translate }}</mat-chip-option>
+        <mat-button-toggle [value]="p.id">{{ p.label | translate }}</mat-button-toggle>
       }
-    </mat-chip-listbox>
+    </mat-button-toggle-group>
     <mat-form-field class="range" [class.custom]="period() === 'custom'">
       <mat-label>{{ "ACCOUNTING_PERIOD" | translate }}</mat-label>
       <mat-date-range-input [rangePicker]="picker">

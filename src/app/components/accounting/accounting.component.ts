@@ -5,7 +5,6 @@ import {FormsModule} from '@angular/forms';
 import {switchMap} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
-import {MatChipsModule} from '@angular/material/chips';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
@@ -29,7 +28,7 @@ const PRODUCT = 'p:';
 // The treasurer's view: what each resident bought in a period, and the total to collect.
 @Component({
   selector: 'app-accounting',
-  imports: [DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatChipsModule, MatDatepickerModule, MatFormFieldModule,
+  imports: [DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule,
     MatIconModule, MatInputModule, MatMenuModule, MatSortModule, MatTableModule, MatTooltipModule, TranslatePipe],
   templateUrl: './accounting.component.html',
   styleUrl: './accounting.component.scss',

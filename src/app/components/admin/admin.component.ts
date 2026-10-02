@@ -8,6 +8,7 @@ import {USAGE_ACTIONS, USAGE_PAGES, usageLabel} from '../../interfaces/usage';
 import {AdminService} from '../../services/admin.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {TranslateService} from '../../services/translate.service';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 // Spark plan: document reads per day.
 const READ_CAP = 50000;
@@ -16,7 +17,7 @@ const READ_CAP = 50000;
 // ops/admin-stats.js job. One read per visit. No residents' names, by design (see the privacy page).
 @Component({
   selector: 'app-admin',
-  imports: [DatePipe, DecimalPipe, LowerCasePipe, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
+  imports: [MatButtonToggleModule, DatePipe, DecimalPipe, LowerCasePipe, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })

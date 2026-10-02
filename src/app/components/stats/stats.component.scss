@@ -27,11 +27,6 @@ h2 {
   flex-wrap: wrap;
   margin-bottom: 20px;
 
-  .on {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
-  }
-
   // Ølsystem or Madklub, above the periods.
   &.views {
     margin-bottom: 12px;
