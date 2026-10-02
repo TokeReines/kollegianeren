@@ -3,6 +3,7 @@ import {RouterOutlet} from '@angular/router';
 import {ThemeService} from './services/theme.service';
 import {AppUpdateService} from './services/app-update.service';
 import {NavHistory} from './services/nav-history.service';
+import {UsageService} from './services/usage.service';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ export class AppComponent {
   constructor() {
     // New versions install themselves on every page, the login page too.
     inject(AppUpdateService).start();
+    inject(UsageService).start();
     inject(NavHistory);
   }
 }

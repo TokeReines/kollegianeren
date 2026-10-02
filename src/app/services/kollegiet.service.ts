@@ -14,6 +14,7 @@ import {db, watch, watchDoc} from '../firebase';
 import {millis} from '../time';
 import {AuthService} from './auth.service';
 import {whileSignedIn} from './kitchen-data';
+import {UsageService} from './usage.service';
 
 const DAY = 864e5;
 // Posts from Kollegiet itself (results, achievements), written by ops/league.js.
@@ -47,6 +48,7 @@ export interface KitchenCard {
 // and shared: the shell keeps events, kudos and battles open for the notifications, the page reuses them.
 @Injectable({providedIn: 'root'})
 export class KollegietService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
 
   private shared<T>(build: () => Observable<T[]>): Observable<T[]> {
@@ -141,11 +143,13 @@ export class KollegietService {
   }
 
   saveProfile(fields: Pick<Profile, 'emoji' | 'colour' | 'bio'>) {
+    this.usage.act('profile');
     return setDoc(doc(db, 'profiles', this.kitchenId), {...fields, updatedAt: serverTimestamp()});
   }
 
   // A post, a reply (parentId) or a post for one kitchen (to). Moves the rate limit in the same batch.
   post(text: string, opts: {to?: string | null, parentId?: string | null} = {}) {
+    this.usage.act(opts.parentId ? 'post-reply' : 'post');
     const kid = this.kitchenId;
     const batch = writeBatch(db);
     const ref = doc(collection(db, 'posts'));
@@ -156,12 +160,14 @@ export class KollegietService {
 
   // Taking back your own (for five minutes) needs no trace.
   takeBack(collectionName: HideableCollection, id: string) {
+    this.usage.act('take-back');
     return deleteDoc(doc(db, collectionName, id));
   }
 
   // Hiding (a manager of the author kitchen, or the maker): moved to hidden/ for the maker.
   // The copy is the stored document itself, not what the screen shows: the rules require it to match.
   async hide(collectionName: HideableCollection, item: {id: string}, authorKitchenId: string) {
+    this.usage.act('hide');
     const ref = doc(db, collectionName, item.id);
     const stored = await getDoc(ref);
     if (!stored.exists()) {
@@ -197,20 +203,24 @@ export class KollegietService {
   }
 
   createEvent(fields: EventFields) {
+    this.usage.act('event');
     return addDoc(collection(db, 'events'), {...fields, kitchenId: this.kitchenId, rsvp: {}, createdAt: serverTimestamp()});
   }
 
   updateEvent(e: KEvent, fields: EventFields) {
+    this.usage.act('event-edit');
     return updateDoc(doc(db, 'events', e.id), {...fields});
   }
 
   rsvp(e: Pick<KEvent, 'id'>, answer: Rsvp | null) {
+    this.usage.act('rsvp');
     return updateDoc(doc(db, 'events', e.id), {[`rsvp.${this.kitchenId}`]: answer ?? deleteField()});
   }
 
   // "Kom over nu": a call to every kitchen, from now for a few hours. Each kitchen has one call
   // document, written over by its next call once the last has ended.
   startLiveCall(title: string, place: string, hours: number) {
+    this.usage.act('live-call');
     const now = Date.now();
     return setDoc(doc(db, 'events', liveCallId(this.kitchenId)), {kind: 'live', title, text: '', place, invited: 'all',
       startsAt: Timestamp.fromMillis(now), endsAt: Timestamp.fromMillis(now + Math.min(hours, LIVE_HOURS_MAX) * 3600e3),
@@ -225,23 +235,27 @@ export class KollegietService {
   // The party is over: the call ends now.
   // Never later than it was set to end (the rules check it), so a second tap is harmless.
   endLiveCall(e: KEvent) {
+    this.usage.act('live-call-end');
     const end = Math.min(millis(e.endsAt), Math.max(Date.now(), millis(e.startsAt) + 1000));
     return updateDoc(doc(db, 'events', e.id), {endsAt: Timestamp.fromMillis(end)});
   }
 
   highfive(to: string) {
+    this.usage.act('highfive');
     const from = this.kitchenId;
     return setDoc(doc(db, 'kudos', highfiveId(from, to, dayKey(new Date()))),
       {from, to, kind: 'highfive', badge: null, reason: '', createdAt: serverTimestamp()});
   }
 
   giveBadge(to: string, badge: Badge, reason: string) {
+    this.usage.act('badge');
     return addDoc(collection(db, 'kudos'), {from: this.kitchenId, to, kind: 'badge', badge, reason, createdAt: serverTimestamp()});
   }
 
   // Two open at a time: the poll takes a free place in pollSlots/{kid} in the same batch (the rules
   // check the place's last poll has closed). Refused if both places hold an open one.
   async createPoll(title: string, opensAt: Date, closesAt: Date) {
+    this.usage.act('poll');
     const kid = this.kitchenId;
     const slotsRef = doc(db, 'pollSlots', kid);
     const slots = (await getDoc(slotsRef)).data() ?? {};
@@ -266,6 +280,7 @@ export class KollegietService {
 
   // Ends the kitchen's own poll now: counted, or cancelled with no result. Frees its place.
   closePoll(poll: Poll, cancel: boolean) {
+    this.usage.act('poll-close');
     return updateDoc(doc(db, 'polls', poll.id), {closesAt: serverTimestamp(), ...(cancel ? {cancelled: true} : {})});
   }
 
@@ -275,6 +290,7 @@ export class KollegietService {
   }
 
   vote(poll: Poll, choice: string | null) {
+    this.usage.act('vote');
     const ref = doc(db, 'polls', poll.id, 'ballots', this.kitchenId);
     return choice ? setDoc(ref, {choice, at: serverTimestamp()}) : deleteDoc(ref);
   }

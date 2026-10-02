@@ -9,12 +9,14 @@ import {AuthService} from './auth.service';
 import {LeagueService} from './league.service';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
 import {millis} from '../time';
+import {UsageService} from './usage.service';
 
 // Units per product, for the stock and sold counters.
 type Units = {product: Pick<Product, 'id' | 'stock'>, units: number}[];
 
 @Injectable({providedIn: 'root'})
 export class PurchaseService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
   private readonly league = inject(LeagueService);
 
@@ -39,6 +41,7 @@ export class PurchaseService {
   // offline, like any write). The stock and sold counters go in a second one: if that fails, for
   // a product deleted meanwhile, the purchases still count. Resolves once the server has them.
   sell(product: Product, amount: number, buyers: User[]): Promise<void> {
+    this.usage.act(buyers.length > 1 ? 'buy-group' : 'buy');
     const batch = writeBatch(db);
     for (const buyer of buyers) {
       batch.set(doc(this.purchases()), {
@@ -56,6 +59,7 @@ export class PurchaseService {
   // Takes a purchase back (a wrong tap, or a correction by the treasurer), and gives its units
   // back to the stock and sold counters. Tablets may do this for a minute after buying.
   async remove(purchase: Purchase, product: Pick<Product, 'id' | 'stock' | 'category'> | undefined): Promise<void> {
+    this.usage.act('purchase-remove');
     await deleteDoc(doc(this.purchases(), purchase.id));
     this.league.onSale(product ?? {category: null}, -(Number(purchase.amount) || 0), millis(purchase.timestamp));
     if (product) {

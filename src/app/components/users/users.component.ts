@@ -22,6 +22,7 @@ import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
 import {sortValue} from '../../table-sort';
 import {ResidentDialogComponent} from './resident-dialog.component';
+import {UsageService} from '../../services/usage.service';
 
 @Component({
   selector: 'app-users',
@@ -31,6 +32,7 @@ import {ResidentDialogComponent} from './resident-dialog.component';
   styleUrl: './users.component.scss',
 })
 export class UsersComponent {
+  private readonly usage = inject(UsageService);
   private readonly userService = inject(UserService);
   private readonly residency = inject(ResidencyService);
   private readonly links = inject(ResidentLinkService);
@@ -93,6 +95,7 @@ export class UsersComponent {
   }
 
   async shareLink(user: User, renew = false) {
+    this.usage.act('resident-link');
     try {
       const url = residentLink(renew ? await this.links.renew(user) : await this.links.linkFor(user));
       await this.notify.copy(url, `${this.t('RESIDENTS_LINK_COPIED')} ${user.name}`,

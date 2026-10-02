@@ -397,6 +397,21 @@ test('admin stats: only admins read them, nobody writes them from the app', asyn
   await assertFails(setDoc(doc(asKitchen(A), 'adminStats', 'latest'), { kitchens: [] }));
 });
 
+// Usage counts: every login of the kitchen adds to its own day, the tablet too; nobody reads them.
+test('usage: kitchen logins count into their own kitchen, nobody reads', async () => {
+  await seedInvite('u1', unused()); await assertSucceeds(redeem('utab', 'u1', A, 'tablet'));
+  const day = doc(asKitchen(A), 'kitchens', A, 'usage', '2026-10-02');
+  await assertSucceeds(setDoc(day, { m: { v: { buy: increment(1) }, h: { 21: increment(1) } } }, { merge: true }));
+  await assertSucceeds(setDoc(doc(asKitchen('utab'), 'kitchens', A, 'usage', '2026-10-02'), { t: { a: { buy: increment(2) } } }, { merge: true }));
+  await assertFails(getDoc(day));
+  await assertFails(setDoc(day, { x: 1 }, { merge: true }));
+  await assertFails(setDoc(day, { t: 5 }, { merge: true }));
+  await assertFails(setDoc(doc(asKitchen(A), 'kitchens', A, 'usage', 'whenever'), { t: {} }));
+  await assertFails(setDoc(doc(asKitchen(A), 'kitchens', B, 'usage', '2026-10-02'), { t: {} }));
+  await assertFails(setDoc(doc(anon(), 'kitchens', A, 'usage', '2026-10-02'), { t: {} }));
+  await assertFails(deleteDoc(day));
+});
+
 // Build reporting: each login writes only its own entry, nobody reads them from the app.
 test('app versions: a login reports its own build, nothing else', async () => {
   const mine = doc(asKitchen(A), 'kitchens', A, 'appVersions', A);

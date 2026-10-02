@@ -18,6 +18,7 @@ import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {EXPORT_MAX_PURCHASES, ExportService, download, plain, purchasesCsv} from '../../services/export.service';
+import {UsageService} from '../../services/usage.service';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -40,6 +41,7 @@ const HANDOVER_ERRORS: Record<string, string> = {
   styleUrl: './access.component.scss',
 })
 export class AccessComponent {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
   private readonly access = inject(AccessService);
   private readonly notify = inject(Notify);
@@ -125,6 +127,7 @@ export class AccessComponent {
   protected readonly exportStatus = signal('');
 
   protected async export(kind: 'json' | 'csv') {
+    this.usage.act(kind === 'csv' ? 'export-csv' : 'export-json');
     this.exporting.set(true);
     try {
       const months = this.exportMonths();

@@ -9,6 +9,7 @@ import {LeagueService} from './league.service';
 import {MakerService} from './maker.service';
 import {ProposalService} from './proposal.service';
 import {TranslateService} from './translate.service';
+import {UsageService} from './usage.service';
 
 const ICONS: Record<NoticeKind, string> = {
   live: 'nightlife', proposal: 'lightbulb', maker: 'mark_email_unread', news: 'campaign', invite: 'celebration', challenge: 'sports_kabaddi', kudos: 'front_hand', event: 'event',
@@ -19,6 +20,7 @@ const ICONS: Record<NoticeKind, string> = {
 // top bar shows the first, the bell lists them all.
 @Injectable({providedIn: 'root'})
 export class NoticeService {
+  private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
   private readonly kollegiet = inject(KollegietService);
   private readonly league = inject(LeagueService);
@@ -98,6 +100,7 @@ export class NoticeService {
   // "Not now": the same as having looked, for Aktuelt or for everything from Kollegiet. For a
   // live call it answers no, so the party sees it, and it stops showing.
   dismiss(n: Notice) {
+    this.usage.act('notice-dismiss');
     if (n.kind === 'live' && n.eventId) {
       return this.kollegiet.rsvp({id: n.eventId}, 'no');
     }
