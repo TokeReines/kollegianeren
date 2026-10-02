@@ -25,7 +25,7 @@ export class ProposalService {
     return watchInKitchen<Proposal>(this.auth.kitchenId$, () => query(collection(db, 'proposals'), orderBy('createdAt', 'desc'), limit(50)));
   }
 
-  readonly recent$: Observable<Proposal[]> = whileSignedIn(this.auth.kitchen$,
+  readonly recent$: Observable<Proposal[]> = whileSignedIn(this.auth.viewer$,
     () => watch<Proposal>(query(collection(db, 'proposals'), where('updatedAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
       orderBy('updatedAt', 'desc'), limit(10))), [] as Proposal[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
 

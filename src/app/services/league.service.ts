@@ -31,7 +31,7 @@ export class LeagueService {
 
   // Battles that have not been over for more than two weeks: a handful of documents. Latest ending
   // first, so new battles keep coming in on a tablet that stays open for weeks.
-  readonly battles$: Observable<Battle[]> = whileSignedIn(this.auth.kitchen$,
+  readonly battles$: Observable<Battle[]> = whileSignedIn(this.auth.viewer$,
     () => watch<Battle>(query(collection(db, 'battles'), where('to', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)),
       orderBy('to', 'desc'), limit(40))), [] as Battle[],
   ).pipe(shareReplay({bufferSize: 1, refCount: true}));
