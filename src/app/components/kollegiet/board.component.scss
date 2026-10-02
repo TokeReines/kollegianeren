@@ -471,7 +471,12 @@
     gap: 6px;
     font: var(--mat-sys-body-medium);
 
-    span {
+    // The kitchen's icon keeps its size; only the text (a direct child, not the chip's own spans) shrinks.
+    app-kitchen-chip {
+      flex: none;
+    }
+
+    > span {
       min-width: 0;
       overflow-wrap: anywhere;
       display: -webkit-box;
