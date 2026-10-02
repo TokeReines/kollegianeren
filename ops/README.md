@@ -128,7 +128,9 @@ Cloud Monitoring refuses service accounts on a project without billing, so cron 
   kitchen from where its backup is complete; for longer periods the page reads as before.
   No reads; one write per kitchen.
 - **`read-alarm.js`** (cron `cron/tokeserver-read-alarm.sh`, every 30 minutes): a note in the
-  maker's inbox (🚩) the first time a day passes 35,000 and 45,000 reads. No reads (Cloud
-  Monitoring); one write per warning. State in `~/kollegianeren-backups/read-alarm.json`.
+  maker's inbox (🚩). With a person's own login (Cloud Monitoring works): the first time a day
+  passes 35,000 and 45,000 reads. On tokeserver, whose service account Monitoring refuses on the
+  Spark plan ("requires billing"): one read as a probe, and a note as soon as the quota is used up.
+  One write per warning. State in `~/kollegianeren-backups/read-alarm.json`.
 - On 1 October the day passed the cap (62,943 reads): Statistik and Regnskab opened often, and
   three releases that reloaded every tablet. Release at most once a day, in the morning.
