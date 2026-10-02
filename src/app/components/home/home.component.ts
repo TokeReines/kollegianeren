@@ -26,7 +26,7 @@ export class HomeComponent {
   constructor() {
     const dialog = inject(MatDialog);
     const authService = inject(AuthService);
-    authService.membership$.pipe(takeUntilDestroyed()).subscribe(m => {
+    authService.kitchen$.pipe(takeUntilDestroyed()).subscribe(m => {
       if (m && !authService.user()?.isAnonymous) {
         this.appUpdate.reportVersion(m.kitchenId, m.uid);
       }

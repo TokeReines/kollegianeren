@@ -1,12 +1,12 @@
 import {Injectable, computed} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {Observable, filter, map, of, shareReplay, distinctUntilChanged, switchMap} from 'rxjs';
+import {Observable, catchError, filter, map, of, shareReplay, distinctUntilChanged, switchMap} from 'rxjs';
 import {
   EmailAuthProvider, User, createUserWithEmailAndPassword, onAuthStateChanged, reauthenticateWithCredential,
   sendPasswordResetEmail, signInWithEmailAndPassword, signOut, verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import {doc, onSnapshot} from 'firebase/firestore';
-import {auth, db} from '../firebase';
+import {auth, db, watchDoc} from '../firebase';
 
 export type Role = 'owner' | 'treasurer' | 'tablet';
 
@@ -35,6 +35,15 @@ export class AuthService {
   // The signed-in kitchen's id. Waits for sign-in, because auth state arrives asynchronously.
   readonly kitchenId$: Observable<string> = this.membership$.pipe(
     filter((m): m is Membership => !!m), map(m => m.kitchenId), distinctUntilChanged(), shareReplay(1));
+  // The membership once the login's kitchen exists, null for a login that has none (the maker's
+  // own): Kollegiet, notifications and the other kitchen listeners only start for a kitchen. The
+  // kitchen document is already watched for its name, so this costs no extra read.
+  readonly kitchen$: Observable<Membership | null> = this.membership$.pipe(
+    switchMap(m => m ? watchDoc(doc(db, 'kitchens', m.kitchenId)).pipe(map(k => k ? m : null), catchError(() => of(m))) : of(null)),
+    distinctUntilChanged(),
+    shareReplay({bufferSize: 1, refCount: false}),
+  );
+  readonly hasKitchen = toSignal(this.kitchen$.pipe(map(m => !!m)), {initialValue: false});
   readonly role$: Observable<Role> = this.membership$.pipe(
     filter((m): m is Membership => !!m), map(m => m.role), distinctUntilChanged(), shareReplay(1));
 

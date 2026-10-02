@@ -29,7 +29,7 @@ export class MakerService {
   }
 
   // The newest posts on Aktuelt, for the notifications. Few and small, one shared listener.
-  readonly recentAnnouncements$: Observable<Announcement[]> = whileSignedIn(this.auth.membership$,
+  readonly recentAnnouncements$: Observable<Announcement[]> = whileSignedIn(this.auth.kitchen$,
     () => watch<Announcement>(query(collection(db, 'announcements'), where('createdAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
       orderBy('createdAt', 'desc'), limit(10))), [] as Announcement[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
 
@@ -44,7 +44,7 @@ export class MakerService {
 
   // The maker's messages the kitchen has not read yet, newest first. One listener, shared by the
   // menu badge and the banner on the buy page.
-  readonly unreadByKitchen$: Observable<Message[]> = whileSignedIn(this.auth.membership$,
+  readonly unreadByKitchen$: Observable<Message[]> = whileSignedIn(this.auth.kitchen$,
     kid => watch<Message>(query(kitchenCollection(kid, 'messages'), where('seenByKitchen', '==', false))), [] as Message[]).pipe(
     map(list => newestFirst(list)),
     shareReplay({bufferSize: 1, refCount: true}),
