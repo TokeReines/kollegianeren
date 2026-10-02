@@ -61,9 +61,12 @@
     </mat-card>
   }
 
-  <div class="grid-head">
-    <button mat-button (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
-  </div>
+  <!-- An open profile has the guide under its shelf; one link is enough. -->
+  @if (!selected()) {
+    <div class="grid-head">
+      <button mat-button (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
+    </div>
+  }
   <div class="grid">
     @for (k of cards(); track k.id) {
       @let s = summary().get(k.id);
