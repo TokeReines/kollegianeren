@@ -7,7 +7,9 @@
 //
 // The backups are for invoicing, which looks back a quarter or so, so only the last --keep-days
 // of purchases are kept. Every run:
-//   1. Snapshots the small collections (kitchen docs, users, products) into snapshots/<date>/.
+//   1. Snapshots the small collections (kitchen docs, users, products) into snapshots/<date>/,
+//      and Kollegiet (posts, events, kudos, battles, polls, profiles, standings, proposals and
+//      their subcollections) into snapshots/<date>/kollegiet/. A few dozen reads today.
 //   2. Pulls new purchases per kitchen since the newest one already backed up.
 //   3. Backfills older purchases within the window, newest first, round-robin across kitchens,
 //      resuming from a cursor stored in state.json, with at most --backfill-reads of the budget.
@@ -119,6 +121,27 @@ async function snapshotSmallCollections(kitchenRefs) {
   log(`snapshot ${dir}: ${existing.length} kitchens`);
 }
 
+// Kollegiet and Aktuelt's proposals: shared collections, each document stored with its path.
+const KOLLEGIET = ['posts', 'events', 'kudos', 'battles', 'polls', 'profiles', 'standings', 'seen', 'pollSlots', 'battleSlots',
+  'proposals', 'reports'];
+const KOLLEGIET_SUB = ['tally', 'ballots', 'achievements', 'comments'];
+
+async function snapshotKollegiet() {
+  const dir = path.join(OUT, 'snapshots', runId.slice(0, 10), 'kollegiet');
+  let n = 0;
+  for (const c of KOLLEGIET) {
+    const docs = await get(db.collection(c));
+    writeNdjson(path.join(dir, `${c}.ndjson.gz`), docs);
+    n += docs.length;
+  }
+  for (const g of KOLLEGIET_SUB) {
+    const docs = await get(db.collectionGroup(g));
+    writeNdjson(path.join(dir, `${g}.ndjson.gz`), docs);
+    n += docs.length;
+  }
+  log(`snapshot ${dir}: ${n} documents`);
+}
+
 function savePurchases(kitchenId, docs, kind) {
   if (!docs.length) return;
   const file = path.join(OUT, 'purchases', kitchenId, `${runId}-${kind}-${docs[0].id}.ndjson.gz`);
@@ -174,6 +197,7 @@ async function reconcile(ref, st) {
   const kitchenRefs = await db.collection('kitchens').listDocuments();
   reads += kitchenRefs.length;
   await snapshotSmallCollections(kitchenRefs);
+  await snapshotKollegiet();
 
   for (const ref of kitchenRefs) state.kitchens[ref.id] ||= { stored: 0, backfillDone: false };
   saveState(state);
