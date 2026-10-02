@@ -1,5 +1,6 @@
 import {Injectable, inject} from '@angular/core';
-import {arrayRemove, arrayUnion, deleteDoc, doc, getDoc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch} from 'firebase/firestore';
+import {arrayRemove, arrayUnion, deleteDoc, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch} from 'firebase/firestore';
+import {getDoc} from '../read-meter';
 import {Observable} from 'rxjs';
 import {Meal, MealFields, dayKey} from '../interfaces/meal';
 import {db} from '../firebase';

@@ -1,8 +1,8 @@
 import {Injectable, inject} from '@angular/core';
 import {
-  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, limit, onSnapshot, orderBy, query, serverTimestamp,
-  updateDoc, where, writeBatch,
+  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
+import {onSnapshot} from '../read-meter';
 import {Observable, catchError, of, shareReplay, switchMap} from 'rxjs';
 import {db, watch} from '../firebase';
 import {NEWS_DAYS} from '../interfaces/kollegiet';

@@ -5,6 +5,7 @@ import {doc, increment, setDoc} from 'firebase/firestore';
 import {filter} from 'rxjs';
 import {dayName} from '../components/stats/stats';
 import {Counts, UsageAction, usagePage} from '../interfaces/usage';
+import {meterInto, meterPage} from '../read-meter';
 import {AuthService} from './auth.service';
 import {kitchenCollection} from './kitchen-data';
 
@@ -18,11 +19,14 @@ interface Pending {
   v: Counts;
   a: Counts;
   h: Counts;
+  // Documents read, by "page|collection|open, live or get" (read-meter.ts).
+  r: Counts;
 }
 
 // How the kitchens use the app, for the maker's Admin page (interfaces/usage.ts): page views and
 // actions are counted on the device and added to kitchens/{kid}/usage/{day} a few times a day,
-// split by tablet and managers. No reads, a handful of writes per login a day. Only kitchen logins
+// split by tablet and managers, with the documents the app read (read-meter.ts). No reads, a
+// handful of writes per login a day. Only kitchen logins
 // count: not the maker, not resident links. ops/admin-stats.js sums them up every night.
 @Injectable({providedIn: 'root'})
 export class UsageService {
@@ -35,6 +39,7 @@ export class UsageService {
   private hiddenAt = 0;
 
   start() {
+    meterInto((key, n) => this.count('r', key, n));
     this.act('open');
     this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe(e => {
       const page = usagePage(e.urlAfterRedirects);
@@ -43,6 +48,7 @@ export class UsageService {
         this.count('v', page);
       }
       this.lastPage = page ?? '';
+      meterPage(page ?? 'other');
     });
     // Soon after start too, so a short visit (closed before it goes to the background) still counts.
     setTimeout(() => this.flush(), FIRST_FLUSH_MS);
@@ -62,12 +68,15 @@ export class UsageService {
     this.count('a', action);
   }
 
-  private count(kind: 'v' | 'a', key: string) {
+  private count(kind: 'v' | 'a' | 'r', key: string, n = 1) {
     const now = new Date();
     const day = dayName(now);
-    const p = this.pending.get(day) ?? {v: {}, a: {}, h: {}};
-    p[kind][key] = (p[kind][key] ?? 0) + 1;
-    p.h[now.getHours()] = (p.h[now.getHours()] ?? 0) + 1;
+    const p = this.pending.get(day) ?? {v: {}, a: {}, h: {}, r: {}};
+    p[kind][key] = (p[kind][key] ?? 0) + n;
+    // The hours are when people use the app, not when listeners are answered.
+    if (kind !== 'r') {
+      p.h[now.getHours()] = (p.h[now.getHours()] ?? 0) + 1;
+    }
     this.pending.set(day, p);
   }
 
@@ -81,7 +90,7 @@ export class UsageService {
     const who = m.role === 'tablet' ? 't' : 'm';
     for (const [day, p] of this.pending) {
       const fields: Record<string, Record<string, ReturnType<typeof increment>>> = {};
-      for (const kind of ['v', 'a', 'h'] as const) {
+      for (const kind of ['v', 'a', 'h', 'r'] as const) {
         const entries = Object.entries(p[kind]);
         if (entries.length) {
           fields[kind] = Object.fromEntries(entries.map(([k, n]) => [k, increment(n)]));

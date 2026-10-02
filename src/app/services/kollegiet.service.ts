@@ -1,9 +1,9 @@
 import {Injectable, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp,
-  setDoc, updateDoc, where, writeBatch,
+  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
+import {getDoc, onSnapshot} from '../read-meter';
 import {Observable, catchError, distinctUntilChanged, firstValueFrom, map, of, shareReplay, switchMap} from 'rxjs';
 import {
   Achievement, Badge, KEvent, Kudos, LIVE_HOURS_MAX, POLL_SLOTS, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId,

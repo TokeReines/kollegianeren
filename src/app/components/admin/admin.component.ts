@@ -34,19 +34,32 @@ export class AdminComponent {
   protected readonly maxReads = computed(() => Math.max(1, ...(this.stats()?.usage ?? []).map(u => u.reads)));
 
   // How the app is used: pages or actions by kitchen, for a period and kind of login.
-  protected readonly usageKind = signal<'v' | 'a'>('v');
+  protected readonly usageKind = signal<'v' | 'a' | 'r'>('v');
   protected readonly usagePeriod = signal<UsagePeriod>('d30');
   protected readonly usageWho = signal<UsageWho>('all');
   protected readonly counted = computed(() => (this.stats()?.kitchens ?? []).filter(k => k.usage && Object.keys(k.usage.days).length));
-  protected readonly grid = computed(() => usageGrid(this.counted(), this.usageKind() === 'v' ? USAGE_PAGES : USAGE_ACTIONS,
-    this.usageKind(), this.usagePeriod(), this.usageWho()));
+  protected readonly grid = computed(() => {
+    const kind = this.usageKind();
+    // Reads have no fixed list: whatever was read, most first, and no "not used".
+    const g = usageGrid(this.counted(), kind === 'v' ? USAGE_PAGES : kind === 'a' ? USAGE_ACTIONS : [], kind,
+      this.usagePeriod(), this.usageWho());
+    return kind === 'r' ? {rows: g.rows.slice(0, 40), unused: []} : g;
+  });
   protected readonly hours = computed(() => usageHours(this.counted()));
   protected readonly maxHour = computed(() => Math.max(1, ...this.hours()));
   protected readonly days = computed(() => usageDays(this.counted()));
   protected readonly maxDay = computed(() => Math.max(1, ...this.days().map(d => d.n)));
 
+  // A row's name: a page or an action, or for reads "Regnskab · purchases (åbnet)".
   protected label(key: string) {
-    return usageLabel(this.usageKind(), key);
+    const kind = this.usageKind();
+    if (kind !== 'r') {
+      return this.i18n.t(usageLabel(kind, key));
+    }
+    const [page, source, how] = key.split('|');
+    const known = (USAGE_PAGES as readonly string[]).includes(page);
+    const where = known ? this.i18n.t(usageLabel('v', page)) : page;
+    return `${where} · ${source} (${this.i18n.t('ADMIN_READS_' + (how ?? '').toUpperCase())})`;
   }
 
   protected cellTip(k: KitchenStats, c: UsageCell) {

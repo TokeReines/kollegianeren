@@ -5,7 +5,8 @@ import {
   EmailAuthProvider, User, createUserWithEmailAndPassword, onAuthStateChanged, reauthenticateWithCredential,
   sendPasswordResetEmail, signInWithEmailAndPassword, signOut, verifyBeforeUpdateEmail,
 } from 'firebase/auth';
-import {doc, getDoc, onSnapshot} from 'firebase/firestore';
+import {doc} from 'firebase/firestore';
+import {getDoc, onSnapshot} from '../read-meter';
 import {auth, db, watchDoc} from '../firebase';
 
 export type Role = 'owner' | 'treasurer' | 'tablet';
