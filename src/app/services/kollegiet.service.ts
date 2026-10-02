@@ -50,7 +50,7 @@ export class KollegietService {
   private readonly auth = inject(AuthService);
 
   private shared<T>(build: () => Observable<T[]>): Observable<T[]> {
-    return whileSignedIn(this.auth.membership$, build, [] as T[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
+    return whileSignedIn(this.auth.kitchen$, build, [] as T[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
   }
 
   readonly kitchens$ = this.shared(() => watch<Kitchen>(collection(db, 'kitchens')));
@@ -58,7 +58,7 @@ export class KollegietService {
   readonly standings$ = this.shared(() => watch<Standing>(collection(db, 'standings')));
   // Every kitchen's achievements, by kitchen: one listener on them all (a read per achievement),
   // for the cards and the profile on Køkkener.
-  readonly achievements$: Observable<Map<string, Achievement[]>> = whileSignedIn(this.auth.membership$,
+  readonly achievements$: Observable<Map<string, Achievement[]>> = whileSignedIn(this.auth.kitchen$,
     () => new Observable<Map<string, Achievement[]>>(sub => onSnapshot(collectionGroup(db, 'achievements'), snap => {
       const by = new Map<string, Achievement[]>();
       for (const d of snap.docs) {
@@ -70,7 +70,7 @@ export class KollegietService {
       sub.next(by);
     }, err => sub.error(err))), new Map<string, Achievement[]>()).pipe(shareReplay({bufferSize: 1, refCount: true}));
   // The kitchen's own counts, for the badges it wears in the top bar: one document.
-  readonly myStanding$ = whileSignedIn(this.auth.membership$,
+  readonly myStanding$ = whileSignedIn(this.auth.kitchen$,
     kid => watchDoc<Standing>(doc(db, 'standings', kid)), null).pipe(shareReplay({bufferSize: 1, refCount: true}));
   readonly posts$ = this.shared(() => watch<Post>(query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(60))));
   // Events that have not been over for a day. Latest ending first: the lower bound is fixed when the
@@ -81,7 +81,7 @@ export class KollegietService {
   readonly polls$ = this.shared(() => watch<Poll>(query(collection(db, 'polls'),
     where('closesAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('closesAt', 'desc'), limit(20))));
   // When the kitchen last opened Kollegiet and Aktuelt: one document, one listener.
-  private readonly seenDoc$ = whileSignedIn(this.auth.membership$,
+  private readonly seenDoc$ = whileSignedIn(this.auth.kitchen$,
     kid => watchDoc<{kollegietAt?: Timestamp, aktueltAt?: Timestamp}>(doc(db, 'seen', kid)), null,
   ).pipe(shareReplay({bufferSize: 1, refCount: true}));
   readonly seen$ = this.seenDoc$.pipe(map(s => millis(s?.kollegietAt)), distinctUntilChanged(),
@@ -127,10 +127,16 @@ export class KollegietService {
 
   async markSeen() {
     this.seenBefore.set(await firstValueFrom(this.seen$));
+    if (!this.auth.hasKitchen()) {
+      return;
+    }
     return setDoc(doc(db, 'seen', this.kitchenId), {kollegietAt: serverTimestamp()}, {merge: true});
   }
 
   async markAktueltSeen() {
+    if (!this.auth.hasKitchen()) {
+      return;
+    }
     return setDoc(doc(db, 'seen', this.kitchenId), {aktueltAt: serverTimestamp()}, {merge: true});
   }
 
