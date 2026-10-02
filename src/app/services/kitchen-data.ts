@@ -3,7 +3,7 @@ import {Observable, catchError, of, switchMap} from 'rxjs';
 import {db, watch} from '../firebase';
 import {Membership} from './auth.service';
 
-export type KitchenCollection = 'products' | 'users' | 'purchases' | 'messages' | 'members' | 'meals';
+export type KitchenCollection = 'products' | 'users' | 'purchases' | 'messages' | 'members' | 'meals' | 'summaries';
 
 export function kitchenCollection(kitchenId: string, name: KitchenCollection): CollectionReference {
   return collection(db, 'kitchens', kitchenId, name);

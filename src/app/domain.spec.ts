@@ -57,8 +57,9 @@ describe('food club', () => {
   });
 
   it('books a day with only the cook, closing 24 hours before 18:30', () => {
-    const m = newMeal(new Date(2026, 9, 2, 11), 'u1');
-    expect(m.date.toDate()).toEqual(new Date(2026, 9, 2, 18, 30));
+    // A day well ahead: a dinner whose closing time has passed is clamped.
+    const m = newMeal(new Date(2036, 9, 2, 11), 'u1');
+    expect(m.date.toDate()).toEqual(new Date(2036, 9, 2, 18, 30));
     expect(closeHours(m)).toBe(24);
     expect(m.menu).toBe('');
   });
