@@ -284,9 +284,13 @@ describe('invites and kitchens', () => {
   it('groups messages into threads, newest first, counting unread', () => {
     const m = (kitchenId: string, day: number, seenByMaker: boolean) =>
       ({id: `${kitchenId}${day}`, kitchenId, text: 't', from: 'kitchen' as const, createdAt: at(2026, 9, day), seenByMaker, seenByKitchen: true});
-    const threads = toThreads([{id: 'a', name: 'Ny2'}], [m('a', 1, true), m('b', 5, false), m('a', 3, false)]);
-    expect(threads.map(t => t.kitchenName)).toEqual(['b', 'Ny2']);
+    const threads = toThreads([{id: 'a', name: 'Ny2'}, {id: 'c', name: 'Gl8'}, {id: 'd', name: 'Ml5'}, {id: 'e', name: ''}],
+      [m('a', 1, true), m('b', 5, false), m('a', 3, false)]);
+    // Kitchens nobody has written with yet come last, by name, so the maker can write first; a
+    // kitchen without a name is not listed.
+    expect(threads.map(t => t.kitchenName)).toEqual(['b', 'Ny2', 'Gl8', 'Ml5']);
     expect(threads[1]).toMatchObject({unread: 1, messages: [{id: 'a1'}, {id: 'a3'}]});
+    expect(threads[2]).toMatchObject({unread: 0, messages: [], lastAt: 0});
   });
 
   it('puts the newest unread message first for the banner', () => {

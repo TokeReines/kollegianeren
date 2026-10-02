@@ -33,10 +33,11 @@ export function newestFirst(messages: Message[]): Message[] {
   return [...messages].sort((a, b) => millis(b.createdAt) - millis(a.createdAt));
 }
 
-// Messages from every kitchen grouped into one thread per kitchen, newest activity first.
+// One thread per kitchen, every kitchen with a name included so the maker can write first: newest
+// activity first, then the ones with no messages by name.
 export function toThreads(kitchens: Kitchen[], messages: Message[]): Thread[] {
-  const names = new Map(kitchens.map(k => [k.id, k.name]));
-  const byKitchen = new Map<string, Message[]>();
+  const names = new Map(kitchens.filter(k => typeof k.name === 'string' && k.name !== '').map(k => [k.id, k.name]));
+  const byKitchen = new Map<string, Message[]>([...names.keys()].map(id => [id, []]));
   for (const m of messages) {
     if (m.kitchenId) {
       byKitchen.set(m.kitchenId, [...(byKitchen.get(m.kitchenId) ?? []), m]);
@@ -46,7 +47,7 @@ export function toThreads(kitchens: Kitchen[], messages: Message[]): Thread[] {
     list.sort((a, b) => millis(a.createdAt) - millis(b.createdAt));
     return {
       kitchenId, kitchenName: names.get(kitchenId) || kitchenId, messages: list,
-      unread: list.filter(m => !m.seenByMaker).length, lastAt: millis(list[list.length - 1].createdAt),
+      unread: list.filter(m => !m.seenByMaker).length, lastAt: list.length ? millis(list[list.length - 1].createdAt) : 0,
     };
-  }).sort((a, b) => b.lastAt - a.lastAt);
+  }).sort((a, b) => b.lastAt - a.lastAt || a.kitchenName.localeCompare(b.kitchenName, 'da', {numeric: true}));
 }

@@ -8,7 +8,11 @@
       @for (t of threads(); track t.kitchenId) {
         <button mat-list-item [class.active]="t.kitchenId === selectedId()" [attr.aria-current]="t.kitchenId === selectedId()" (click)="open(t)">
           <span matListItemTitle>{{ t.kitchenName }} @if (t.unread) { <b>({{ t.unread }})</b> }</span>
-          <span matListItemLine>{{ t.messages[t.messages.length - 1].text || ("MAKER_PICTURE" | translate) }}</span>
+          @if (t.messages.length) {
+            <span matListItemLine>{{ t.messages[t.messages.length - 1].text || ("MAKER_PICTURE" | translate) }}</span>
+          } @else {
+            <span matListItemLine class="none">{{ "INBOX_NO_THREAD" | translate }}</span>
+          }
         </button>
       } @empty {
         <p class="empty">{{ "INBOX_EMPTY" | translate }}</p>
@@ -38,6 +42,9 @@
         }
       } @else if (selected(); as t) {
         <h2>{{ t.kitchenName }}</h2>
+        @if (!t.messages.length) {
+          <p class="empty">{{ "INBOX_FIRST" | translate }}</p>
+        }
         @for (m of t.messages; track m.id) {
           <div class="bubble" [class.mine]="m.from === 'maker'">
             @if (m.text) {
@@ -53,7 +60,7 @@
         }
         <div class="composer">
           <mat-form-field class="grow">
-            <mat-label>{{ "INBOX_REPLY" | translate }}</mat-label>
+            <mat-label>{{ (t.messages.length ? "INBOX_REPLY" : "INBOX_WRITE") | translate }}</mat-label>
             <textarea matInput [(ngModel)]="text" rows="3" maxlength="2000" (keydown.control.enter)="reply()" (paste)="pics.paste($event)"></textarea>
           </mat-form-field>
           <button mat-flat-button [disabled]="(!text().trim() && !pictures().length) || uploading()" (click)="reply()">{{ "MAKER_SEND" | translate }}</button>
