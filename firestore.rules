@@ -234,6 +234,22 @@ service cloud.firestore {
       return signedIn() && request.auth.token.get('firebase', {}).get('sign_in_provider', '') != 'anonymous'
         && exists(/databases/$(database)/documents/kitchens/$(myKitchen())) && isMember(myKitchen());
     }
+    // When each kind of thing last changed (src/app/services/pulse.service.ts), so the app fetches a
+    // list again only then. A login (not a resident link) may move a time, only to the server's.
+    match /pulse/{id} {
+      function stamped(k) {
+        return !(k in request.resource.data) || request.resource.data[k] == request.time
+          || (resource != null && k in resource.data && request.resource.data[k] == resource.data[k]);
+      }
+      allow read: if signedIn();
+      allow create, update: if id == 'kollegiet' && signedIn()
+        && request.auth.token.get('firebase', {}).get('sign_in_provider', '') != 'anonymous'
+        && request.resource.data.keys().hasOnly(['kitchens', 'events', 'kudos', 'battles', 'posts', 'news', 'proposals'])
+        && stamped('kitchens') && stamped('events') && stamped('kudos') && stamped('battles')
+        && stamped('posts') && stamped('news') && stamped('proposals');
+      allow delete: if false;
+    }
+
     function kitchenExists(kid) {
       return exists(/databases/$(database)/documents/kitchens/$(kid));
     }

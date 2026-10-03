@@ -52,7 +52,7 @@ export class ToolbarComponent {
   // the shell already listens to for the bell. New in the last day: it wiggles.
   private readonly kollegiet = inject(KollegietService);
   private readonly myStanding = toSignal(this.kollegiet.myStanding$, {initialValue: null});
-  private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
+  private readonly kudos = toSignal(this.kollegiet.myKudos$, {initialValue: []});
   protected readonly myKitchen = computed(() => {
     const kid = this.auth.membership()?.kitchenId;
     return kid && this.kollegiet.byId().has(kid) ? kid : null;

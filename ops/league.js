@@ -146,11 +146,19 @@ async function names() {
   return new Map(docs.map(d => [d.id, d.get('name') || d.id]));
 }
 
+// The app fetches battles again only when pulse/kollegiet says they changed
+// (src/app/services/pulse.service.ts), so a settled battle moves that time.
+const bumpPulse = (...kinds) => db.doc('pulse/kollegiet')
+  .set(Object.fromEntries(kinds.map(k => [k, FieldValue.serverTimestamp()])), { merge: true });
+
 // Claims the result: fails if another run changed the document since this one read it.
 async function claim(doc, result) {
   if (args.dry) return true;
   return doc.ref.update({ result: { ...result, settledAt: FieldValue.serverTimestamp() } }, { lastUpdateTime: doc.updateTime })
-    .then(() => true, e => {
+    .then(async () => {
+      if (doc.ref.parent.id === 'battles') await bumpPulse('battles');
+      return true;
+    }, e => {
       console.log(`  ${doc.ref.path} changed meanwhile (${e.code || e.message}), left for the next run`);
       return false;
     });

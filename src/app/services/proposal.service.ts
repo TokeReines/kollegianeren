@@ -1,15 +1,16 @@
 import {Injectable, inject} from '@angular/core';
 import {
-  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, updateDoc, where, writeBatch,
+  Timestamp, collection, collectionGroup, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import {onSnapshot} from '../read-meter';
-import {Observable, catchError, of, shareReplay, switchMap} from 'rxjs';
+import {Observable, catchError, of, switchMap} from 'rxjs';
 import {db, watch} from '../firebase';
 import {NEWS_DAYS} from '../interfaces/kollegiet';
 import {MAKER, Proposal, ProposalComment, ProposalStatus} from '../interfaces/proposal';
 import {AuthService} from './auth.service';
-import {watchInKitchen, whileSignedIn} from './kitchen-data';
+import {watchInKitchen} from './kitchen-data';
 import {UsageService} from './usage.service';
+import {PulseService, bump} from './pulse.service';
 
 export type ProposalFields = Pick<Proposal, 'title' | 'body' | 'images' | 'status'>;
 
@@ -25,9 +26,9 @@ export class ProposalService {
     return watchInKitchen<Proposal>(this.auth.kitchenId$, () => query(collection(db, 'proposals'), orderBy('createdAt', 'desc'), limit(50)));
   }
 
-  readonly recent$: Observable<Proposal[]> = whileSignedIn(this.auth.viewer$,
-    () => watch<Proposal>(query(collection(db, 'proposals'), where('updatedAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
-      orderBy('updatedAt', 'desc'), limit(10))), [] as Proposal[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
+  // Recently changed proposals, for the bell: fetched when the maker adds, changes or answers one.
+  readonly recent$: Observable<Proposal[]> = inject(PulseService).list<Proposal>('proposals', () => query(collection(db, 'proposals'),
+    where('updatedAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)), orderBy('updatedAt', 'desc'), limit(10)));
 
   comments(id: string): Observable<ProposalComment[]> {
     return watch<ProposalComment>(query(collection(db, 'proposals', id, 'comments'), orderBy('createdAt'), limit(300)));
@@ -53,13 +54,17 @@ export class ProposalService {
 
   // The maker's.
   create(fields: ProposalFields) {
-    return addDoc(collection(db, 'proposals'),
+    const batch = writeBatch(db);
+    batch.set(doc(collection(db, 'proposals')),
       {...fields, votes: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), statusAt: serverTimestamp()});
+    return bump(batch, 'proposals').commit();
   }
 
   update(p: Proposal, fields: ProposalFields) {
-    return updateDoc(doc(db, 'proposals', p.id),
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'proposals', p.id),
       {...fields, updatedAt: serverTimestamp(), ...(fields.status !== p.status ? {statusAt: serverTimestamp()} : {})});
+    return bump(batch, 'proposals').commit();
   }
 
   setStatus(p: Proposal, status: ProposalStatus) {
@@ -71,7 +76,7 @@ export class ProposalService {
     const batch = writeBatch(db);
     batch.set(doc(collection(db, 'proposals', p.id, 'comments')), {from: MAKER, text, images, createdAt: serverTimestamp()});
     batch.update(doc(db, 'proposals', p.id), {updatedAt: serverTimestamp()});
-    return batch.commit();
+    return bump(batch, 'proposals').commit();
   }
 
   // A kitchen's comment, text only. Shares the 30 second limit with posts on the board.

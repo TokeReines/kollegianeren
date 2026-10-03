@@ -13,8 +13,12 @@ import {
 // ("get"). And when the device was asleep or offline for more than 30 minutes, every open listener
 // is billed in full again when it reconnects ("wake"), though nothing changes on screen. Answers
 // from the offline cache and the app's own pending writes cost nothing and are not counted.
+//
+// "reconnect" is a list coming back from offline (its connection dropped and came back): counted
+// at its full size, an upper bound, since within the resume window Firestore resends only changes.
+// Compared with Google's own count, it shows whether dropped connections are what costs.
 
-export type ReadKind = 'open' | 'resume' | 'live' | 'get' | 'wake';
+export type ReadKind = 'open' | 'resume' | 'live' | 'get' | 'wake' | 'reconnect';
 type Sink = (key: string, n: number) => void;
 
 // Firestore's resume window: a listener away for longer is billed as a new query.
@@ -59,7 +63,12 @@ function saveSeen(now = Date.now()) {
   }
 }
 
-// What every open listener costs after a long sleep or a long time offline.
+// What every open listener costs after a long sleep or a long time offline; also called when the
+// app turns its own network back on after a long break (services/network.service.ts).
+export function meterWake() {
+  wake();
+}
+
 function wake() {
   const counted = new Set<string>();
   for (const l of active) {
@@ -183,9 +192,18 @@ export const onSnapshot = ((ref: unknown, ...rest: unknown[]) => {
   const resumed = shared || Date.now() - (lastSeen[listener.key] ?? 0) < RESUME_MS;
   let first = true;
   let delivered = false;
+  let wentOffline = false;
   rest[at] = (snap: QuerySnapshot | DocumentSnapshot) => {
     if (isList) {
       listener.size = (snap as QuerySnapshot).size;
+      // After the first answer, a cached answer means the connection dropped; the next answer from
+      // the server is the reconnect.
+      if (!first && snap.metadata.fromCache) {
+        wentOffline = true;
+      } else if (wentOffline && !snap.metadata.fromCache) {
+        wentOffline = false;
+        add(source, 'reconnect', Math.max(1, listener.size));
+      }
     }
     if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
       const n = first && shared ? 0

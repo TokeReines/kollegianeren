@@ -367,6 +367,7 @@
   "ADMIN_READS_GET": "fetched",
   "ADMIN_READS_RESUME": "reopened",
   "ADMIN_READS_WAKE": "woken",
+  "ADMIN_READS_RECONNECT": "reconnected",
   "ADMIN_MAKER": "Toke (maker)",
   "ADMIN_READS_HINT_GRID": "Documents read from Firestore, by page and collection. Opened: a list opened fresh. Reopened: the same list again within 30 minutes, which only costs what changed. Woken: every open list again, after the tablet slept or was offline for more than 30 minutes. Live: changes while the list is open. Fetched: one-off lookups.",
   "ADMIN_USAGE_ALL": "All logins",
