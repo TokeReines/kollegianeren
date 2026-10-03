@@ -63,7 +63,12 @@ function saveSeen(now = Date.now()) {
   }
 }
 
-// What every open listener costs after a long sleep or a long time offline.
+// What every open listener costs after a long sleep or a long time offline; also called when the
+// app turns its own network back on after a long break (services/network.service.ts).
+export function meterWake() {
+  wake();
+}
+
 function wake() {
   const counted = new Set<string>();
   for (const l of active) {

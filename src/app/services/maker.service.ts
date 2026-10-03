@@ -12,6 +12,7 @@ import {AuthService} from './auth.service';
 import {db, snapshotOptions, watch} from '../firebase';
 import {kitchenCollection, watchInKitchen, whileSignedIn} from './kitchen-data';
 import {UsageService} from './usage.service';
+import {PulseService, bump} from './pulse.service';
 
 // Everything between the kitchens and the maker: announcements ("Aktuelt"), one message
 // thread per kitchen, and the maker's inbox. Admins are users with an admins/{uid} document,
@@ -29,12 +30,14 @@ export class MakerService {
   }
 
   // The newest posts on Aktuelt, for the notifications. Few and small, one shared listener.
-  readonly recentAnnouncements$: Observable<Announcement[]> = whileSignedIn(this.auth.viewer$,
-    () => watch<Announcement>(query(collection(db, 'announcements'), where('createdAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
-      orderBy('createdAt', 'desc'), limit(10))), [] as Announcement[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
+  readonly recentAnnouncements$: Observable<Announcement[]> = inject(PulseService).list<Announcement>('news',
+    () => query(collection(db, 'announcements'), where('createdAt', '>', Timestamp.fromMillis(Date.now() - NEWS_DAYS * 864e5)),
+      orderBy('createdAt', 'desc'), limit(10)));
 
   postAnnouncement(title: string, body: string) {
-    return addDoc(collection(db, 'announcements'), {title, body, createdAt: serverTimestamp()});
+    const batch = writeBatch(db);
+    batch.set(doc(collection(db, 'announcements')), {title, body, createdAt: serverTimestamp()});
+    return bump(batch, 'news').commit();
   }
 
   // The signed-in kitchen's thread with the maker, oldest first.

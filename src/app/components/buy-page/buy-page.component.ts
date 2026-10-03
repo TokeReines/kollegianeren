@@ -81,7 +81,7 @@ export class BuyPageComponent {
   // The events listener is already open for the strip and the bell.
   private readonly kollegiet = inject(KollegietService);
   private readonly auth = inject(AuthService);
-  private readonly allEvents = toSignal(this.kollegiet.events$, {initialValue: []});
+  private readonly allEvents = toSignal(this.kollegiet.noticeEvents$, {initialValue: []});
   protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
   // The time itself too, not only the app's minute clock: an ended call goes at once.
   private readonly liveNow = computed(() => this.allEvents().filter(e => isLiveNow(e, Math.max(this.league.now(), Date.now()))));

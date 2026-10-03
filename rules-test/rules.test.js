@@ -413,6 +413,20 @@ test('usage: kitchen logins count into their own kitchen, nobody reads', async (
 });
 
 // Build reporting: each login writes only its own entry, nobody reads them from the app.
+// The pulse: kitchens move a kind's time to the server's time; nothing else, no resident links.
+test('pulse: logins stamp the server time, nothing else', async () => {
+  const pulse = db => doc(db, 'pulse', 'kollegiet');
+  await assertSucceeds(setDoc(pulse(asKitchen(A)), { kudos: serverTimestamp() }, { merge: true }));
+  await assertSucceeds(setDoc(pulse(asKitchen(B)), { posts: serverTimestamp(), events: serverTimestamp() }, { merge: true }));
+  await assertSucceeds(getDoc(pulse(asKitchen(B))));
+  await assertFails(setDoc(pulse(asKitchen(A)), { kudos: Timestamp.fromMillis(Date.now() + 864e5) }, { merge: true }));
+  await assertFails(setDoc(pulse(asKitchen(A)), { other: serverTimestamp() }, { merge: true }));
+  await assertFails(setDoc(doc(asKitchen(A), 'pulse', 'elsewhere'), { kudos: serverTimestamp() }));
+  await assertFails(setDoc(pulse(anon()), { kudos: serverTimestamp() }, { merge: true }));
+  await assertFails(getDoc(pulse(anon())));
+  await assertFails(deleteDoc(pulse(asKitchen(A))));
+});
+
 test('app versions: a login reports its own build, nothing else', async () => {
   const mine = doc(asKitchen(A), 'kitchens', A, 'appVersions', A);
   await assertSucceeds(setDoc(mine, { build: 'PJ72EFS3', loadedAt: serverTimestamp() }));

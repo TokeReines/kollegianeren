@@ -1,10 +1,10 @@
 import {Injectable, computed, inject, signal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, arrayUnion, collection, deleteDoc, doc, increment, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  Timestamp, arrayUnion, collection, doc, increment, limit, orderBy, query, serverTimestamp, setDoc, where, writeBatch,
 } from 'firebase/firestore';
 import {getDoc} from '../read-meter';
-import {Observable, catchError, combineLatest, interval, map, of, shareReplay, startWith, switchMap} from 'rxjs';
+import {Observable, catchError, combineLatest, interval, map, of, startWith, switchMap} from 'rxjs';
 import {
   Achievement, BATTLE_SLOTS, Battle, Metric, TOO_MANY_BATTLES, Tally, addTick, during, earnedAchievements, isPlantMeal, liveFor,
   saleUnits,
@@ -16,6 +16,7 @@ import {millis} from '../time';
 import {AuthService} from './auth.service';
 import {whileSignedIn} from './kitchen-data';
 import {UsageService} from './usage.service';
+import {PulseService, bump} from './pulse.service';
 
 const DAY = 864e5;
 
@@ -31,10 +32,10 @@ export class LeagueService {
 
   // Battles that have not been over for more than two weeks: a handful of documents. Latest ending
   // first, so new battles keep coming in on a tablet that stays open for weeks.
-  readonly battles$: Observable<Battle[]> = whileSignedIn(this.auth.viewer$,
-    () => watch<Battle>(query(collection(db, 'battles'), where('to', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)),
-      orderBy('to', 'desc'), limit(40))), [] as Battle[],
-  ).pipe(shareReplay({bufferSize: 1, refCount: true}));
+  // Fetched when a battle is created, joined, called off or settled (pulse/kollegiet); the live
+  // scores come from the tallies, which are listened to only for the kitchen's own live battles.
+  readonly battles$: Observable<Battle[]> = inject(PulseService).list<Battle>('battles', () => query(collection(db, 'battles'),
+    where('to', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('to', 'desc'), limit(40)));
   readonly battles = toSignal(this.battles$, {initialValue: []});
 
   // Ticks once a minute, so battles start and end on screen without a reload.
@@ -91,17 +92,21 @@ export class LeagueService {
     const batch = writeBatch(db);
     batch.set(ref, {...fields, kitchenId: kid, participants: [kid], createdAt: serverTimestamp()});
     batch.set(slotsRef, {[free]: ref.id}, {merge: true});
-    return batch.commit();
+    return bump(batch, 'battles').commit();
   }
 
   join(battle: Battle) {
     this.usage.act('battle-join');
-    return updateDoc(doc(db, 'battles', battle.id), {participants: arrayUnion(this.auth.currentKitchenId)});
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'battles', battle.id), {participants: arrayUnion(this.auth.currentKitchenId)});
+    return bump(batch, 'battles').commit();
   }
 
   callOff(battle: Battle) {
     this.usage.act('battle-calloff');
-    return deleteDoc(doc(db, 'battles', battle.id));
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'battles', battle.id));
+    return bump(batch, 'battles').commit();
   }
 
   // A sale (units > 0) or its undo (units < 0) at `at`.
