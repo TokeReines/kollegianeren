@@ -1,7 +1,7 @@
 import {Injectable, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, addDoc, collection, collectionGroup, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  Timestamp, WriteBatch, collection, collectionGroup, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import {getDoc, onSnapshot} from '../read-meter';
 import {Observable, catchError, distinctUntilChanged, firstValueFrom, map, of, shareReplay, switchMap} from 'rxjs';
@@ -15,6 +15,7 @@ import {millis} from '../time';
 import {AuthService} from './auth.service';
 import {whileSignedIn} from './kitchen-data';
 import {UsageService} from './usage.service';
+import {PulseKind, PulseService, bump} from './pulse.service';
 
 const DAY = 864e5;
 // Posts from Kollegiet itself (results, achievements), written by ops/league.js.
@@ -44,19 +45,23 @@ export interface KitchenCard {
   profiled: boolean;
 }
 
-// Kollegiet's board, events, kudos, polls and profiles (docs/kollegiet.md). Listeners are capped
-// and shared: the shell keeps events, kudos and battles open for the notifications, the page reuses them.
+// Kollegiet's board, events, kudos, polls and profiles (docs/kollegiet.md). The live lists are for
+// the Kollegiet page while it is open; the rest of the app (the bell, the badges, the buy page and
+// kitchen names) uses lists fetched when pulse/kollegiet says they changed (services/pulse.service.ts).
 @Injectable({providedIn: 'root'})
 export class KollegietService {
   private readonly usage = inject(UsageService);
   private readonly auth = inject(AuthService);
+  private readonly pulse = inject(PulseService);
 
   private shared<T>(build: () => Observable<T[]>): Observable<T[]> {
     return whileSignedIn(this.auth.viewer$, build, [] as T[]).pipe(shareReplay({bufferSize: 1, refCount: true}));
   }
 
-  readonly kitchens$ = this.shared(() => watch<Kitchen>(collection(db, 'kitchens')));
-  readonly profiles$ = this.shared(() => watch<Profile>(collection(db, 'profiles')));
+  // Names, emojis and colours for every kitchen card in the app: fetched when a kitchen is added,
+  // renamed or changes its profile.
+  readonly kitchens$ = this.pulse.list<Kitchen>('kitchens', () => collection(db, 'kitchens'));
+  readonly profiles$ = this.pulse.list<Profile>('kitchens', () => collection(db, 'profiles'));
   readonly standings$ = this.shared(() => watch<Standing>(collection(db, 'standings')));
   // Every kitchen's achievements, by kitchen: one listener on them all (a read per achievement),
   // for the cards and the profile on Køkkener.
@@ -80,6 +85,12 @@ export class KollegietService {
   readonly events$ = this.shared(() => watch<KEvent>(query(collection(db, 'events'),
     where('endsAt', '>=', Timestamp.fromMillis(Date.now() - DAY)), orderBy('endsAt', 'desc'), limit(40))));
   readonly kudos$ = this.shared(() => watch<Kudos>(query(collection(db, 'kudos'), orderBy('createdAt', 'desc'), limit(60))));
+  // For the bell, the badges and the buy page: events, and the kitchen's own kudos of the last two
+  // weeks (newer than the nightly standing, for the badges it wears), fetched when they change.
+  readonly noticeEvents$ = this.pulse.list<KEvent>('events', () => query(collection(db, 'events'),
+    where('endsAt', '>=', Timestamp.fromMillis(Date.now() - DAY)), orderBy('endsAt', 'desc'), limit(40)));
+  readonly myKudos$ = this.pulse.list<Kudos>('kudos', v => query(collection(db, 'kudos'), where('to', '==', v.kitchenId),
+    where('createdAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('createdAt', 'desc'), limit(60)));
   readonly polls$ = this.shared(() => watch<Poll>(query(collection(db, 'polls'),
     where('closesAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('closesAt', 'desc'), limit(20))));
   // When the kitchen last opened Kollegiet and Aktuelt: one document, one listener.
@@ -91,10 +102,10 @@ export class KollegietService {
   readonly aktueltSeen$ = this.seenDoc$.pipe(map(s => millis(s?.aktueltAt)), distinctUntilChanged(),
     shareReplay({bufferSize: 1, refCount: true}));
 
-  // Posts since the kitchen last opened Kollegiet, for the menu badge: only the new ones are read.
+  // Posts since the kitchen last opened Kollegiet, for the menu badge: fetched when a post is added.
   readonly newPosts$ = this.seen$.pipe(
-    switchMap(seen => watch<Post>(query(collection(db, 'posts'), where('createdAt', '>', Timestamp.fromMillis(seen)), orderBy('createdAt'), limit(20)))
-      .pipe(catchError(() => of([] as Post[])))),
+    switchMap(seen => this.pulse.list<Post>('posts', () => query(collection(db, 'posts'), where('createdAt', '>', Timestamp.fromMillis(seen)),
+      orderBy('createdAt'), limit(20))).pipe(catchError(() => of([] as Post[])))),
     shareReplay({bufferSize: 1, refCount: true}),
   );
 
@@ -144,7 +155,9 @@ export class KollegietService {
 
   saveProfile(fields: Pick<Profile, 'emoji' | 'colour' | 'bio'>) {
     this.usage.act('profile');
-    return setDoc(doc(db, 'profiles', this.kitchenId), {...fields, updatedAt: serverTimestamp()});
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'profiles', this.kitchenId), {...fields, updatedAt: serverTimestamp()});
+    return bump(batch, 'kitchens').commit();
   }
 
   // A post, a reply (parentId) or a post for one kitchen (to). Moves the rate limit in the same batch.
@@ -155,13 +168,15 @@ export class KollegietService {
     const ref = doc(collection(db, 'posts'));
     batch.set(ref, {kitchenId: kid, text, to: opts.to ?? null, parentId: opts.parentId ?? null, createdAt: serverTimestamp()});
     batch.set(doc(db, 'seen', kid), {lastPostAt: serverTimestamp(), lastPostId: ref.id}, {merge: true});
-    return batch.commit();
+    return bump(batch, 'posts').commit();
   }
 
   // Taking back your own (for five minutes) needs no trace.
   takeBack(collectionName: HideableCollection, id: string) {
     this.usage.act('take-back');
-    return deleteDoc(doc(db, collectionName, id));
+    const batch = writeBatch(db);
+    batch.delete(doc(db, collectionName, id));
+    return pulsed(batch, collectionName).commit();
   }
 
   // Hiding (a manager of the author kitchen, or the maker): moved to hidden/ for the maker.
@@ -177,7 +192,7 @@ export class KollegietService {
     batch.set(doc(db, 'hidden', `${collectionName}_${item.id}`),
       {collection: collectionName, kitchenId: authorKitchenId, data: stored.data(), hiddenAt: serverTimestamp()});
     batch.delete(ref);
-    return batch.commit();
+    return pulsed(batch, collectionName).commit();
   }
 
   // The maker's side: technical notes from ops/league.js (a tally that was off, an achievement
@@ -204,17 +219,24 @@ export class KollegietService {
 
   createEvent(fields: EventFields) {
     this.usage.act('event');
-    return addDoc(collection(db, 'events'), {...fields, kitchenId: this.kitchenId, rsvp: {}, createdAt: serverTimestamp()});
+    const batch = writeBatch(db);
+    const ref = doc(collection(db, 'events'));
+    batch.set(ref, {...fields, kitchenId: this.kitchenId, rsvp: {}, createdAt: serverTimestamp()});
+    return bump(batch, 'events').commit().then(() => ref);
   }
 
   updateEvent(e: KEvent, fields: EventFields) {
     this.usage.act('event-edit');
-    return updateDoc(doc(db, 'events', e.id), {...fields});
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'events', e.id), {...fields});
+    return bump(batch, 'events').commit();
   }
 
   rsvp(e: Pick<KEvent, 'id'>, answer: Rsvp | null) {
     this.usage.act('rsvp');
-    return updateDoc(doc(db, 'events', e.id), {[`rsvp.${this.kitchenId}`]: answer ?? deleteField()});
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'events', e.id), {[`rsvp.${this.kitchenId}`]: answer ?? deleteField()});
+    return bump(batch, 'events').commit();
   }
 
   // "Kom over nu": a call to every kitchen, from now for a few hours. Each kitchen has one call
@@ -222,9 +244,11 @@ export class KollegietService {
   startLiveCall(title: string, place: string, hours: number) {
     this.usage.act('live-call');
     const now = Date.now();
-    return setDoc(doc(db, 'events', liveCallId(this.kitchenId)), {kind: 'live', title, text: '', place, invited: 'all',
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'events', liveCallId(this.kitchenId)), {kind: 'live', title, text: '', place, invited: 'all',
       startsAt: Timestamp.fromMillis(now), endsAt: Timestamp.fromMillis(now + Math.min(hours, LIVE_HOURS_MAX) * 3600e3),
       kitchenId: this.kitchenId, rsvp: {}, createdAt: serverTimestamp()});
+    return bump(batch, 'events').commit();
   }
 
   // The kitchen's last call, ended or not: when it may call again.
@@ -237,19 +261,25 @@ export class KollegietService {
   endLiveCall(e: KEvent) {
     this.usage.act('live-call-end');
     const end = Math.min(millis(e.endsAt), Math.max(Date.now(), millis(e.startsAt) + 1000));
-    return updateDoc(doc(db, 'events', e.id), {endsAt: Timestamp.fromMillis(end)});
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'events', e.id), {endsAt: Timestamp.fromMillis(end)});
+    return bump(batch, 'events').commit();
   }
 
   highfive(to: string) {
     this.usage.act('highfive');
     const from = this.kitchenId;
-    return setDoc(doc(db, 'kudos', highfiveId(from, to, dayKey(new Date()))),
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'kudos', highfiveId(from, to, dayKey(new Date()))),
       {from, to, kind: 'highfive', badge: null, reason: '', createdAt: serverTimestamp()});
+    return bump(batch, 'kudos').commit();
   }
 
   giveBadge(to: string, badge: Badge, reason: string) {
     this.usage.act('badge');
-    return addDoc(collection(db, 'kudos'), {from: this.kitchenId, to, kind: 'badge', badge, reason, createdAt: serverTimestamp()});
+    const batch = writeBatch(db);
+    batch.set(doc(collection(db, 'kudos')), {from: this.kitchenId, to, kind: 'badge', badge, reason, createdAt: serverTimestamp()});
+    return bump(batch, 'kudos').commit();
   }
 
   // Two open at a time: the poll takes a free place in pollSlots/{kid} in the same batch (the rules
@@ -294,4 +324,10 @@ export class KollegietService {
     const ref = doc(db, 'polls', poll.id, 'ballots', this.kitchenId);
     return choice ? setDoc(ref, {choice, at: serverTimestamp()}) : deleteDoc(ref);
   }
+}
+
+// A removal in a collection the rest of the app keeps (posts, events, kudos, battles) moves its pulse.
+function pulsed(batch: WriteBatch, collectionName: HideableCollection): WriteBatch {
+  const kind: Partial<Record<HideableCollection, PulseKind>> = {posts: 'posts', events: 'events', kudos: 'kudos', battles: 'battles'};
+  return kind[collectionName] ? bump(batch, kind[collectionName]!) : batch;
 }

@@ -8,6 +8,7 @@ import {INVITE_DAYS, Invite, Member, newCode} from '../interfaces/invite';
 import {auth, db, watch} from '../firebase';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
 import {UsageService} from './usage.service';
+import {bump} from './pulse.service';
 
 function signedInUser(): User {
   if (!auth.currentUser) {
@@ -69,7 +70,9 @@ export class AccessService {
   rename(name: string) {
     this.usage.act('kitchen-rename');
     const kid = this.auth.currentKitchenId;
-    return setDoc(doc(db, 'kitchens', kid), {id: kid, name});
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'kitchens', kid), {id: kid, name});
+    return bump(batch, 'kitchens').commit();
   }
 
   // For the register page, before an account exists.
@@ -96,6 +99,7 @@ export class AccessService {
     batch.update(doc(db, 'invites', invite.id), {usedBy: user.uid, usedAt: serverTimestamp()});
     if (!invite.kitchenId) {
       batch.set(doc(db, 'kitchens', kitchenId), {id: kitchenId, name: newKitchenName.trim()});
+      bump(batch, 'kitchens');
     }
     batch.set(doc(db, 'memberships', user.uid), {kitchenId, role: invite.role, invite: invite.id, joinedAt: serverTimestamp()});
     batch.set(doc(kitchenCollection(kitchenId, 'members'), user.uid), {role: invite.role, email: user.email || '', joinedAt: serverTimestamp()});

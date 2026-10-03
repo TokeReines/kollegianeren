@@ -30,8 +30,8 @@ export class NoticeService {
   private readonly unread = toSignal(this.maker.unreadByKitchen$, {initialValue: []});
   private readonly news = toSignal(this.maker.recentAnnouncements$, {initialValue: []});
   private readonly proposals = toSignal(inject(ProposalService).recent$, {initialValue: []});
-  private readonly events = toSignal(this.kollegiet.events$, {initialValue: []});
-  private readonly kudos = toSignal(this.kollegiet.kudos$, {initialValue: []});
+  private readonly events = toSignal(this.kollegiet.noticeEvents$, {initialValue: []});
+  private readonly kudos = toSignal(this.kollegiet.myKudos$, {initialValue: []});
   // Until the seen document is in, nothing counts as new.
   private readonly seenAt = toSignal(this.kollegiet.seen$, {initialValue: Number.MAX_SAFE_INTEGER});
   private readonly aktueltSeenAt = toSignal(this.kollegiet.aktueltSeen$, {initialValue: Number.MAX_SAFE_INTEGER});
