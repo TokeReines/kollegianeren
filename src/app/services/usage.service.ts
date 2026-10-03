@@ -27,12 +27,13 @@ interface Pending {
 // actions are counted on the device and added to kitchens/{kid}/usage/{day} a few times a day,
 // split by tablet and managers, with the documents the app read (read-meter.ts). No reads, a
 // handful of writes per login a day. Only kitchen logins
-// count: not the maker, not resident links. ops/admin-stats.js sums them up every night.
+// count, and the maker's own reads under its id; not resident links. ops/admin-stats.js sums them up every night.
 @Injectable({providedIn: 'root'})
 export class UsageService {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly kitchen = toSignal(this.auth.kitchen$, {initialValue: null});
+  private readonly admin = toSignal(this.auth.isAdmin$, {initialValue: false});
   // By day, so counts from before midnight land on the right day.
   private readonly pending = new Map<string, Pending>();
   private lastPage = '';
@@ -81,7 +82,8 @@ export class UsageService {
   }
 
   private flush() {
-    const m = this.kitchen();
+    // The maker has no kitchen; its counts go under its own id (the Admin page shows them apart).
+    const m = this.kitchen() ?? (this.admin() ? this.auth.membership() : null);
     if (!m || !this.pending.size) {
       // Not a kitchen (or not signed in yet): nothing to count for.
       this.pending.clear();
