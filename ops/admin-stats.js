@@ -188,7 +188,13 @@ async function deployedBuild() {
   rows.sort((a, b) => b.purchases.last30 - a.purchases.last30 || a.name.localeCompare(b.name, 'da'));
   // Reads and writes per quota day. The emulator has no Monitoring.
   const usage = process.env.FIRESTORE_EMULATOR_HOST ? [] : await dailyUsage(accessToken, projectId, 7).catch(() => []);
-  const stats = { at: Timestamp.fromMillis(now), usage, build: liveBuild, kitchens: rows, reads };
+  // The maker's own use of the app (its counts are kept under its uid, which is not a kitchen).
+  let makerUsage = null;
+  for (const a of await get(db.collection('admins'))) {
+    const days = await get(db.collection('kitchens').doc(a.id).collection('usage').where(FieldPath.documentId(), '>=', dayKey(now - 29 * DAY)));
+    if (days.length) makerUsage = usageOf(days, now);
+  }
+  const stats = { at: Timestamp.fromMillis(now), usage, build: liveBuild, kitchens: rows, makerUsage, reads };
 
   for (const r of rows) {
     console.log(`${r.name.padEnd(18)} ${String(r.purchases.last7).padStart(4)} buys/7d  ${String(r.purchases.last30).padStart(5)} buys/30d  ` +

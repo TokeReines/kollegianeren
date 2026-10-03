@@ -38,10 +38,15 @@ export class AdminComponent {
   protected readonly usagePeriod = signal<UsagePeriod>('d30');
   protected readonly usageWho = signal<UsageWho>('all');
   protected readonly counted = computed(() => (this.stats()?.kitchens ?? []).filter(k => k.usage && Object.keys(k.usage.days).length));
+  // The grid's columns: the kitchens, and the maker last when it has counts.
+  protected readonly columns = computed(() => {
+    const maker = this.stats()?.makerUsage;
+    return maker ? [...this.counted(), {id: 'maker', name: this.i18n.t('ADMIN_MAKER'), usage: maker} as KitchenStats] : this.counted();
+  });
   protected readonly grid = computed(() => {
     const kind = this.usageKind();
     // Reads have no fixed list: whatever was read, most first, and no "not used".
-    const g = usageGrid(this.counted(), kind === 'v' ? USAGE_PAGES : kind === 'a' ? USAGE_ACTIONS : [], kind,
+    const g = usageGrid(this.columns(), kind === 'v' ? USAGE_PAGES : kind === 'a' ? USAGE_ACTIONS : [], kind,
       this.usagePeriod(), this.usageWho());
     return kind === 'r' ? {rows: g.rows.slice(0, 40), unused: []} : g;
   });
