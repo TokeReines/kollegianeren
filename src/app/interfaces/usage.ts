@@ -34,10 +34,11 @@ export type UsageAction = typeof USAGE_ACTIONS[number];
 export type Counts = Record<string, number>;
 
 // kitchens/{kid}/usage/{day}: per kind of login (t: tablet, m: owner or treasurer), the page views
-// (v), actions (a) and how many of either fell in each hour (h, "0" to "23").
+// (v), actions (a), how many of either fell in each hour (h, "0" to "23"), and the documents read
+// (r, "page|collection|open, live or get", read-meter.ts).
 export interface UsageDay {
-  t?: {v?: Counts, a?: Counts, h?: Counts};
-  m?: {v?: Counts, a?: Counts, h?: Counts};
+  t?: {v?: Counts, a?: Counts, h?: Counts, r?: Counts};
+  m?: {v?: Counts, a?: Counts, h?: Counts, r?: Counts};
 }
 
 export function usageLabel(kind: 'v' | 'a', key: string): string {

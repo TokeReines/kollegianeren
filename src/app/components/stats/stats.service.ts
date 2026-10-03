@@ -1,5 +1,6 @@
 import {Injectable, inject} from '@angular/core';
-import {doc, getDoc, getDocs, query, where} from 'firebase/firestore';
+import {doc, query, where} from 'firebase/firestore';
+import {getDoc, getDocs} from '../../read-meter';
 import {firstValueFrom} from 'rxjs';
 import {Meal} from '../../interfaces/meal';
 import {Purchase} from '../../interfaces/purchase';

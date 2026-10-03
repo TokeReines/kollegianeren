@@ -53,6 +53,7 @@
         <mat-button-toggle-group [value]="usageKind()" (change)="usageKind.set($event.value)" hideSingleSelectionIndicator>
           <mat-button-toggle value="v">{{ "ADMIN_USAGE_PAGES" | translate }}</mat-button-toggle>
           <mat-button-toggle value="a">{{ "ADMIN_USAGE_ACTIONS" | translate }}</mat-button-toggle>
+          <mat-button-toggle value="r">{{ "ADMIN_USAGE_READS" | translate }}</mat-button-toggle>
         </mat-button-toggle-group>
         <mat-button-toggle-group [value]="usagePeriod()" (change)="usagePeriod.set($event.value)" hideSingleSelectionIndicator>
           <mat-button-toggle value="d7">{{ "ADMIN_7_DAYS" | translate }}</mat-button-toggle>
@@ -76,7 +77,7 @@
           <tbody>
             @for (r of g.rows; track r.key) {
               <tr>
-                <th class="key">{{ label(r.key) | translate }}</th>
+                <th class="key">{{ label(r.key) }}</th>
                 @for (c of r.cells; track $index) {
                   <td class="num cell" [attr.data-level]="c.level" [matTooltip]="cellTip(counted()[$index], c)">{{ c.n || '' }}</td>
                 }
@@ -86,11 +87,11 @@
           </tbody>
         </table>
       </div>
-      <p class="hint">{{ "ADMIN_USAGE_HINT" | translate }}</p>
+      <p class="hint">{{ (usageKind() === 'r' ? "ADMIN_READS_HINT_GRID" : "ADMIN_USAGE_HINT") | translate }}</p>
       @if (g.unused.length) {
         <h3>{{ "ADMIN_USAGE_UNUSED" | translate }}</h3>
         <div class="unused">
-          @for (key of g.unused; track key) { <span class="chip">{{ label(key) | translate }}</span> }
+          @for (key of g.unused; track key) { <span class="chip">{{ label(key) }}</span> }
         </div>
       }
 

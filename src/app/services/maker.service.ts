@@ -1,8 +1,9 @@
 import {Injectable, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {
-  Timestamp, addDoc, collection, collectionGroup, doc, limit, onSnapshot, orderBy, query, serverTimestamp, where, writeBatch,
+  Timestamp, addDoc, collection, collectionGroup, doc, limit, orderBy, query, serverTimestamp, where, writeBatch,
 } from 'firebase/firestore';
+import {onSnapshot} from '../read-meter';
 import {NEWS_DAYS} from '../interfaces/kollegiet';
 import {Observable, combineLatest, map, of, shareReplay, switchMap} from 'rxjs';
 import {Kitchen} from '../interfaces/kitchen';

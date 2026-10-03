@@ -1,5 +1,6 @@
 import {Injectable, inject} from '@angular/core';
-import {Timestamp, getCountFromServer, getDoc, getDocs, doc, orderBy, query, where} from 'firebase/firestore';
+import {Timestamp, getCountFromServer, doc, orderBy, query, where} from 'firebase/firestore';
+import {getDoc, getDocs} from '../read-meter';
 import {db} from '../firebase';
 import {AuthService} from './auth.service';
 import {kitchenCollection} from './kitchen-data';

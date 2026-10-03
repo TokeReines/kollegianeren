@@ -38,6 +38,8 @@ export interface KitchenStats {
 export interface UsageCounts {
   v: Record<string, number>;
   a: Record<string, number>;
+  // Documents read by "page|collection|open, live or get"; missing before the read meter.
+  r?: Record<string, number>;
 }
 
 // Per kind of login (t: tablet, m: owner or treasurer) over 7 and 30 days; the 30 days' views and
@@ -106,15 +108,15 @@ export interface UsageRow {
 
 // Pages or actions (keys) by kitchen, most used first; keys nobody used go in `unused`. Keys a
 // newer build counts and this one does not know are listed too, after the known ones.
-export function usageGrid(kitchens: KitchenStats[], keys: readonly string[], kind: 'v' | 'a', period: UsagePeriod,
+export function usageGrid(kitchens: KitchenStats[], keys: readonly string[], kind: 'v' | 'a' | 'r', period: UsagePeriod,
                           who: UsageWho): {rows: UsageRow[], unused: string[]} {
   const seen = new Set(kitchens.flatMap(k => ['t', 'm'].flatMap(w => Object.keys(k.usage?.[period][w as 't' | 'm'][kind] ?? {}))));
   const all = [...keys, ...[...seen].filter(k => !keys.includes(k)).sort()];
   const rows = all.map(key => {
     const cells = kitchens.map(k => {
       const u = k.usage?.[period];
-      const t = u?.t[kind][key] ?? 0;
-      const m = u?.m[kind][key] ?? 0;
+      const t = u?.t[kind]?.[key] ?? 0;
+      const m = u?.m[kind]?.[key] ?? 0;
       return {t, m, n: who === 't' ? t : who === 'm' ? m : t + m, level: -1};
     });
     const max = Math.max(0, ...cells.map(c => c.n));

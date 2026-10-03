@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
-import {doc, getDoc} from 'firebase/firestore';
+import {doc} from 'firebase/firestore';
+import {getDoc} from '../read-meter';
 import {AdminStats} from '../interfaces/admin-stats';
 import {db} from '../firebase';
 
