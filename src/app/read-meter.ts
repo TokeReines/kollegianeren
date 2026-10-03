@@ -7,18 +7,104 @@ import {
 // these wrappers, which count the documents the server sent, by the page the user is on and the
 // collection. Counts ride along in the usage counts (services/usage.service.ts), no extra writes.
 //
-// How it maps to what Firestore bills, roughly: a listener's first answer from the server is
-// counted in full ("open"; an upper bound, since a listener resumed within 30 minutes is billed
-// only for what changed), later answers by the documents that changed ("live"), and a one-off
-// fetch by the documents it returned ("get"). Answers from the offline cache and the app's own
-// pending writes cost nothing and are not counted.
+// How it maps to what Firestore bills: a listener opened fresh costs its whole result ("open"); the
+// same query opened again within 30 minutes of the last time costs only what changed ("resume");
+// changes while it is open cost one read each ("live"); a one-off fetch costs what it returned
+// ("get"). And when the device was asleep or offline for more than 30 minutes, every open listener
+// is billed in full again when it reconnects ("wake"), though nothing changes on screen. Answers
+// from the offline cache and the app's own pending writes cost nothing and are not counted.
 
-export type ReadKind = 'open' | 'live' | 'get';
+export type ReadKind = 'open' | 'resume' | 'live' | 'get' | 'wake';
 type Sink = (key: string, n: number) => void;
+
+// Firestore's resume window: a listener away for longer is billed as a new query.
+const RESUME_MS = 30 * 60e3;
+const TICK_MS = 60e3;
+const SEEN_KEY = 'kollegianeren.reads.seen';
 
 let page = 'start';
 let sink: Sink | null = null;
 const early: [string, number][] = [];
+
+// The listeners open now, with how many documents each holds, for what a wake costs.
+interface Listener {
+  source: string;
+  key: string;
+  size: number;
+}
+const active = new Set<Listener>();
+
+// When each query (by key) was last live, kept across reloads, since Firestore keeps its resume
+// tokens in the offline cache too.
+let lastSeen: Record<string, number> = {};
+try {
+  lastSeen = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}');
+} catch {
+  // Storage unavailable: every listener counts as opened fresh.
+}
+
+function saveSeen(now = Date.now()) {
+  for (const l of active) {
+    lastSeen[l.key] = now;
+  }
+  for (const [k, t] of Object.entries(lastSeen)) {
+    if (now - t > RESUME_MS) {
+      delete lastSeen[k];
+    }
+  }
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(lastSeen));
+  } catch {
+    // Not kept; only makes a reopen after a reload count as fresh.
+  }
+}
+
+// What every open listener costs after a long sleep or a long time offline.
+function wake() {
+  const counted = new Set<string>();
+  for (const l of active) {
+    // Identical queries share one listen on the server.
+    if (!counted.has(l.key)) {
+      counted.add(l.key);
+      add(l.source, 'wake', Math.max(1, l.size));
+    }
+  }
+}
+
+// A timer that stops while the device sleeps (timers do not run on a frozen page): a gap longer
+// than the resume window means every listener reconnected after it. Offline counts the same way.
+let lastTick = Date.now();
+let offlineSince = 0;
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    if (now - lastTick > RESUME_MS) {
+      wake();
+    }
+    lastTick = now;
+    saveSeen(now);
+  }, TICK_MS);
+  window.addEventListener('offline', () => offlineSince = Date.now());
+  window.addEventListener('online', () => {
+    if (offlineSince && Date.now() - offlineSince > RESUME_MS) {
+      wake();
+    }
+    offlineSince = 0;
+  });
+}
+
+// Which query a listener runs, so a reopen of the same one can be told from a new one.
+export function queryKey(ref: unknown, source: string): string {
+  if (ref instanceof DocumentReference) {
+    return ref.path;
+  }
+  try {
+    const q = (ref as {_query?: Record<string, unknown> & {path?: {canonicalString(): string}}})._query;
+    return JSON.stringify([q?.path?.canonicalString(), q?.['collectionGroup'], q?.['filters'], q?.['explicitOrderBy'], q?.['limit']]);
+  } catch {
+    return source;
+  }
+}
 
 // The page reads are put on, set by the usage service as the user navigates.
 export function meterPage(p: string) {
@@ -90,12 +176,23 @@ export const onSnapshot = ((ref: unknown, ...rest: unknown[]) => {
   const isList = !(ref instanceof DocumentReference);
   const next = rest[at] as (snap: QuerySnapshot | DocumentSnapshot) => void;
   const source = sourceOf(ref);
+  const listener: Listener = {source, key: queryKey(ref, source), size: 1};
+  // The same query already open shares its listen and costs nothing more; live within the resume
+  // window, the server sends, and bills, only what changed.
+  const shared = [...active].some(l => l.key === listener.key);
+  const resumed = shared || Date.now() - (lastSeen[listener.key] ?? 0) < RESUME_MS;
   let first = true;
   let delivered = false;
   rest[at] = (snap: QuerySnapshot | DocumentSnapshot) => {
+    if (isList) {
+      listener.size = (snap as QuerySnapshot).size;
+    }
     if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
-      add(source, first ? 'open' : 'live', snapshotReads(snap, first));
+      const n = first && shared ? 0
+        : first && resumed && isList ? (snap as QuerySnapshot).docChanges().length : snapshotReads(snap, first);
+      add(source, first ? (resumed ? 'resume' : 'open') : 'live', n);
       first = false;
+      lastSeen[listener.key] = Date.now();
     }
     const metadataOnly = isList && delivered && (snap as QuerySnapshot).docChanges().length === 0;
     if (wantsMetadata || !metadataOnly) {
@@ -103,11 +200,15 @@ export const onSnapshot = ((ref: unknown, ...rest: unknown[]) => {
       next(snap);
     }
   };
-  if (!isList) {
-    return (fsOnSnapshot as (...args: unknown[]) => () => void)(ref, ...rest);
-  }
-  const listen = options ? [{...options, includeMetadataChanges: true}, ...rest.slice(1)] : [{includeMetadataChanges: true}, ...rest];
-  return (fsOnSnapshot as (...args: unknown[]) => () => void)(ref, ...listen);
+  const listen = !isList ? rest
+    : options ? [{...options, includeMetadataChanges: true}, ...rest.slice(1)] : [{includeMetadataChanges: true}, ...rest];
+  const stop = (fsOnSnapshot as (...args: unknown[]) => () => void)(ref, ...listen);
+  active.add(listener);
+  return () => {
+    lastSeen[listener.key] = Date.now();
+    active.delete(listener);
+    stop();
+  };
 }) as typeof fsOnSnapshot;
 
 // getDocs and getDoc, counted: a query that returns nothing still costs one read.

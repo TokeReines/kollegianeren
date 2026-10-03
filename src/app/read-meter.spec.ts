@@ -1,6 +1,6 @@
 import {initializeApp} from 'firebase/app';
 import {collection, collectionGroup, doc, getFirestore, limit, orderBy, query, where} from 'firebase/firestore';
-import {snapshotReads, sourceOf} from './read-meter';
+import {queryKey, snapshotReads, sourceOf} from './read-meter';
 
 const meta = (fromCache: boolean, hasPendingWrites = false) => ({fromCache, hasPendingWrites});
 const list = (size: number, changes: number, m = meta(false)) => ({metadata: m, size, docChanges: () => new Array(changes).fill(0)});
@@ -23,5 +23,16 @@ describe('read meter', () => {
     expect(sourceOf(query(collection(db, 'posts'), orderBy('createdAt'), limit(5)))).toBe('posts');
     expect(sourceOf(query(collection(db, 'kitchens', 'k1', 'purchases'), where('timestamp', '>=', 1)))).toBe('purchases');
     expect(sourceOf(collectionGroup(db, 'achievements'))).toBe('achievements');
+  });
+
+  it('tells the same query from a different one, for reopens', () => {
+    const db = getFirestore(initializeApp({projectId: 'demo-meter-keys'}, 'meter-keys'));
+    const purchases = collection(db, 'kitchens', 'k1', 'purchases');
+    const since = (ms: number) => query(purchases, where('timestamp', '>=', new Date(ms)), orderBy('timestamp'));
+    expect(queryKey(since(1000), 'purchases')).toBe(queryKey(since(1000), 'purchases'));
+    expect(queryKey(since(1000), 'purchases')).not.toBe(queryKey(since(2000), 'purchases'));
+    expect(queryKey(query(purchases, limit(30)), 'purchases')).not.toBe(queryKey(query(purchases, limit(31)), 'purchases'));
+    expect(queryKey(collection(db, 'kitchens', 'k1', 'products'), 'products')).not.toBe(queryKey(collection(db, 'kitchens', 'k2', 'products'), 'products'));
+    expect(queryKey(doc(db, 'seen', 'k1'), 'seen')).toBe('seen/k1');
   });
 });

@@ -10,6 +10,8 @@ export interface AdminStats {
   // The deployed build (main bundle hash); null when the site could not be fetched.
   build?: string | null;
   kitchens: KitchenStats[];
+  // The maker's own use of the app, apart from the kitchens.
+  makerUsage?: KitchenUsage | null;
   // What the job itself read.
   reads: number;
 }

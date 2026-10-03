@@ -70,7 +70,7 @@
           <thead>
             <tr>
               <th></th>
-              @for (k of counted(); track k.id) { <th class="num">{{ k.name }}</th> }
+              @for (k of columns(); track k.id) { <th class="num">{{ k.name }}</th> }
               <th class="num">{{ "ADMIN_USAGE_TOTAL" | translate }}</th>
             </tr>
           </thead>
@@ -79,7 +79,7 @@
               <tr>
                 <th class="key">{{ label(r.key) }}</th>
                 @for (c of r.cells; track $index) {
-                  <td class="num cell" [attr.data-level]="c.level" [matTooltip]="cellTip(counted()[$index], c)">{{ c.n || '' }}</td>
+                  <td class="num cell" [attr.data-level]="c.level" [matTooltip]="cellTip(columns()[$index], c)">{{ c.n || '' }}</td>
                 }
                 <td class="num total">{{ r.total | number }}</td>
               </tr>
