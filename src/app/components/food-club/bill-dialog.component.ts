@@ -56,7 +56,8 @@ export interface BillDialogData {
         </div>
 
         @if (!m.bill) {
-          <form class="add" (submit)="$event.preventDefault(); add()">
+          <!-- Enter saves, like Gem below. -->
+          <form class="add" (submit)="$event.preventDefault(); save()">
             <mat-form-field class="amount" subscriptSizing="dynamic">
               <mat-label>{{ "FOOD_EXPENSE_KR" | translate }}</mat-label>
               <input matInput name="kr" type="number" inputmode="decimal" min="1" max="20000" step="0.01" [ngModel]="kr() || null"
@@ -76,7 +77,7 @@ export interface BillDialogData {
               <input matInput name="note" [ngModel]="note()" (ngModelChange)="note.set($event)" [maxlength]="noteMax"
                      [placeholder]="'FOOD_EXPENSE_ALL' | translate" autocomplete="off">
             </mat-form-field>
-            <button mat-stroked-button type="submit" [disabled]="!canAdd()"><mat-icon>add</mat-icon> {{ "FOOD_EXPENSE_ADD" | translate }}</button>
+            <button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
           </form>
           @if (canSplit()) {
             <p class="preview">{{ m.signups.length }} {{ "FOOD_BILL_ATE" | translate }}: {{ share() | number:'1.2-2' }} kr. {{ "FOOD_BILL_EACH" | translate }}.
@@ -89,9 +90,12 @@ export interface BillDialogData {
         }
       }
     </div>
+    <!-- With an amount typed in: Gem saves it and closes. Without, the bill can be split once eaten. -->
     <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close type="button">{{ "CLOSE" | translate }}</button>
-      @if (canSplit()) {
+      <button mat-button mat-dialog-close type="button">{{ (canAdd() ? "CANCEL" : "CLOSE") | translate }}</button>
+      @if (canAdd()) {
+        <button mat-flat-button type="button" (click)="save()">{{ "SAVE" | translate }}</button>
+      } @else if (canSplit()) {
         <button mat-flat-button type="button" (click)="split()">{{ "FOOD_BILL_SPLIT" | translate }}</button>
       }
     </mat-dialog-actions>
@@ -145,15 +149,14 @@ export class BillDialogComponent {
     return this.data.residents.get(id)?.name ?? '?';
   }
 
-  protected add() {
+  // The expense typed in, saved; the dialog closes (open it again from the card for another one).
+  protected save() {
     const m = this.meal();
     if (!m || !this.canAdd()) {
       return;
     }
-    this.meals.addExpense(m, {by: this.by(), kr: this.kr(), note: this.note()}).then(() => {
-      this.kr.set(0);
-      this.note.set('');
-    }, this.notify.error);
+    this.meals.addExpense(m, {by: this.by(), kr: this.kr(), note: this.note()}).catch(this.notify.error);
+    this.ref.close();
   }
 
   protected remove(e: MealExpense) {

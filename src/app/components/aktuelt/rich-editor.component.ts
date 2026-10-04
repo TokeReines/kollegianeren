@@ -7,7 +7,7 @@ import {Notify} from '../../services/notify.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {asHtml, cleanHtml} from './rich-text';
 
-// A text field with pictures in it, for the maker: paste a screenshot or drop a picture where the
+// A text field with pictures and simple formatting (bold, bullets) for the maker: paste a screenshot or drop a picture where the
 // caret is, and it is uploaded (Cloudinary) and shown right there. Pasted text comes in plain.
 @Component({
   selector: 'app-rich-editor',
@@ -19,6 +19,11 @@ import {asHtml, cleanHtml} from './rich-text';
            (input)="changed()" (paste)="paste($event)" (drop)="drop($event)" (dragover)="$event.preventDefault()"
            (focus)="focused.set(true)" (blur)="focused.set(false); keepCaret()" (keyup)="keepCaret()" (mouseup)="keepCaret()"></div>
       <div class="bar">
+        <!-- On the selected text (or what is typed next); mousedown keeps the selection in the text. -->
+        <button mat-icon-button type="button" (mousedown)="$event.preventDefault()" (click)="format('bold')"
+                [attr.aria-label]="'RICH_BOLD' | translate"><mat-icon>format_bold</mat-icon></button>
+        <button mat-icon-button type="button" (mousedown)="$event.preventDefault()" (click)="format('insertUnorderedList')"
+                [attr.aria-label]="'RICH_LIST' | translate"><mat-icon>format_list_bulleted</mat-icon></button>
         <button mat-button type="button" [disabled]="!cloudinary.canUpload || uploading()" (click)="file.click()">
           <mat-icon>add_photo_alternate</mat-icon> {{ "FORSLAG_ADD_PICTURE" | translate }}
         </button>
@@ -66,6 +71,13 @@ export class RichEditorComponent {
 
   protected changed() {
     this.value.set(cleanHtml(this.area().nativeElement.innerHTML));
+  }
+
+  // Bold or a bullet list, as Ctrl+B does: the browser's own editing, kept by cleanHtml (b, ul, li).
+  protected format(command: 'bold' | 'insertUnorderedList') {
+    this.area().nativeElement.focus();
+    document.execCommand(command);
+    this.changed();
   }
 
   protected keepCaret() {
