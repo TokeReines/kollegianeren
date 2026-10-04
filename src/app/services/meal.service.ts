@@ -1,8 +1,11 @@
 import {Injectable, inject} from '@angular/core';
-import {arrayRemove, arrayUnion, deleteDoc, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch} from 'firebase/firestore';
-import {getDoc} from '../read-meter';
+import {arrayRemove, arrayUnion, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch} from 'firebase/firestore';
+import {getDoc, getDocs} from '../read-meter';
 import {Observable} from 'rxjs';
-import {Meal, MealFields, dayKey} from '../interfaces/meal';
+import {BILL_PRODUCT, Meal, MealFields, billProductId, dayKey, splitBill} from '../interfaces/meal';
+import {Purchase} from '../interfaces/purchase';
+import {User} from '../interfaces/user';
+import {PurchaseService} from './purchase.service';
 import {db} from '../firebase';
 import {AuthService} from './auth.service';
 import {LeagueService} from './league.service';
@@ -17,6 +20,7 @@ export class MealService {
   private readonly auth = inject(AuthService);
   // Food club battles move with bookings and sign-ups (docs/kollegiet.md, Battles).
   private readonly league = inject(LeagueService);
+  private readonly purchases = inject(PurchaseService);
 
   private meals() {
     return kitchenCollection(this.auth.currentKitchenId, 'meals');
@@ -54,7 +58,9 @@ export class MealService {
       return false;
     }
     const batch = writeBatch(db);
-    batch.set(target, {...fields, day, signups: [...new Set([...meal.signups, ...fields.cooks])], createdAt: serverTimestamp()});
+    // A split bill moves with it (its purchases keep the product id it was split under).
+    batch.set(target, {...fields, day, signups: [...new Set([...meal.signups, ...fields.cooks])], createdAt: serverTimestamp(),
+      ...(meal.bill ? {bill: meal.bill} : {})});
     batch.delete(doc(this.meals(), meal.id));
     await batch.commit();
     return true;
@@ -76,6 +82,37 @@ export class MealService {
     if (eats !== meal.signups.includes(residentId)) {
       this.league.onDiner(meal, eats ? 1 : -1);
     }
+  }
+
+  // The shopping split between the eaters, into Regnskab: a purchase of "Madklub" each, and the
+  // whole bill back to who paid (splitBill), with the meal marked in the same batch so it is split once.
+  splitBill(meal: Meal, total: number, paidBy: string, residents: Map<string, User>) {
+    this.usage.act('meal-bill');
+    const purchases = kitchenCollection(this.auth.currentKitchenId, 'purchases');
+    const batch = writeBatch(db);
+    const lines = splitBill(total, meal.signups, paidBy);
+    for (const l of lines) {
+      const u = residents.get(l.userId);
+      batch.set(doc(purchases), {
+        productId: billProductId(meal), productName: BILL_PRODUCT, amount: l.amount, price: l.price,
+        userId: l.userId, userName: u?.name ?? '', userRoom: u?.room ?? null, timestamp: serverTimestamp(),
+      });
+    }
+    batch.update(doc(this.meals(), meal.id), {
+      bill: {productId: billProductId(meal), total, paidBy, eaters: meal.signups.length, share: Math.floor(Math.round(total * 100) / meal.signups.length) / 100, at: serverTimestamp()},
+    });
+    return batch.commit();
+  }
+
+  // Back out of Regnskab (a wrong amount): the dinner's purchases taken back with their notes.
+  async undoBill(meal: Meal) {
+    this.usage.act('meal-bill-undo');
+    const kid = this.auth.currentKitchenId;
+    const lines = await getDocs(query(kitchenCollection(kid, 'purchases'), where('productId', '==', meal.bill?.productId ?? billProductId(meal))));
+    const batch = writeBatch(db);
+    lines.docs.forEach(d => this.purchases.takeBack(batch, {id: d.id, ...d.data()} as Purchase));
+    batch.update(doc(this.meals(), meal.id), {bill: deleteField()});
+    return batch.commit();
   }
 
   async delete(meal: Meal) {

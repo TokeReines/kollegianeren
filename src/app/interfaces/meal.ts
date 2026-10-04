@@ -26,6 +26,8 @@ export interface Meal {
   // Resident ids, the cooks included.
   signups: string[];
   createdAt: Timestamp;
+  // Once the bill is split into Regnskab.
+  bill?: MealBill | null;
 }
 
 export type MealFields = Pick<Meal, 'date' | 'cooks' | 'menu' | 'notes' | 'tags' | 'closesAt' | 'askCook'>;
@@ -109,4 +111,39 @@ export function isoWeek(day: Date): number {
 export function atTime(day: Date, time: string): Date {
   const [h, m] = time.split(':').map(Number);
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h || 0, m || 0);
+}
+
+// A dinner's bill, split (MealService.splitBill): what the shopping cost, who paid it, and the share
+// each of the eaters paid. On the meal, so it is split once.
+export interface MealBill {
+  // The purchases' product id, billProductId of the day it was split on.
+  productId: string;
+  total: number;
+  paidBy: string;
+  eaters: number;
+  share: number;
+  at: Timestamp | null;
+}
+
+// The product a split bill is booked as, one per dinner: Regnskab shows it as one column, Madklub.
+export const BILL_PRODUCT = 'Madklub';
+export function billProductId(meal: Pick<Meal, 'id'>): string {
+  return 'madklub-' + meal.id;
+}
+
+// Every eater pays an equal share in whole øre (the first ones one øre more, when it does not divide),
+// and the one who paid gets the whole bill back: their share less the bill, or the bill as a line of
+// its own (0 portions) when they did not eat. In øre, so the lines add up to exactly 0 kr.
+export function splitBill(total: number, eaters: string[], paidBy: string): {userId: string, amount: number, price: number}[] {
+  const ore = Math.round(total * 100);
+  const base = Math.floor(ore / eaters.length);
+  const rest = ore - base * eaters.length;
+  const lines = eaters.map((userId, i) => ({userId, amount: 1, ore: base + (i < rest ? 1 : 0)}));
+  const payer = lines.find(l => l.userId === paidBy);
+  if (payer) {
+    payer.ore -= ore;
+  } else {
+    lines.push({userId: paidBy, amount: 0, ore: -ore});
+  }
+  return lines.map(l => ({userId: l.userId, amount: l.amount, price: l.ore / 100}));
 }

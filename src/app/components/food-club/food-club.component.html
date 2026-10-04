@@ -46,6 +46,9 @@
                   @if (!open(m)) {
                     <button mat-menu-item (click)="signups(m)"><mat-icon>group_add</mat-icon><span>{{ "FOOD_EDIT_SIGNUPS" | translate }}</span></button>
                   }
+                  @if (m.bill) {
+                    <button mat-menu-item (click)="undoBill(m)"><mat-icon>undo</mat-icon><span>{{ "FOOD_BILL_UNDO" | translate }}</span></button>
+                  }
                   <button mat-menu-item (click)="remove(m)"><mat-icon>delete</mat-icon><span>{{ "DELETE" | translate }}</span></button>
                 </mat-menu>
               </div>
@@ -85,6 +88,12 @@
                   </div>
                 } @else if (!d.past) {
                   <span class="status"><mat-icon>{{ m.askCook ? 'forum' : 'lock' }}</mat-icon> {{ (m.askCook ? "FOOD_ASK" : "FOOD_CLOSED") | translate }}</span>
+                }
+                <!-- On the day and after: the shopping split between the eaters, into Regnskab. -->
+                @if (m.bill; as b) {
+                  <span class="status bill"><mat-icon>receipt_long</mat-icon> {{ "FOOD_BILL_DONE" | translate }} {{ b.share | number:'1.2-2' }} kr. {{ "FOOD_BILL_EACH" | translate }}</span>
+                } @else if ((d.past || isToday(d.day)) && !open(m) && m.signups.length) {
+                  <button mat-stroked-button (click)="splitBill(m)"><mat-icon>receipt_long</mat-icon> {{ "FOOD_BILL_SPLIT" | translate }}</button>
                 }
               </div>
             </div>

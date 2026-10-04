@@ -8,7 +8,7 @@ const {
 } = require('@firebase/rules-unit-testing');
 const { increment, arrayUnion, arrayRemove,
   doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup, writeBatch,
+  query, where, orderBy, limit, Timestamp, serverTimestamp, collectionGroup, writeBatch, deleteField,
 } = require('firebase/firestore');
 
 let env;
@@ -116,6 +116,30 @@ test('buy page: add a purchase with a server timestamp', async () => {
     amount: 2, productId: 'p1', productName: 'Beer', price: 5, userId: 'u1', userName: 'Resident', userRoom: '101',
     timestamp: serverTimestamp(),
   }));
+});
+// A food club bill split into Regnskab (MealService.splitBill): shares, and the bill back to who paid.
+test('food club bill: a negative price or 0 portions only under a dinner\'s product id', async () => {
+  await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
+  const db = asKitchen('tab');
+  const line = extra => addDoc(collection(db, 'kitchens', A, 'purchases'), purchase({ productId: 'madklub-2026-10-08', productName: 'Madklub', ...extra }));
+  const meal = doc(db, 'kitchens', A, 'meals', '2026-10-08');
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'kitchens', A, 'meals', '2026-10-08'), {
+    day: '2026-10-08', date: Timestamp.now(), closesAt: Timestamp.now(), cooks: ['u1'], menu: 'Tacos', notes: '', tags: [],
+    askCook: false, signups: ['u1', 'u2'], createdAt: Timestamp.now(),
+  }));
+  const b = writeBatch(db);
+  b.set(doc(collection(db, 'kitchens', A, 'purchases')), purchase({ productId: 'madklub-2026-10-08', productName: 'Madklub', price: 60 }));
+  b.set(doc(collection(db, 'kitchens', A, 'purchases')), purchase({ productId: 'madklub-2026-10-08', productName: 'Madklub', userId: 'u2', price: -60 }));
+  b.update(meal, { bill: { productId: 'madklub-2026-10-08', total: 120, paidBy: 'u2', eaters: 2, share: 60, at: serverTimestamp() } });
+  await assertSucceeds(b.commit());
+  await assertSucceeds(line({ amount: 0, price: -90 })); // paid, did not eat
+  await assertFails(addPurchase(purchase({ price: -5 }))); // a normal product never goes negative
+  await assertFails(addPurchase(purchase({ amount: 0 })));
+  await assertFails(line({ productId: 'madklub-x', amount: 0, price: -5 }));
+  await assertFails(line({ price: -20001 }));
+  await assertFails(updateDoc(meal, { bill: { productId: 'madklub-2026-10-08', total: -1, paidBy: 'u2', eaters: 2, share: 60, at: null } }));
+  await assertFails(updateDoc(meal, { bill: { total: 120, paidBy: 'u2', extra: 1 } }));
+  await assertSucceeds(updateDoc(meal, { bill: deleteField() }));
 });
 test('accounting: purchases in a date range', async () => {
   const q = query(collection(asKitchen(A), 'kitchens', A, 'purchases'),
