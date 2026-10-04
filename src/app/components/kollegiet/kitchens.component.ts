@@ -2,12 +2,12 @@ import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
-import {map} from 'rxjs';
+import {firstValueFrom, map} from 'rxjs';
 import {MatDialog} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
-import {Achievement, Badge, KitchenColour, TOO_MANY_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
+import {Achievement, Badge, KitchenColour, NOTES_PER_KITCHEN, TOO_MANY_BATTLES, badgeList, highfiveId, kudosSummary} from '../../interfaces/kollegiet';
 import {dayKey} from '../../interfaces/meal';
 import {AccessService} from '../../services/access.service';
 import {AuthService} from '../../services/auth.service';
@@ -16,7 +16,9 @@ import {BattleFields, LeagueService} from '../../services/league.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
-import {BadgeDialogComponent, BadgeResult, BattleDialogComponent, BattleDialogData, ProfileDialogComponent, ProfileFields} from './dialogs';
+import {
+  BadgeDialogComponent, BadgeResult, BattleDialogComponent, BattleDialogData, BorrowData, BorrowDialogComponent, ProfileDialogComponent, ProfileFields,
+} from './dialogs';
 import {KitchenChipComponent} from './kitchen-chip.component';
 import {ShelfGuideComponent} from './shelf-guide.component';
 import {UsageService} from '../../services/usage.service';
@@ -132,10 +134,36 @@ export class KitchensComponent {
     this.dialog.open(ShelfGuideComponent, {width: '600px', maxWidth: '94vw', data: this.achievementsOf(this.me()).map(a => a.id)});
   }
 
+  // What the other kitchens lend, every thing with its kitchen.
+  protected readonly lendable = computed(() => this.kollegiet.cards().filter(k => k.id !== this.me())
+    .flatMap(k => k.lends.map(item => ({kitchenId: k.id, item}))));
+
+  // Asking to borrow is a note on the board for that kitchen; its answer comes there too. A kitchen
+  // with all its notes up takes one down on the board first.
+  protected async ask(kitchenId: string, item: string) {
+    const posts = await firstValueFrom(this.kollegiet.posts$);
+    if (posts.filter(p => !p.parentId && p.kitchenId === this.me()).length >= NOTES_PER_KITCHEN) {
+      this.notify.action(this.i18n.t('KOL_BORROW_FULL'), this.i18n.t('KOL_TO_BOARD'), 8000)
+        .subscribe(() => this.router.navigate([], {queryParams: {tab: 'board'}}));
+      return;
+    }
+    const kitchen = this.kollegiet.card(kitchenId).name;
+    this.dialog.open<BorrowDialogComponent, BorrowData, string>(BorrowDialogComponent, {width: '480px', maxWidth: '94vw',
+      data: {kitchen, text: this.i18n.t('KOL_BORROW_TEXT').replace('{item}', item)}})
+      .afterClosed().subscribe(text => {
+        if (text) {
+          this.usage.act('lend-ask');
+          this.kollegiet.post(text, {to: kitchenId}).then(
+            () => this.notify.info(`🤝 ${this.i18n.t('KOL_BORROW_SENT')} ${kitchen}`),
+            err => this.notify.info(String(err).includes('permission') ? this.i18n.t('KOL_TOO_SOON') : String(err)));
+        }
+      });
+  }
+
   protected editProfile() {
     const c = this.kollegiet.card(this.me());
     this.dialog.open<ProfileDialogComponent, ProfileFields, ProfileFields>(ProfileDialogComponent,
-      {width: '480px', maxWidth: '94vw', data: {name: c.name, emoji: c.emoji, colour: c.colour as KitchenColour, bio: c.bio}})
+      {width: '480px', maxWidth: '94vw', data: {name: c.name, emoji: c.emoji, colour: c.colour as KitchenColour, bio: c.bio, lends: c.lends}})
       .afterClosed().subscribe(p => {
         if (p) {
           const {name, ...profile} = p;

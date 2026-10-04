@@ -17,7 +17,7 @@ export const USAGE_ACTIONS = [
   'meal-add', 'meal-edit', 'meal-delete', 'meal-cook', 'meal-signup', 'meal-signoff', 'meal-bill', 'meal-bill-undo',
   // Kollegiet
   'post', 'post-reply', 'highfive', 'badge', 'event', 'event-edit', 'rsvp', 'who-is-coming', 'live-call', 'live-call-end',
-  'poll', 'poll-close', 'vote', 'battle', 'battle-join', 'battle-calloff', 'gym', 'profile', 'shelf-guide', 'take-back', 'hide', 'note-take-down',
+  'poll', 'poll-close', 'vote', 'battle', 'battle-join', 'battle-calloff', 'gym', 'profile', 'shelf-guide', 'take-back', 'hide', 'note-take-down', 'lend-ask',
   // Aktuelt
   'proposal-comment', 'proposal-vote', 'message', 'picture',
   // Statistik

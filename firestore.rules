@@ -312,7 +312,9 @@ service cloud.firestore {
     match /profiles/{kid} {
       allow read: if kitchenLogin() || isAdmin();
       allow create, update: if canManage(kid) && kitchenLogin()
-        && request.resource.data.keys().hasOnly(['emoji', 'colour', 'bio', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['emoji', 'colour', 'bio', 'lends', 'updatedAt'])
+        // Things it lends to the others, a short list (the app keeps each to 40 characters).
+        && (!('lends' in request.resource.data) || (request.resource.data.lends is list && request.resource.data.lends.size() <= 12))
         && request.resource.data.keys().hasAll(['emoji', 'colour', 'bio', 'updatedAt'])
         && text(request.resource.data.emoji, 1, 16)
         && request.resource.data.colour in ['purple', 'blue', 'teal', 'green', 'lime', 'amber', 'orange', 'red', 'pink', 'grey']
