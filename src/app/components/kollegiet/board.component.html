@@ -78,19 +78,24 @@
         <div class="date">
           @if (live) {
             <b class="now"><span class="dot"></span>{{ "KOL_LIVE_NOW" | translate }}</b>
-            <span>{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span>
-            @if (e.place) { <span class="place">{{ e.place }}</span> }
           } @else {
             <b>{{ e.startsAt.toDate() | date:'EEE d/M' }}</b>
-            <!-- From and to on one line (the end with its day when it runs more than half a day), the place under. -->
-            <span>{{ e.startsAt.toDate() | date:'HH:mm' }} {{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:(long(e) ? 'EEE d/M HH:mm' : 'HH:mm') }}</span>
-            @if (e.place) { <span class="place">{{ e.place }}</span> }
           }
         </div>
         @if (e.kind !== 'live') {
           <ng-container *ngTemplateOutlet="menu; context: {collection: 'events', item: e, author: e.kitchenId}" />
         }
       </header>
+      <!-- Under the header, the card's full width: from and to (the end with its day when it runs more
+           than half a day), then the place. They wrap rather than being cut off. -->
+      <div class="when">
+        @if (live) {
+          <span>{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}</span>
+        } @else {
+          <span>{{ e.startsAt.toDate() | date:'HH:mm' }} {{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:(long(e) ? 'EEE d/M HH:mm' : 'HH:mm') }}</span>
+        }
+        @if (e.place) { <span>{{ e.place }}</span> }
+      </div>
       <b class="title">{{ e.title }}</b>
       <div class="by">
         <app-kitchen-chip [kitchenId]="e.kitchenId" />

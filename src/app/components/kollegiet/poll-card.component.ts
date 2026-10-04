@@ -25,14 +25,14 @@ import {KitchenChipComponent} from './kitchen-chip.component';
     <mat-card appearance="outlined" class="poll" [class.paper]="paper()">
       <header>
         <mat-icon class="icon">how_to_vote</mat-icon>
-        <div class="head">
-          <b>{{ poll().title }}</b>
-          <span class="hint">
-            {{ "KOL_POLL_BY" | translate }} <app-kitchen-chip [kitchenId]="poll().kitchenId" />
-            · {{ (open() ? "KOL_POLL_CLOSES" : "KOL_POLL_CLOSED") | translate }} {{ poll().closesAt.toDate() | date:'EEE d/M HH:mm' }}
-          </span>
-        </div>
+        <b class="head">{{ poll().title }}</b>
       </header>
+      <!-- Under the header, the card's full width: who started it, then when it closes, a line each,
+           the date and time kept together. -->
+      <div class="meta">
+        <span class="hint by">{{ "KOL_POLL_BY" | translate }} <app-kitchen-chip [kitchenId]="poll().kitchenId" /></span>
+        <span class="hint when">{{ (open() ? "KOL_POLL_CLOSES" : "KOL_POLL_CLOSED") | translate }} <span class="nowrap">{{ poll().closesAt.toDate() | date:'EEE d/M HH:mm' }}</span></span>
+      </div>
       @if (poll().result; as r) {
         <div class="result">
           🏆 @for (w of r.winners; track w) { <app-kitchen-chip [kitchenId]="w" /> }
@@ -66,8 +66,12 @@ import {KitchenChipComponent} from './kitchen-chip.component';
     .poll { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; border-color: var(--mat-sys-tertiary); }
     header { display: flex; align-items: center; gap: 12px; }
     .icon { color: var(--mat-sys-tertiary); }
-    .head { display: flex; flex-direction: column; min-width: 0; }
+    .head { min-width: 0; }
     .hint { color: var(--mat-sys-on-surface-variant); font: var(--mat-sys-body-small); margin: 0; --chip-size: 20px; }
+    .meta { display: flex; flex-direction: column; gap: 2px; margin-top: -4px; }
+    .by { display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .when::first-letter { text-transform: uppercase; }
+    .nowrap { white-space: nowrap; }
     .result { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 20px; }
     .vote { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .vote mat-form-field { width: 260px; max-width: 100%; }
