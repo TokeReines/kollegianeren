@@ -119,14 +119,25 @@ node api-key.js --project dev|prod shows which websites may use the browser API 
 
 Cloud Monitoring refuses service accounts on a project without billing, so cron runs leave the reads-per-day chart empty (the page hides it), as the backup's quota check already notes in its log. A run with your own `firebase login` fills it.
 
-## Read budget: Statistik's summary and the read alarm
+## Read budget: the summaries for Statistik and Regnskab, and the read alarm
 
 - **`stats-summary.js`** (cron `cron/tokeserver-stats-summary.sh`, 08:55 Danish time, after the
   backup): from the local backup, one summary per kitchen of the last 92 days per Danish day, in
   `kitchens/{kid}/summaries/stats`. Statistik reads it (1 read) and only the purchases since it,
   instead of every purchase in the period (thousands of reads per visit). A summary only covers a
   kitchen from where its backup is complete; for longer periods the page reads as before.
-  No reads; one write per kitchen.
+  The same job writes Regnskab's summary: one document per kitchen and month,
+  `kitchens/{kid}/summaries/accounts-YYYY-MM`, per day, resident and product (`lib/accounts-summary.js`).
+  Regnskab reads the months of the period (1 read each), the purchases after the summary live, and
+  the purchases taken back since: the app writes a note in `kitchens/{kid}/removed/` with every
+  delete (the rules require it), and the backup keeps their ids, so the next summary leaves them
+  out. It also writes `adminStats/nightly`, which the Admin page shows, red after two days.
+  No reads; about 15 writes per kitchen.
+- **Checking Regnskab's summary**: `node tools/accounts-check/run.js --project dev --from 2026-09-01 --to 2026-10-04`
+  computes every kitchen's Regnskab both ways with the app's code and compares them to the øre.
+  A read per purchase in the period.
+- **A missed night** (the day's quota already used up when the backup runs): the next hourly run
+  finds the last good backup more than 25 hours old and runs anyway, right after the reset.
 - **`read-alarm.js`** (cron `cron/tokeserver-read-alarm.sh`, every 30 minutes): a note in the
   maker's inbox (🚩). With a person's own login (Cloud Monitoring works): the first time a day
   passes 35,000 and 45,000 reads. On tokeserver, whose service account Monitoring refuses on the

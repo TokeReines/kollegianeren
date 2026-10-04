@@ -1,5 +1,5 @@
 import {Injectable, inject} from '@angular/core';
-import {deleteDoc, doc, increment, limit, orderBy, query, serverTimestamp, where, writeBatch} from 'firebase/firestore';
+import {doc, increment, limit, orderBy, query, serverTimestamp, where, writeBatch} from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {Product, tracksStock} from '../interfaces/product';
 import {Purchase} from '../interfaces/purchase';
@@ -57,10 +57,17 @@ export class PurchaseService {
   }
 
   // Takes a purchase back (a wrong tap, or a correction by the treasurer), and gives its units
-  // back to the stock and sold counters. Tablets may do this for a minute after buying.
+  // back to the stock and sold counters. Tablets may do this for a minute after buying. A note in
+  // removed/ goes with it, so Regnskab's nightly summary (ops/stats-summary.js) can leave it out.
   async remove(purchase: Purchase, product: Pick<Product, 'id' | 'stock' | 'category'> | undefined): Promise<void> {
     this.usage.act('purchase-remove');
-    await deleteDoc(doc(this.purchases(), purchase.id));
+    const batch = writeBatch(db);
+    batch.delete(doc(this.purchases(), purchase.id));
+    batch.set(doc(kitchenCollection(this.auth.currentKitchenId, 'removed'), purchase.id), {
+      userId: purchase.userId, productName: purchase.productName ?? null, amount: purchase.amount, price: purchase.price ?? null,
+      timestamp: purchase.timestamp, removedAt: serverTimestamp(),
+    });
+    await batch.commit();
     this.league.onSale(product ?? {category: null}, -(Number(purchase.amount) || 0), millis(purchase.timestamp));
     if (product) {
       await this.moveCounters([{product, units: Number(purchase.amount) || 0}], 1).catch(() => undefined);

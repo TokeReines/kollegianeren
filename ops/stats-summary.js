@@ -2,7 +2,10 @@
 // Statistik without reading every purchase: from the nightly backup (ops/backup.js) on tokeserver,
 // one summary per kitchen of the last SUMMARY_DAYS days, per Danish day, written to
 // kitchens/{kid}/summaries/stats. The app reads it (1 read) plus the purchases since `through`.
-// Costs no reads (the backup files are local) and one write per kitchen.
+// Also Regnskab's summary, one document per kitchen and month (lib/accounts-summary.js), and
+// adminStats/nightly with when the backup and this job last ran, for the Admin page.
+// Purchases taken back after they were backed up are left out of both.
+// Costs no reads (the backup files are local) and about 15 writes per kitchen.
 //
 //   node stats-summary.js --project prod --from ~/kollegianeren-backups/firebase-ehp [--dry]
 //
@@ -13,8 +16,13 @@ const path = require('path');
 const zlib = require('zlib');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { init, parseArgs } = require('./lib/firebase');
+const { summariseAccounts, nextDay, before } = require('./lib/accounts-summary');
 
 const SUMMARY_DAYS = 92;
+// The backup keeps a year of purchases (backup.js --keep-days).
+const KEEP_DAYS = 365;
+// Firestore's limit is 1 MiB a document; a bigger month is left to the app's full read.
+const MAX_DOC = 900e3;
 const TZ = 'Europe/Copenhagen';
 const args = parseArgs();
 const FROM = String(args.from || path.join(require('os').homedir(), 'kollegianeren-backups/firebase-ehp'));
@@ -27,15 +35,19 @@ function local(ms) {
   const p = Object.fromEntries(parts.formatToParts(new Date(ms)).map(x => [x.type, x.value]));
   return { day: `${p.year}-${p.month}-${p.day}`, hour: +p.hour };
 }
+// A backed-up timestamp to the microsecond, as Firestore keeps it: the app reads the purchases
+// after `through`, and a rounded one would read the last summarised purchase again.
+const tsOf = t => t?.s ? { s: t.s, n: t.n || 0 } : null;
+const msOf = t => t.s * 1000 + Math.floor(t.n / 1e6);
 
 function summarise(purchases, sinceDay) {
   const days = {};
-  let through = 0;
+  let through = null;
   for (const p of purchases) {
-    const ms = p.timestamp ? p.timestamp.s * 1000 + Math.floor((p.timestamp.n || 0) / 1e6) : 0;
-    if (!ms) continue;
-    through = Math.max(through, ms);
-    const { day, hour } = local(ms);
+    const ts = tsOf(p.timestamp);
+    if (!ts) continue;
+    if (!through || before(through, ts) < 0) through = ts;
+    const { day, hour } = local(msOf(ts));
     if (day < sinceDay) continue;
     const price = Number(p.price) || 0, amount = Number(p.amount) || 0;
     const d = days[day] || (days[day] = { kr: 0, n: 0, u: 0, p: {}, h: {}, b: [] });
@@ -59,22 +71,70 @@ function summarise(purchases, sinceDay) {
 (async () => {
   const pdir = path.join(FROM, 'purchases');
   const since = local(Date.now() - SUMMARY_DAYS * 864e5).day;
+  const today = local(Date.now()).day;
+  // The first whole day the backup still keeps.
+  const kept = nextDay(local(Date.now() - KEEP_DAYS * 864e5).day);
   // How far back each kitchen's backup is complete: all of the window once backfilled, else from
   // the oldest purchase it has reached. The app only uses a summary for periods it fully covers.
   const state = JSON.parse(fs.readFileSync(path.join(FROM, 'state.json'), 'utf8'));
+  // A backup still running has written purchases but may not yet have read what was taken back.
+  // Its file names start with its start time, which is after the last finished run ended.
+  const finished = (state.lastRun?.at || '').replace(/[:.]/g, '-');
+  const files = fs.readdirSync(pdir).flatMap(kid => fs.readdirSync(path.join(pdir, kid)));
+  if (files.some(f => f.slice(0, finished.length) > finished)) {
+    console.log(`the backup is still running (last finished ${state.lastRun?.at}), nothing written`);
+    return;
+  }
   let writes = 0;
   for (const kid of fs.readdirSync(pdir)) {
     // Later files overwrite earlier copies of a purchase (the names start with the run time).
     const byPath = new Map();
     for (const f of fs.readdirSync(path.join(pdir, kid)).sort()) for (const r of readNdjson(path.join(pdir, kid, f))) byPath.set(r.path, r.data);
+    // Taken back after they were backed up: backup.js keeps the ids of the app's notes.
+    const rdir = path.join(FROM, 'removed', kid);
+    const removed = new Set(fs.existsSync(rdir) ? fs.readdirSync(rdir).flatMap(f => readNdjson(path.join(rdir, f)).map(r => r.id)) : []);
+    for (const p of [...byPath.keys()]) if (removed.has(p.split('/').pop())) byPath.delete(p);
     const st = state.kitchens?.[kid] || {};
     const coveredFrom = st.backfillDone ? since : st.oldest ? [since, local(st.oldest.s * 1000).day].sort()[1] : null;
     const { days, through } = summarise([...byPath.values()], coveredFrom || since);
     const size = JSON.stringify(days).length;
-    console.log(`${kid}: ${byPath.size} purchases backed up, complete from ${coveredFrom || '-'}, ${Object.keys(days).length} days, through ${through ? new Date(through).toISOString() : '-'}, ${Math.round(size / 1024)} KB`);
-    if (args.dry || !through || !coveredFrom) continue;
-    await db.doc(`kitchens/${kid}/summaries/stats`).set({ days, since: coveredFrom, through: Timestamp.fromMillis(through), computedAt: FieldValue.serverTimestamp() });
+    const at = t => t ? new Date(msOf(t)).toISOString() : '-';
+    console.log(`${kid}: ${byPath.size} purchases backed up, ${removed.size} taken back, complete from ${coveredFrom || '-'}, ${Object.keys(days).length} days, through ${at(through)}, ${Math.round(size / 1024)} KB`);
+    if (!through || !coveredFrom) continue;
+    if (!args.dry) {
+      await db.doc(`kitchens/${kid}/summaries/stats`).set({ days, since: coveredFrom, through: new Timestamp(through.s, through.n), computedAt: FieldValue.serverTimestamp() });
+      writes++;
+    }
+
+    // Regnskab, as far back as the backup is complete: from the day after the oldest purchase it
+    // has reached, as that day may be partly read.
+    const accountsFrom = st.backfillDone ? kept : [kept, nextDay(local(st.oldest.s * 1000).day)].sort()[1];
+    const purchases = [...byPath].map(([p, data]) => ({ id: p.split('/').pop(), ts: tsOf(data.timestamp), data }));
+    const accounts = summariseAccounts(purchases, { removed, since: accountsFrom, today, local });
+    if (!accounts.through) continue;
+    const removedThrough = st.removedThrough ? new Timestamp(st.removedThrough.s, st.removedThrough.n) : new Timestamp(0, 0);
+    const sizes = [];
+    for (const [month, monthDays] of Object.entries(accounts.months)) {
+      const bytes = JSON.stringify(monthDays).length;
+      sizes.push(`${month} ${Math.round(bytes / 1024)} KB`);
+      if (bytes > MAX_DOC) {
+        console.log(`  ${month} is too big (${bytes} bytes), left out`);
+        continue;
+      }
+      if (args.dry) continue;
+      await db.doc(`kitchens/${kid}/summaries/accounts-${month}`).set({
+        days: monthDays, since: accountsFrom, through: new Timestamp(accounts.through.s, accounts.through.n), removedThrough,
+        computedAt: FieldValue.serverTimestamp(),
+      });
+      writes++;
+    }
+    console.log(`  Regnskab from ${accountsFrom} through ${at(accounts.through)}: ${sizes.join(', ')}`);
+  }
+  if (!args.dry) {
+    await db.doc('adminStats/nightly').set({
+      backupAt: state.lastRun?.at ? Timestamp.fromDate(new Date(state.lastRun.at)) : null, summariesAt: FieldValue.serverTimestamp(),
+    });
     writes++;
   }
-  console.log(`${writes} summaries written`);
+  console.log(`${writes} documents written`);
 })().catch(e => { console.error(e.message); process.exit(1); });
