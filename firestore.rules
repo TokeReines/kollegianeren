@@ -659,8 +659,32 @@ service cloud.firestore {
           && request.resource.data.timestamp == request.time;
         allow update: if canManage(kid) && validPurchase(request.resource.data)
           && request.resource.data.timestamp == resource.data.timestamp;
-        allow delete: if canManage(kid)
-          || (isMember(kid) && request.time < resource.data.timestamp + duration.value(60, 's'));
+        // With a note in removed/ in the same batch, so Regnskab's nightly summary can leave it out.
+        allow delete: if (canManage(kid)
+          || (isMember(kid) && request.time < resource.data.timestamp + duration.value(60, 's')))
+          && existsAfter(/databases/$(database)/documents/kitchens/$(kid)/removed/$(purchaseId));
+      }
+
+      // A purchase taken back: what it was, written in the same batch as the delete, never changed.
+      // The timestamp is the purchase's; for one from the last ten minutes the app may only have its
+      // own estimate (not yet confirmed by the server), and such a purchase is newer than any summary.
+      match /removed/{purchaseId} {
+        function purchase() {
+          return /databases/$(database)/documents/kitchens/$(kid)/purchases/$(purchaseId);
+        }
+        allow read: if isMember(kid);
+        allow create: if isMember(kid) && exists(purchase()) && !existsAfter(purchase())
+          && request.resource.data.keys().hasOnly(['userId', 'productName', 'amount', 'price', 'timestamp', 'removedAt'])
+          && request.resource.data.keys().hasAll(['userId', 'productName', 'amount', 'price', 'timestamp', 'removedAt'])
+          && request.resource.data.removedAt == request.time
+          && request.resource.data.userId == get(purchase()).data.userId
+          && request.resource.data.productName == get(purchase()).data.get('productName', null)
+          && request.resource.data.amount == get(purchase()).data.amount
+          && request.resource.data.price == get(purchase()).data.get('price', null)
+          && request.resource.data.timestamp is timestamp
+          && (request.resource.data.timestamp == get(purchase()).data.timestamp
+            || get(purchase()).data.timestamp > request.time - duration.value(10, 'm'));
+        allow update, delete: if false;
       }
 
       // "Message your maker": the kitchen and the maker each write their own side and may only
@@ -726,12 +750,12 @@ service cloud.firestore {
         allow get: if viewsResident(kid, userId);
       }
 
-      // users (residents): every member reads, managers write. Purchases, messages, meals, members,
+      // users (residents): every member reads, managers write. Purchases, removed, messages, meals, members,
       // appVersions and usage are matched above; rules are OR'ed, so they are excluded here or this would bypass them.
       // {collection}/ first, because {sub=**} alone would also match the kitchen doc itself.
       match /{collection}/{rest=**} {
-        allow read: if isMember(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions', 'usage']);
-        allow write: if canManage(kid) && !(collection in ['purchases', 'messages', 'members', 'products', 'meals', 'appVersions', 'usage']);
+        allow read: if isMember(kid) && !(collection in ['purchases', 'removed', 'messages', 'members', 'products', 'meals', 'appVersions', 'usage']);
+        allow write: if canManage(kid) && !(collection in ['purchases', 'removed', 'messages', 'members', 'products', 'meals', 'appVersions', 'usage']);
       }
     }
   }

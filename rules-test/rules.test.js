@@ -68,6 +68,18 @@ const purchase = (extra = {}) => ({
 });
 // What the app writes for each collection.
 const sample = { products: () => ({ name: 'new' }), users: () => ({ name: 'new' }), purchases: () => purchase() };
+// PurchaseService.remove: the delete and its note in removed/, in one batch. The note copies the
+// purchase; for x1 exactly, for one just bought the app may only have its own timestamp estimate.
+const x1Note = (extra = {}) => ({
+  userId: 'u1', productName: 'Beer', amount: 1, price: 5, timestamp: Timestamp.fromDate(new Date('2026-09-01T20:00:00Z')),
+  removedAt: serverTimestamp(), ...extra,
+});
+const takeBack = (db, id, note = x1Note({ timestamp: Timestamp.now() })) => {
+  const b = writeBatch(db);
+  b.delete(doc(db, 'kitchens', A, 'purchases', id));
+  b.set(doc(db, 'kitchens', A, 'removed', id), note);
+  return b.commit();
+};
 const change = { products: { name: 'changed' }, users: { name: 'changed' }, purchases: { amount: 2 } };
 
 for (const sub of ['products', 'users', 'purchases']) {
@@ -76,7 +88,12 @@ for (const sub of ['products', 'users', 'purchases']) {
     await assertSucceeds(getDocs(collection(db, 'kitchens', A, sub)));
     const ref = await assertSucceeds(addDoc(collection(db, 'kitchens', A, sub), sample[sub]()));
     await assertSucceeds(updateDoc(doc(db, 'kitchens', A, sub, ref.id), change[sub]));
-    await assertSucceeds(deleteDoc(doc(db, 'kitchens', A, sub, ref.id)));
+    if (sub === 'purchases') {
+      await assertFails(deleteDoc(doc(db, 'kitchens', A, sub, ref.id))); // without its note
+      await assertSucceeds(takeBack(db, ref.id, x1Note({ amount: 2, timestamp: Timestamp.now() })));
+    } else {
+      await assertSucceeds(deleteDoc(doc(db, 'kitchens', A, sub, ref.id)));
+    }
   });
   test(`other kitchen: no access to ${sub}`, async () => {
     const db = asKitchen(A);
@@ -125,6 +142,22 @@ test('purchases: rejects bad shapes', async () => {
   await assertFails(addPurchase({ ...purchase(), timestamp: Timestamp.fromDate(new Date('2020-01-01')) }));
   const { productId, ...noProduct } = purchase();
   await assertFails(addPurchase(noProduct));
+});
+test('removed: the note must match the purchase it goes with, and stays', async () => {
+  const db = asKitchen(A);
+  await assertFails(takeBack(db, 'x1', x1Note({ amount: 2 })));
+  await assertFails(takeBack(db, 'x1', x1Note({ price: 0 })));
+  await assertFails(takeBack(db, 'x1', x1Note({ userId: 'u2' })));
+  await assertFails(takeBack(db, 'x1', x1Note({ timestamp: Timestamp.now() }))); // an old purchase's own time
+  await assertFails(takeBack(db, 'x1', x1Note({ userName: 'Resident' })));
+  await assertFails(setDoc(doc(db, 'kitchens', A, 'removed', 'x1'), x1Note())); // without the delete
+  await assertSucceeds(takeBack(db, 'x1', x1Note()));
+  const note = doc(db, 'kitchens', A, 'removed', 'x1');
+  await assertSucceeds(getDocs(query(collection(db, 'kitchens', A, 'removed'), where('removedAt', '>', Timestamp.fromMillis(0)))));
+  await assertFails(updateDoc(note, { amount: 0 }));
+  await assertFails(deleteDoc(note));
+  await assertFails(getDoc(doc(asKitchen(B), 'kitchens', A, 'removed', 'x1')));
+  await assertFails(getDocs(collection(anon(), 'kitchens', A, 'removed')));
 });
 test('purchases: updates cannot move the timestamp', async () => {
   const db = asKitchen(A);
@@ -243,8 +276,8 @@ test('tablet role: buys, reads, undoes within a minute, nothing else', async () 
   await assertSucceeds(getDocs(collection(db, 'kitchens', A, 'products')));
   await assertSucceeds(getDocs(query(collection(db, 'kitchens', A, 'purchases'), orderBy('timestamp', 'desc'), limit(30))));
   const ref = await assertSucceeds(addDoc(collection(db, 'kitchens', A, 'purchases'), purchase()));
-  await assertSucceeds(deleteDoc(ref)); // undo
-  await assertFails(deleteDoc(doc(db, 'kitchens', A, 'purchases', 'x1'))); // old purchase
+  await assertSucceeds(takeBack(db, ref.id)); // undo
+  await assertFails(takeBack(db, 'x1', x1Note())); // old purchase
   await assertFails(addDoc(collection(db, 'kitchens', A, 'products'), { name: 'x' }));
   await assertFails(updateDoc(doc(db, 'kitchens', A, 'users', 'u1'), { name: 'x' }));
   await assertFails(setDoc(doc(db, 'kitchens', A), { id: A, name: 'hacked' }));
@@ -254,7 +287,7 @@ test('treasurer role: manages products, cannot remove members', async () => {
   await seedInvite('t2', { ...unused(), role: 'treasurer' }); await redeem('tre', 't2', A, 'treasurer');
   const db = asKitchen('tre');
   await assertSucceeds(addDoc(collection(db, 'kitchens', A, 'products'), { name: 'x' }));
-  await assertSucceeds(deleteDoc(doc(db, 'kitchens', A, 'purchases', 'x1')));
+  await assertSucceeds(takeBack(db, 'x1', x1Note()));
   await seedInvite('t1', unused()); await redeem('tab', 't1', A, 'tablet');
   await assertSucceeds(getDocs(collection(db, 'kitchens', A, 'members')));
   await assertFails(deleteDoc(doc(db, 'kitchens', A, 'members', 'tab')));

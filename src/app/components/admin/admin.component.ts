@@ -5,7 +5,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {KitchenStats, UsageCell, UsagePeriod, UsageWho, lastActive, summarise, trend, usageDays, usageGrid, usageHours} from '../../interfaces/admin-stats';
 import {USAGE_ACTIONS, USAGE_PAGES, usageLabel} from '../../interfaces/usage';
-import {AdminService} from '../../services/admin.service';
+import {AdminService, Nightly} from '../../services/admin.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {TranslateService} from '../../services/translate.service';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
@@ -29,6 +29,8 @@ export class AdminComponent {
   protected readonly loading = this.result.isLoading;
   protected readonly error = this.result.error;
   protected readonly summary = computed(() => summarise(this.stats()?.kitchens ?? []));
+  private readonly nightlyResult = resource({loader: () => this.admin.nightly()});
+  protected readonly nightly = computed(() => this.nightlyResult.hasValue() ? this.nightlyResult.value() : null);
   protected readonly open = signal<string | null>(null);
   protected readonly readCap = READ_CAP;
   protected readonly maxReads = computed(() => Math.max(1, ...(this.stats()?.usage ?? []).map(u => u.reads)));
@@ -54,6 +56,12 @@ export class AdminComponent {
   protected readonly maxHour = computed(() => Math.max(1, ...this.hours()));
   protected readonly days = computed(() => usageDays(this.counted()));
   protected readonly maxDay = computed(() => Math.max(1, ...this.days().map(d => d.n)));
+
+  // Two days without a backup or summaries: tokeserver is down, and Regnskab and Statistik read more.
+  protected stale(n: Nightly) {
+    const old = Date.now() - 48 * 36e5;
+    return !n.backupAt || n.backupAt.toMillis() < old || n.summariesAt.toMillis() < old;
+  }
 
   // A row's name: a page or an action, or for reads "Regnskab · purchases (åbnet)".
   protected label(key: string) {

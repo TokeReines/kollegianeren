@@ -34,10 +34,14 @@ h3 {
   color: var(--mat-sys-on-surface-variant);
 }
 
-.privacy {
+.privacy, .nightly {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.nightly.stale {
+  color: var(--mat-sys-error);
 }
 
 .tiles {
