@@ -118,10 +118,10 @@ export class BoardComponent {
     .filter(p => !p.result && !p.cancelled)
     .sort((a, b) => millis(a.closesAt) - millis(b.closesAt)));
 
-  // Stickers: the newest high-fives and badges, and battles and votes won in the last three days.
+  // Stickers: the newest high-fives and badges, and battles and votes won in the last week.
   protected readonly stickers = computed<Sticker[]>(() => {
     const now = this.league.now();
-    const since = now - 3 * 864e5;
+    const since = now - 7 * 864e5;
     const at = (t: {toMillis(): number} | null | undefined) => t ? millis(t as never) : Date.now();
     return [
       ...this.kudos().slice(0, 20).map(kudos => ({kind: 'kudos' as const, at: at(kudos.createdAt), kudos})),
