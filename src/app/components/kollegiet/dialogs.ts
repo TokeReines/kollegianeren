@@ -10,7 +10,7 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  BADGES, BATTLE_MAX_DAYS, BIO_MAX, Badge, EVENT_KINDS, KEvent, KITCHEN_COLOURS, LIVE_HOURS_MAX, KITCHEN_EMOJIS, KitchenColour, METRICS, Metric,
+  BADGES, BATTLE_MAX_DAYS, BIO_MAX, Badge, LENDS_MAX, LEND_MAX, EVENT_KINDS, KEvent, KITCHEN_COLOURS, LIVE_HOURS_MAX, KITCHEN_EMOJIS, KitchenColour, METRICS, Metric,
   Profile, REASON_MAX, TITLE_MAX,
 } from '../../interfaces/kollegiet';
 import {atTime} from '../../interfaces/meal';
@@ -387,7 +387,7 @@ export class PollDialogComponent {
   }
 }
 
-export type ProfileFields = Pick<Profile, 'emoji' | 'colour' | 'bio'> & {name: string};
+export type ProfileFields = Pick<Profile, 'emoji' | 'colour' | 'bio'> & {name: string, lends: string[]};
 
 // The kitchen as the others see it: its name (the same everywhere), emoji, colour and bio. The one
 // place to change the kitchen; Adgang is only logins and invitations.
@@ -421,6 +421,11 @@ export type ProfileFields = Pick<Profile, 'emoji' | 'colour' | 'bio'> & {name: s
         <textarea matInput [(ngModel)]="bio" rows="3" [maxlength]="bioMax"></textarea>
         <mat-hint align="end">{{ bio().length }}/{{ bioMax }}</mat-hint>
       </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ "KOL_PROFILE_LENDS" | translate }}</mat-label>
+        <textarea matInput [(ngModel)]="lends" rows="3" [placeholder]="'KOL_PROFILE_LENDS_EXAMPLE' | translate"></textarea>
+        <mat-hint>{{ "KOL_PROFILE_LENDS_HINT" | translate }}</mat-hint>
+      </mat-form-field>
     </div>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
@@ -452,9 +457,12 @@ export class ProfileDialogComponent {
   protected readonly emoji = signal(this.current.emoji);
   protected readonly colour = signal<KitchenColour>(this.current.colour);
   protected readonly bio = signal(this.current.bio);
+  // One thing a line.
+  protected readonly lends = signal(this.current.lends.join('\n'));
 
   protected save() {
-    this.ref.close({name: this.name().trim(), emoji: this.emoji(), colour: this.colour(), bio: this.bio().trim()});
+    const lends = [...new Set(this.lends().split('\n').map(l => l.trim().slice(0, LEND_MAX)).filter(Boolean))].slice(0, LENDS_MAX);
+    this.ref.close({name: this.name().trim(), emoji: this.emoji(), colour: this.colour(), bio: this.bio().trim(), lends});
   }
 }
 
@@ -515,4 +523,38 @@ export class LiveCallDialogComponent {
       this.ref.close({title: this.title().trim(), place: this.place().trim(), hours: this.hours()});
     }
   }
+}
+
+export interface BorrowData {
+  kitchen: string;
+  // The question, filled in with the thing asked for.
+  text: string;
+}
+
+// Asking another kitchen to borrow something: a note on the board for that kitchen, ready to send.
+@Component({
+  selector: 'app-borrow-dialog',
+  imports: [FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  template: `
+    <h2 mat-dialog-title>🤝 {{ "KOL_BORROW_TITLE" | translate }} {{ data.kitchen }}</h2>
+    <div mat-dialog-content class="content">
+      <p class="hint">{{ "KOL_BORROW_HINT" | translate }}</p>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>{{ "KOL_WRITE" | translate }}</mat-label>
+        <textarea matInput [(ngModel)]="text" rows="3" maxlength="1000"></textarea>
+      </mat-form-field>
+    </div>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
+      <button mat-flat-button [disabled]="!text().trim()" [mat-dialog-close]="text().trim()">{{ "MAKER_SEND" | translate }}</button>
+    </mat-dialog-actions>
+  `,
+  styles: `
+    .content { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+    .hint { margin: 0; color: var(--mat-sys-on-surface-variant); }
+  `,
+})
+export class BorrowDialogComponent {
+  protected readonly data = inject<BorrowData>(MAT_DIALOG_DATA);
+  protected readonly text = signal(this.data.text);
 }

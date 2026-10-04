@@ -3,7 +3,8 @@
 // one summary per kitchen of the last SUMMARY_DAYS days, per Danish day, written to
 // kitchens/{kid}/summaries/stats. The app reads it (1 read) plus the purchases since `through`.
 // Also Regnskab's summary, one document per kitchen and month (lib/accounts-summary.js), and
-// adminStats/nightly with when the backup and this job last ran, for the Admin page.
+// adminStats/nightly with when the backup and this job last ran, for the Admin page, and Kollegiet's
+// archive, a document a month (lib/kollegiet-archive.js).
 // Purchases taken back after they were backed up are left out of both.
 // Costs no reads (the backup files are local) and about 15 writes per kitchen.
 //
@@ -17,6 +18,7 @@ const zlib = require('zlib');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { init, parseArgs } = require('./lib/firebase');
 const { summariseAccounts, nextDay, before } = require('./lib/accounts-summary');
+const { archive } = require('./lib/kollegiet-archive');
 
 const SUMMARY_DAYS = 92;
 // The backup keeps a year of purchases (backup.js --keep-days).
@@ -85,8 +87,17 @@ function summarise(purchases, sinceDay) {
     console.log(`the backup is still running (last finished ${state.lastRun?.at}), nothing written`);
     return;
   }
+  // Only kitchens that still exist, as of the backup's newest snapshot: the purchase files of a
+  // kitchen deleted since stay in the backup, and writing its summaries would bring its path back.
+  const snaps = fs.readdirSync(path.join(FROM, 'snapshots')).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+  const latest = snaps.length ? path.join(FROM, 'snapshots', snaps[snaps.length - 1], 'kitchens.ndjson.gz') : null;
+  const existing = latest && fs.existsSync(latest) ? new Set(readNdjson(latest).map(r => r.path.split('/').pop())) : null;
   let writes = 0;
   for (const kid of fs.readdirSync(pdir)) {
+    if (existing && !existing.has(kid)) {
+      console.log(`${kid}: no longer a kitchen, skipped`);
+      continue;
+    }
     // Later files overwrite earlier copies of a purchase (the names start with the run time).
     const byPath = new Map();
     for (const f of fs.readdirSync(path.join(pdir, kid)).sort()) for (const r of readNdjson(path.join(pdir, kid, f))) byPath.set(r.path, r.data);
@@ -130,6 +141,23 @@ function summarise(purchases, sinceDay) {
     }
     console.log(`  Regnskab from ${accountsFrom} through ${at(accounts.through)}: ${sizes.join(', ')}`);
   }
+  // Kollegiet's archive, a document a month (lib/kollegiet-archive.js), from the backup's Kollegiet files.
+  const kdir = path.join(FROM, 'kollegiet');
+  if (fs.existsSync(kdir)) {
+    const load = name => {
+      const f = path.join(kdir, `${name}.ndjson.gz`);
+      return fs.existsSync(f) ? readNdjson(f).map(r => ({ ...r.data, id: r.path.split('/').pop() })) : [];
+    };
+    const months = archive({ battles: load('battles'), polls: load('polls'), kudos: load('kudos'), posts: load('posts') },
+      at => local(at).day.slice(0, 7));
+    for (const [month, data] of Object.entries(months)) {
+      if (args.dry) continue;
+      await db.doc(`archive/${month}`).set({ ...data, month, computedAt: FieldValue.serverTimestamp() });
+      writes++;
+    }
+    console.log(`archive: ${Object.entries(months).map(([m, d]) => `${m} (${d.battles.length} battles, ${d.polls.length} votes, ${Object.keys(d.kudos).length} kitchens with kudos, ${d.notes.length} notes)`).join(', ') || 'nothing yet'}`);
+  }
+
   if (!args.dry) {
     await db.doc('adminStats/nightly').set({
       backupAt: state.lastRun?.at ? Timestamp.fromDate(new Date(state.lastRun.at)) : null, summariesAt: FieldValue.serverTimestamp(),

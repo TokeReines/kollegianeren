@@ -2,7 +2,7 @@ import {Component, computed, effect, inject, signal, viewChild} from '@angular/c
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {DecimalPipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {switchMap} from 'rxjs';
+import {map, switchMap} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDatepickerModule} from '@angular/material/datepicker';
@@ -18,7 +18,8 @@ import {TranslateService} from '../../services/translate.service';
 import {sortValue} from '../../table-sort';
 import {TranslatePipe} from '../../translate.pipe';
 import type {SheetData} from 'write-excel-file/browser';
-import {AccountRow, Period, accounts, periodRange, toCsv, toTable} from './accounting';
+import {AccountRow, Period, accounts, kroner, paymentMessage, periodRange, toCsv, toTable} from './accounting';
+import {MatCheckboxModule} from '@angular/material/checkbox';
 import {UsageService} from '../../services/usage.service';
 import {AccountingService} from './accounting.service';
 
@@ -28,7 +29,7 @@ const PRODUCT = 'p:';
 // The treasurer's view: what each resident bought in a period, and the total to collect.
 @Component({
   selector: 'app-accounting',
-  imports: [DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule,
+  imports: [DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule, MatDatepickerModule, MatFormFieldModule,
     MatIconModule, MatInputModule, MatMenuModule, MatSortModule, MatTableModule, MatTooltipModule, TranslatePipe],
   templateUrl: './accounting.component.html',
   styleUrl: './accounting.component.scss',
@@ -57,19 +58,63 @@ export class AccountingComponent {
     toObservable(this.range).pipe(switchMap(({from, to}) => this.accounting.between(from, to))), {initialValue: []});
   protected readonly accounts = computed(() => accounts(this.purchases()));
   protected readonly productColumns = computed(() => this.accounts().products.map(name => ({id: PRODUCT + name, name})));
-  protected readonly displayedColumns = computed(() => ['name', 'room', ...this.productColumns().map(c => c.id), 'total']);
+  protected readonly displayedColumns = computed(() => ['name', 'room', ...this.productColumns().map(c => c.id), 'total', 'paid']);
   protected readonly table = new MatTableDataSource<AccountRow>([]);
   // The table (and its sort) only exists once the period has purchases.
   private readonly sort = viewChild(MatSort);
 
+  // Who has paid for this exact period, and the number the messages ask them to pay to.
+  private readonly settlement = toSignal(
+    toObservable(this.range).pipe(switchMap(({from, to}) => this.accounting.settlement(from, to))), {initialValue: null});
+  protected readonly mobilePay = toSignal(this.accounting.settings$.pipe(map(s => s?.mobilePay ?? '')), {initialValue: ''});
+  // Only the residents who still owe (or have money to get back).
+  protected readonly unpaidOnly = signal(false);
+  // Residents with something to settle, and how many of them have.
+  private readonly owing = computed(() => this.accounts().rows.filter(r => r.total !== 0));
+  protected readonly paidCount = computed(() => this.owing().filter(r => this.paid(r)).length);
+  protected readonly owingCount = computed(() => this.owing().length);
+  protected readonly outstanding = computed(() => this.owing().filter(r => !this.paid(r)).reduce((sum, r) => sum + r.total, 0));
+
   constructor() {
     this.table.sortingDataAccessor = (row, column) => column.startsWith(PRODUCT)
       ? (this.show() === 'units' ? row.units : row.kr)[column.slice(PRODUCT.length)] ?? 0
+      : column === 'paid' ? (this.paid(row) ? 1 : 0)
       : sortValue(row[column as 'name' | 'room' | 'total']);
     this.table.filterPredicate = (row, term) => `${row.name} ${row.room}`.toLocaleLowerCase('da').includes(term);
     effect(() => this.table.sort = this.sort() ?? null);
-    effect(() => this.table.data = this.accounts().rows);
+    effect(() => this.table.data = this.unpaidOnly() ? this.owing().filter(r => !this.paid(r)) : this.accounts().rows);
     effect(() => this.table.filter = this.search().trim().toLocaleLowerCase('da'));
+  }
+
+  protected paid(row: AccountRow) {
+    return this.settlement()?.paid?.[row.userId] ?? null;
+  }
+
+  // Ticked for an amount that has changed since (a purchase added or taken back later).
+  protected changed(row: AccountRow) {
+    const p = this.paid(row);
+    return !!p && Math.abs(p.kr - row.total) >= 0.005;
+  }
+
+  protected changedText(row: AccountRow) {
+    const p = this.paid(row);
+    return p ? this.i18n.t('ACCOUNTING_PAID_CHANGED').replace('{paid}', kroner(p.kr)).replace('{now}', kroner(row.total)) : '';
+  }
+
+  protected togglePaid(row: AccountRow, paid: boolean) {
+    this.accounting.setPaid(this.from(), this.to(), row.userId, paid ? row.total : null).catch(this.notify.error);
+  }
+
+  protected copyMessage(row: AccountRow) {
+    this.usage.act('accounting-message');
+    const period = `${this.from().getDate()}/${this.from().getMonth() + 1} ${this.i18n.t('FOOD_TO')} ${this.to().getDate()}/${this.to().getMonth() + 1}`;
+    this.notify.copy(paymentMessage(row, period, this.mobilePay(), k => this.i18n.t(k)), this.i18n.t('ACCOUNTING_MESSAGE_COPIED'));
+  }
+
+  protected saveMobilePay(value: string) {
+    if (value.trim() !== this.mobilePay()) {
+      this.accounting.saveMobilePay(value).catch(this.notify.error);
+    }
   }
 
   protected choose(period: Period | 'custom') {

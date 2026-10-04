@@ -243,3 +243,37 @@
   justify-content: flex-end;
   margin-bottom: -8px;
 }
+
+// Things to borrow: on a profile, and all of them above the cards.
+.lends {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  .lend {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--mat-sys-surface-container-high);
+  }
+
+  .with-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.lends-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.lend-all {
+  margin: 8px 0 16px;
+
+  h3 {
+    margin: 0 0 8px;
+    font: var(--mat-sys-title-small);
+  }
+}

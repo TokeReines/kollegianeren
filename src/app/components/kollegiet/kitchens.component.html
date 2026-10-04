@@ -38,6 +38,22 @@
       </div>
       <button mat-button class="guide-link" (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
 
+      <!-- What the kitchen lends out; another kitchen asks with a tap (a note on the board). -->
+      @if (k.lends.length) {
+        <h3>🤝 {{ "KOL_LENDS" | translate }}</h3>
+        <div class="lends">
+          @for (item of k.lends; track item) {
+            @if (me() && k.id !== me()) {
+              <button mat-stroked-button (click)="ask(k.id, item)">{{ item }}</button>
+            } @else {
+              <span class="lend">{{ item }}</span>
+            }
+          }
+        </div>
+      } @else if (k.id === me() && canManage()) {
+        <p class="lends-hint">🤝 {{ "KOL_LENDS_NONE_MINE" | translate }}</p>
+      }
+
       @if (me() && k.id !== me()) {
         <div class="actions">
           <button mat-flat-button [disabled]="highfivedToday()" (click)="highfive(k.id)">🙌 {{ (highfivedToday() ? "KOL_HIGHFIVE_DONE" : "KOL_HIGHFIVE") | translate }}</button>
@@ -67,6 +83,20 @@
       <button mat-button (click)="guide()"><mat-icon>help</mat-icon> {{ "KOL_GUIDE" | translate }}</button>
     </div>
   }
+  <!-- Everything the other kitchens lend, to ask for with a tap. -->
+  @if (lendable().length) {
+    <section class="lend-all">
+      <h3>🤝 {{ "KOL_LENDS_ALL" | translate }}</h3>
+      <div class="lends">
+        @for (l of lendable(); track l.kitchenId + l.item) {
+          <button mat-stroked-button [disabled]="!me()" (click)="ask(l.kitchenId, l.item)">
+            <span class="with-chip" style="--chip-size: 20px"><app-kitchen-chip [kitchenId]="l.kitchenId" [iconOnly]="true" /> {{ l.item }}</span>
+          </button>
+        }
+      </div>
+    </section>
+  }
+
   <div class="grid">
     @for (k of cards(); track k.id) {
       @let s = summary().get(k.id);

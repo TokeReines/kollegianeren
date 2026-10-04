@@ -11,6 +11,8 @@ export interface Profile {
   emoji: string;
   colour: KitchenColour;
   bio: string;
+  // Things the kitchen lends to the others (a raclette grill, a beer pong table): asked for with a note.
+  lends?: string[];
   updatedAt: Timestamp;
 }
 
@@ -20,6 +22,9 @@ export const KITCHEN_COLOURS = ['purple', 'blue', 'teal', 'green', 'lime', 'ambe
 export type KitchenColour = typeof KITCHEN_COLOURS[number];
 
 export const BIO_MAX = 200;
+// What a kitchen can lend: this many things, each this long.
+export const LENDS_MAX = 12;
+export const LEND_MAX = 40;
 export const POST_MAX = 1000;
 // Notes a kitchen keeps on the board at once; a fourth asks it to take one down or write on one.
 export const NOTES_PER_KITCHEN = 3;
