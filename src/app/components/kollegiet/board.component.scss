@@ -557,6 +557,39 @@
   }
 }
 
+// The kitchen's own notes, when it has all of them up.
+.full {
+  .mine {
+    padding: 12px 12px 4px;
+    border-radius: 4px;
+    // The post-it's own colour.
+    background: color-mix(in srgb, var(--kitchen-hue, #ffd54f) 32%, var(--mat-sys-surface));
+  }
+
+  .text {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .when {
+      font: var(--mat-sys-label-medium);
+      opacity: .75;
+    }
+
+  }
+}
+
 .thread {
   header {
     display: flex;

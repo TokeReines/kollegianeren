@@ -21,6 +21,10 @@ export type KitchenColour = typeof KITCHEN_COLOURS[number];
 
 export const BIO_MAX = 200;
 export const POST_MAX = 1000;
+// Notes a kitchen keeps on the board at once; a fourth asks it to take one down or write on one.
+export const NOTES_PER_KITCHEN = 3;
+// What the board loads: every kitchen's notes, with room for the maker's and a few kitchens more.
+export const NOTES_MAX = 80;
 export const REASON_MAX = 140;
 export const TITLE_MAX = 80;
 

@@ -81,7 +81,8 @@
             <span>{{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:'HH:mm' }}@if (e.place) { · {{ e.place }} }</span>
           } @else {
             <b>{{ e.startsAt.toDate() | date:'EEE d/M' }}</b>
-            <span>{{ e.startsAt.toDate() | date:'HH:mm' }}@if (e.place) { · {{ e.place }} }</span>
+            <!-- The end too: a time, or a day and time for one that runs more than half a day. -->
+            <span>{{ e.startsAt.toDate() | date:'HH:mm' }} {{ "KOL_LIVE_UNTIL" | translate }} {{ e.endsAt.toDate() | date:(long(e) ? 'EEE d/M HH:mm' : 'HH:mm') }}@if (e.place) { · {{ e.place }} }</span>
           }
         </div>
         @if (e.kind !== 'live') {
@@ -199,6 +200,30 @@
   <mat-dialog-actions align="end">
     <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
     <button mat-flat-button [disabled]="!text().trim()" (click)="send()">{{ "MAKER_SEND" | translate }}</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- A kitchen with all its notes up: take one down for the new one, or write on one instead. -->
+<ng-template #full>
+  <h2 mat-dialog-title>{{ "KOL_NOTES_FULL_TITLE" | translate }}</h2>
+  <div mat-dialog-content class="dialog-content full">
+    <p>{{ (canManage() ? "KOL_NOTES_FULL_TEXT" : "KOL_NOTES_FULL_TEXT_TABLET") | translate }}</p>
+    @for (n of myNotes(); track n.thread.post.id) {
+      <article class="mine" [attr.data-kitchen-colour]="colour(me())">
+        <p class="text">{{ n.thread.post.text }}</p>
+        <div class="row">
+          <span class="when">{{ n.thread.post.createdAt.toDate() | date:'d/M' }}@if (n.thread.replies.length) { · 💬 {{ n.thread.replies.length }} {{ (n.thread.replies.length === 1 ? "KOL_REPLY_ONE" : "KOL_REPLIES") | translate }} }</span>
+          <span class="fill-space"></span>
+          <button mat-button type="button" (click)="writeOn(n.thread.post.id)"><mat-icon>edit_note</mat-icon> {{ "KOL_WRITE_ON" | translate }}</button>
+          @if (canManage()) {
+            <button mat-button type="button" (click)="takeDown(n.thread.post.id)"><mat-icon>delete_outline</mat-icon> {{ "KOL_TAKE_DOWN" | translate }}</button>
+          }
+        </div>
+      </article>
+    }
+  </div>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
   </mat-dialog-actions>
 </ng-template>
 

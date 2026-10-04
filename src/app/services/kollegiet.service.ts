@@ -4,9 +4,9 @@ import {
   Timestamp, WriteBatch, collection, collectionGroup, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import {getDoc, onSnapshot} from '../read-meter';
-import {Observable, catchError, distinctUntilChanged, firstValueFrom, map, of, shareReplay, switchMap} from 'rxjs';
+import {Observable, ReplaySubject, catchError, combineLatest, distinctUntilChanged, finalize, firstValueFrom, map, of, share, shareReplay, switchMap, timer} from 'rxjs';
 import {
-  Achievement, Badge, KEvent, Kudos, LIVE_HOURS_MAX, POLL_SLOTS, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId,
+  Achievement, Badge, KEvent, Kudos, LIVE_HOURS_MAX, NOTES_MAX, POLL_SLOTS, Poll, liveCallId, Post, Profile, Rsvp, Standing, highfiveId,
 } from '../interfaces/kollegiet';
 import {Kitchen} from '../interfaces/kitchen';
 import {dayKey} from '../interfaces/meal';
@@ -79,7 +79,31 @@ export class KollegietService {
   // The kitchen's own counts, for the badges it wears in the top bar: one document.
   readonly myStanding$ = whileSignedIn(this.auth.kitchen$,
     kid => watchDoc<Standing>(doc(db, 'standings', kid)), null).pipe(shareReplay({bufferSize: 1, refCount: true}));
-  readonly posts$ = this.shared(() => watch<Post>(query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(60))));
+  // The board's notes and their replies. The notes on their own (a kitchen keeps at most
+  // NOTES_PER_KITCHEN up, so the limit holds every kitchen's), so a long thread cannot push other
+  // kitchens' notes off the board; then their replies, a listener per 30 notes (Firestore's "in"
+  // limit), oldest notes first: a new note only changes the last listener, the others stay open.
+  readonly posts$ = this.shared(() => watch<Post>(query(collection(db, 'posts'), where('parentId', '==', null),
+    orderBy('createdAt', 'desc'), limit(NOTES_MAX))).pipe(
+    switchMap(notes => {
+      const ids = notes.map(n => n.id).reverse();
+      const chunks = Array.from({length: Math.ceil(ids.length / 30)}, (_, i) => ids.slice(i * 30, i * 30 + 30));
+      return chunks.length ? combineLatest(chunks.map(c => this.repliesTo(c))).pipe(map(r => [...notes, ...r.flat()])) : of(notes);
+    })));
+  private readonly replyLists = new Map<string, Observable<Post[]>>();
+  // One listener per set of notes, kept while the board shows them.
+  private repliesTo(ids: string[]): Observable<Post[]> {
+    const key = ids.join();
+    let list = this.replyLists.get(key);
+    if (!list) {
+      // Kept a moment after the last subscriber leaves, so a board that swaps its lists keeps this one.
+      list = watch<Post>(query(collection(db, 'posts'), where('parentId', 'in', ids))).pipe(
+        finalize(() => this.replyLists.delete(key)),
+        share({connector: () => new ReplaySubject<Post[]>(1), resetOnRefCountZero: () => timer(5000)}));
+      this.replyLists.set(key, list);
+    }
+    return list;
+  }
   // Events that have not been over for a day. Latest ending first: the lower bound is fixed when the
   // listener opens, so on a tablet open for weeks old ones would otherwise fill the limit.
   readonly events$ = this.shared(() => watch<KEvent>(query(collection(db, 'events'),
@@ -177,6 +201,15 @@ export class KollegietService {
     const batch = writeBatch(db);
     batch.delete(doc(db, collectionName, id));
     return pulsed(batch, collectionName).commit();
+  }
+
+  // A kitchen taking its own note off the board, to put up a new one: its managers may delete their
+  // kitchen's posts at any time. Others' replies to it stay in Firestore but are no longer shown.
+  takeDown(id: string) {
+    this.usage.act('note-take-down');
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'posts', id));
+    return pulsed(batch, 'posts').commit();
   }
 
   // Hiding (a manager of the author kitchen, or the maker): moved to hidden/ for the maker.
