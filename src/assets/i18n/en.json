@@ -718,6 +718,7 @@
   "KOL_METRIC_mealDiners": "Most food club diners",
   "KOL_METRIC_plantMeals": "Most plant-based food club",
   "KOL_METRIC_gym": "Most gym visits",
+  "KOL_RANK": "No.",
   "KOL_METRIC_HINT_drinks": "Everything bought on the tab.",
   "KOL_METRIC_HINT_beer": "Products set as beer under Products.",
   "KOL_METRIC_HINT_mealDiners": "Every sign-up for a dinner in the period.",
