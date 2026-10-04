@@ -1,4 +1,4 @@
-import {Component, DestroyRef, computed, inject, signal} from '@angular/core';
+import {Component, DestroyRef, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -21,6 +21,9 @@ import {TranslatePipe} from '../../translate.pipe';
 import {MakerChatComponent} from '../maker-chat/maker-chat.component';
 import {AboutComponent} from './about.component';
 import {ProposalsComponent} from './proposals.component';
+import {PictureViewerDirective} from './picture-viewer';
+import {RichEditorComponent} from './rich-editor.component';
+import {asHtml} from './rich-text';
 
 const TABS = ['nyt', 'forslag', 'om'] as const;
 
@@ -29,7 +32,7 @@ const TABS = ['nyt', 'forslag', 'om'] as const;
 @Component({
   selector: 'app-aktuelt',
   imports: [DatePipe, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTabsModule,
-    TranslatePipe, MakerChatComponent, ProposalsComponent, AboutComponent],
+    TranslatePipe, MakerChatComponent, ProposalsComponent, AboutComponent, PictureViewerDirective, RichEditorComponent],
   templateUrl: './aktuelt.component.html',
   styleUrl: './aktuelt.component.scss',
 })
@@ -45,7 +48,11 @@ export class AktueltComponent {
   protected readonly announcements = toSignal(this.maker.announcements(), {initialValue: []});
   protected readonly isAdmin = this.maker.isAdmin;
   protected readonly title = signal('');
+  // Cleaned HTML from the editor (bold, bullets, pictures); older posts are plain text.
   protected readonly body = signal('');
+  protected readonly uploading = signal(false);
+  private readonly editor = viewChild(RichEditorComponent);
+  protected readonly asHtml = asHtml;
 
   // When the kitchen last looked, read before this visit counts: what is newer gets a "new" tag.
   protected readonly seenBefore = signal(Number.MAX_SAFE_INTEGER);
@@ -70,7 +77,7 @@ export class AktueltComponent {
   protected post() {
     this.maker.postAnnouncement(this.title().trim(), this.body().trim()).then(() => {
       this.title.set('');
-      this.body.set('');
+      this.editor()?.clear();
     }, this.notify.error);
   }
 }
