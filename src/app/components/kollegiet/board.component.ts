@@ -11,7 +11,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {
-  Battle, KEvent, Kudos, POST_MAX, Poll, Post, PostThread, Rsvp, isLiveNow, threads,
+  Battle, KEvent, Kudos, NOTES_PER_KITCHEN, POST_MAX, Poll, Post, PostThread, Rsvp, isLiveNow, threads,
 } from '../../interfaces/kollegiet';
 import {EventFields, HideableCollection, KollegietService} from '../../services/kollegiet.service';
 import {AuthService} from '../../services/auth.service';
@@ -93,6 +93,8 @@ export class BoardComponent {
 
   private readonly composeTpl = viewChild.required<TemplateRef<unknown>>('compose');
   private readonly noteTpl = viewChild.required<TemplateRef<unknown>>('note');
+  private readonly fullTpl = viewChild.required<TemplateRef<unknown>>('full');
+  private fullRef: MatDialogRef<unknown> | null = null;
   private composeRef: MatDialogRef<unknown> | null = null;
   private noteRef: MatDialogRef<unknown> | null = null;
   protected readonly openId = signal<string | null>(null);
@@ -151,6 +153,9 @@ export class BoardComponent {
       };
     })
     .sort((a, b) => b.at - a.at));
+  // The kitchen's own notes, most recently active first.
+  protected readonly myNotes = computed(() => this.notes().filter(n => n.thread.post.kitchenId === this.me()));
+  protected readonly notesPerKitchen = NOTES_PER_KITCHEN;
   protected readonly openThread = computed(() => this.notes().find(n => n.thread.post.id === this.openId())?.thread ?? null);
 
 
@@ -198,8 +203,27 @@ export class BoardComponent {
     return this.kollegiet.card(kitchenId).colour;
   }
 
+  // A kitchen keeps NOTES_PER_KITCHEN notes up: with that many, it first takes one down or
+  // writes on one of them instead.
   protected openComposer() {
+    if (this.myNotes().length >= NOTES_PER_KITCHEN) {
+      this.fullRef = this.dialog.open(this.fullTpl(), {width: '520px', maxWidth: '94vw', autoFocus: false});
+      return;
+    }
     this.composeRef = this.dialog.open(this.composeTpl(), {width: '520px', maxWidth: '94vw'});
+  }
+
+  protected writeOn(id: string) {
+    this.fullRef?.close();
+    this.openNote(id);
+  }
+
+  // Off the board for good (its replies go with it); then the new note.
+  protected takeDown(id: string) {
+    this.kollegiet.takeDown(id).then(() => {
+      this.fullRef?.close();
+      this.openComposer();
+    }, this.notify.error);
   }
 
   protected send() {
@@ -287,6 +311,11 @@ export class BoardComponent {
             () => this.notify.info(this.i18n.t('KOL_HIGHFIVE_DONE')));
         }
       });
+  }
+
+  // Longer than half a day: its end is shown with the day.
+  protected long(e: KEvent) {
+    return millis(e.endsAt) - millis(e.startsAt) > 12 * 3.6e6;
   }
 
   protected isLive(e: KEvent) {

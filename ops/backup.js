@@ -9,7 +9,8 @@
 // of purchases are kept. Every run:
 //   1. Snapshots the small collections (kitchen docs, users, products) into snapshots/<date>/,
 //      and Kollegiet (posts, events, kudos, battles, polls, profiles, standings, proposals and
-//      their subcollections) into snapshots/<date>/kollegiet/. A few dozen reads today.
+//      their subcollections) into kollegiet/, only what can still have changed since the last
+//      run (snapshotKollegiet). A few dozen reads a night.
 //   2. Pulls new purchases per kitchen since the newest one already backed up, and the ids of
 //      purchases taken back since the last run (the app's notes in removed/).
 //   3. Backfills older purchases within the window, newest first, round-robin across kitchens,
@@ -123,25 +124,58 @@ async function snapshotSmallCollections(kitchenRefs) {
   log(`snapshot ${dir}: ${existing.length} kitchens`);
 }
 
-// Kollegiet and Aktuelt's proposals: shared collections, each document stored with its path.
-const KOLLEGIET = ['posts', 'events', 'kudos', 'battles', 'polls', 'profiles', 'standings', 'seen', 'pollSlots', 'battleSlots',
-  'proposals', 'reports'];
-const KOLLEGIET_SUB = ['tally', 'ballots', 'achievements', 'comments'];
+// Kollegiet and Aktuelt's proposals: shared collections that grow every day, so a night reads only
+// what can still have changed, and merges it into kollegiet/<collection>.ndjson.gz (every document
+// by its path, the newest copy wins; never pruned). The first run reads everything.
+//  - New since the last run (they never change): posts, kudos.
+//  - Still going or ended in the last 3 days (answers, scores, results): events, battles with their
+//    tallies, polls with their ballots.
+//  - Small, one per kitchen or few: profiles, standings with achievements, seen, the slots, reports,
+//    proposals (votes change any time), and each proposal's comments since the last run.
+// Documents deleted later (taken back, hidden, a note taken down) stay in the files; hidden/ holds
+// the hidden ones. A few dozen reads a night, however big Kollegiet grows.
+const RECENT_MS = 3 * 864e5;
 
-async function snapshotKollegiet() {
-  const dir = path.join(OUT, 'snapshots', runId.slice(0, 10), 'kollegiet');
-  let n = 0;
-  for (const c of KOLLEGIET) {
-    const docs = await get(db.collection(c));
-    writeNdjson(path.join(dir, `${c}.ndjson.gz`), docs);
-    n += docs.length;
+function mergeNdjson(file, docs) {
+  const byPath = new Map();
+  if (fs.existsSync(file)) {
+    for (const l of zlib.gunzipSync(fs.readFileSync(file)).toString('utf8').split('\n').filter(Boolean)) byPath.set(JSON.parse(l).path, l);
   }
-  for (const g of KOLLEGIET_SUB) {
-    const docs = await get(db.collectionGroup(g));
-    writeNdjson(path.join(dir, `${g}.ndjson.gz`), docs);
-    n += docs.length;
+  for (const d of docs) byPath.set(d.ref.path, JSON.stringify({ path: d.ref.path, data: encode(d.data()) }));
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file + '.tmp', zlib.gzipSync([...byPath.values()].join('\n') + (byPath.size ? '\n' : '')));
+  fs.renameSync(file + '.tmp', file);
+  return byPath.size;
+}
+
+async function snapshotKollegiet(state) {
+  const dir = path.join(OUT, 'kollegiet');
+  const startedAt = Date.now();
+  // A margin for commits landing just as the last run read.
+  const since = state.kollegietAt ? Timestamp.fromMillis(Date.parse(state.kollegietAt) - 3600e3) : null;
+  const recent = Timestamp.fromMillis(Date.now() - RECENT_MS);
+  const read = {};
+  const save = (name, docs) => {
+    read[name] = (read[name] || 0) + docs.length;
+    return mergeNdjson(path.join(dir, `${name}.ndjson.gz`), docs);
+  };
+  const newer = (q, field = 'createdAt') => since ? q.where(field, '>', since) : q;
+  for (const c of ['posts', 'kudos']) save(c, await get(newer(db.collection(c))));
+  save('events', await get(since ? db.collection('events').where('endsAt', '>=', recent) : db.collection('events')));
+  for (const [c, field, sub] of [['battles', 'to', 'tally'], ['polls', 'closesAt', 'ballots']]) {
+    const docs = await get(since ? db.collection(c).where(field, '>=', recent) : db.collection(c));
+    save(c, docs);
+    for (const d of docs) save(sub, await get(d.ref.collection(sub)));
   }
-  log(`snapshot ${dir}: ${n} documents`);
+  for (const c of ['profiles', 'seen', 'pollSlots', 'battleSlots', 'reports']) save(c, await get(db.collection(c)));
+  const standings = await get(db.collection('standings'));
+  save('standings', standings);
+  save('achievements', await get(db.collectionGroup('achievements')));
+  const proposals = await get(db.collection('proposals'));
+  save('proposals', proposals);
+  for (const p of proposals) save('comments', await get(newer(p.ref.collection('comments'))));
+  state.kollegietAt = new Date(startedAt).toISOString();
+  log(`kollegiet ${since ? 'since ' + since.toDate().toISOString() : 'in full'}: ${Object.entries(read).map(([k, n]) => `${k} ${n}`).join(', ')}`);
 }
 
 function savePurchases(kitchenId, docs, kind) {
@@ -219,7 +253,8 @@ async function reconcile(ref, st) {
   const kitchenRefs = await db.collection('kitchens').listDocuments();
   reads += kitchenRefs.length;
   await snapshotSmallCollections(kitchenRefs);
-  await snapshotKollegiet();
+  await snapshotKollegiet(state);
+  saveState(state);
 
   for (const ref of kitchenRefs) state.kitchens[ref.id] ||= { stored: 0, backfillDone: false };
   saveState(state);
