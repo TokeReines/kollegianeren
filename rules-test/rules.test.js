@@ -123,8 +123,10 @@ test('food club bill: a negative price or 0 portions only under a dinner\'s prod
   const db = asKitchen('tab');
   const line = extra => addDoc(collection(db, 'kitchens', A, 'purchases'), purchase({ productId: 'madklub-2026-10-08', productName: 'Madklub', ...extra }));
   const meal = doc(db, 'kitchens', A, 'meals', '2026-10-08');
+  // One moment for both: two now() calls a millisecond apart put closesAt after date, which the rules refuse.
+  const now = Timestamp.now();
   await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'kitchens', A, 'meals', '2026-10-08'), {
-    day: '2026-10-08', date: Timestamp.now(), closesAt: Timestamp.now(), cooks: ['u1'], menu: 'Tacos', notes: '', tags: [],
+    day: '2026-10-08', date: now, closesAt: now, cooks: ['u1'], menu: 'Tacos', notes: '', tags: [],
     askCook: false, signups: ['u1', 'u2'], createdAt: Timestamp.now(),
   }));
   const b = writeBatch(db);
