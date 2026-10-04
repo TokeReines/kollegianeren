@@ -18,7 +18,7 @@ describe('Kollegiet archive', () => {
     kudos: [
       {to: 'a', kind: 'highfive', createdAt: ts('2026-10-01T10:00:00Z')},
       {to: 'a', kind: 'highfive', createdAt: ts('2026-10-02T10:00:00Z')},
-      {to: 'a', kind: 'badge', badge: 'bestParty', createdAt: ts('2026-10-02T11:00:00Z')},
+      {to: 'a', from: 'b', kind: 'badge', badge: 'bestParty', reason: 'Vild fest', createdAt: ts('2026-10-02T11:00:00Z')},
     ],
     posts: [
       {id: 'p1', kitchenId: 'b', text: 'Raclette?', parentId: null, createdAt: ts('2026-10-01T10:00:00Z')},
@@ -35,6 +35,9 @@ describe('Kollegiet archive', () => {
 
   it('counts high-fives and badges per kitchen, and keeps the notes with replies', () => {
     expect(months['2026-10'].kudos).toEqual({a: {highfives: 2, badges: {bestParty: 1}}});
+    // Each one, newest first, for the history: the badge's reason kept, a high-five's badge null.
+    expect(months['2026-10'].given.map((g: {badge: string | null, reason: string}) => [g.badge, g.reason]))
+      .toEqual([['bestParty', 'Vild fest'], [null, ''], [null, '']]);
     expect(months['2026-10'].notes).toEqual([{kitchenId: 'b', text: 'Raclette?', replies: 1, at: Date.parse('2026-10-01T10:00:00Z')}]);
   });
 });

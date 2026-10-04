@@ -1,7 +1,9 @@
-import {Component, computed, inject, resource, signal} from '@angular/core';
+import {Component, TemplateRef, computed, inject, resource, signal, viewChild} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {collection, limit, orderBy, query} from 'firebase/firestore';
+import {MatButtonModule} from '@angular/material/button';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {db} from '../../firebase';
 import {Badge} from '../../interfaces/kollegiet';
@@ -16,6 +18,8 @@ interface ArchiveMonth {
   battles: {title: string, metric: string, winners: string[], scores: Record<string, number>, at: number}[];
   polls: {title: string, kitchenId: string, winners: string[], votes: Record<string, number>, at: number}[];
   kudos: Record<string, {highfives: number, badges: Partial<Record<Badge, number>>}>;
+  // Each high-five (badge null) and badge, newest first; missing in months archived before it was kept.
+  given?: {to: string, from: string, badge: Badge | null, reason: string, at: number}[];
   notes: {kitchenId: string, text: string, replies: number, at: number}[];
 }
 
@@ -26,7 +30,7 @@ const MONTHS = 12;
 // and the notes everyone talked about. Read when the tab opens, a read per month, never live.
 @Component({
   selector: 'app-archive',
-  imports: [DatePipe, MatButtonToggleModule, MatIconModule, TranslatePipe, KitchenChipComponent],
+  imports: [DatePipe, MatButtonModule, MatButtonToggleModule, MatDialogModule, MatIconModule, TranslatePipe, KitchenChipComponent],
   template: `
     @if (months.isLoading()) {
       <p class="empty">…</p>
@@ -70,14 +74,17 @@ const MONTHS = 12;
 
         <section>
           <h3>🙌 {{ "KOL_ARCHIVE_KUDOS" | translate }}</h3>
+          <!-- A tap on a kitchen: each high-five and badge it got this month, from whom, when and why. -->
           @for (k of kudos(); track k.kitchenId) {
-            <div class="row">
+            <button type="button" class="row kudos-row" [disabled]="!m.given" (click)="history(k.kitchenId)"
+                    [attr.aria-label]="('KOL_ARCHIVE_HISTORY' | translate) + ': ' + kollegiet.card(k.kitchenId).name">
               <app-kitchen-chip [kitchenId]="k.kitchenId" />
               <span class="who">
                 @if (k.highfives) { <span class="pin">🙌 {{ k.highfives }}</span> }
                 @for (b of k.badges; track b[0]) { <span class="pin">{{ "KOL_BADGE_ICON_" + b[0] | translate }} {{ b[1] }}</span> }
+                @if (m.given) { <mat-icon class="open">chevron_right</mat-icon> }
               </span>
-            </div>
+            </button>
           } @empty {
             <p class="none">{{ "KOL_ARCHIVE_NONE" | translate }}</p>
           }
@@ -97,6 +104,31 @@ const MONTHS = 12;
         </section>
       }
     }
+
+    <!-- One kitchen's high-fives and badges in the month, newest first. -->
+    <ng-template #historyTpl let-kitchenId>
+      <h2 mat-dialog-title class="history-title" style="--chip-size: 32px">
+        <app-kitchen-chip [kitchenId]="kitchenId" /> <span>{{ monthDate(shown().month) | date:'MMMM y' }}</span>
+      </h2>
+      <div mat-dialog-content>
+        @for (g of givenTo(kitchenId); track $index) {
+          <div class="given" style="--chip-size: 22px">
+            <span class="icon" aria-hidden="true">{{ g.badge ? ("KOL_BADGE_ICON_" + g.badge | translate) : '🙌' }}</span>
+            <div class="body">
+              <div class="line">
+                <b>{{ (g.badge ? "KOL_BADGE_" + g.badge : "KOL_HIGHFIVE") | translate }}</b>
+                <span class="from">{{ "KOL_ARCHIVE_FROM" | translate }} <app-kitchen-chip [kitchenId]="g.from" /></span>
+                <span class="hint">{{ g.at | date:'d/M HH:mm' }}</span>
+              </div>
+              @if (g.reason) { <p class="reason">"{{ g.reason }}"</p> }
+            </div>
+          </div>
+        }
+      </div>
+      <mat-dialog-actions align="end">
+        <button mat-button mat-dialog-close type="button">{{ "CLOSE" | translate }}</button>
+      </mat-dialog-actions>
+    </ng-template>
   `,
   styles: `
     :host { display: block; padding: 16px 0; }
@@ -113,10 +145,25 @@ const MONTHS = 12;
     .none { margin: 0; }
     .note { padding: 8px 0; border-bottom: 1px solid var(--mat-sys-outline-variant); --chip-size: 24px; }
     .note p { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .kudos-row { width: 100%; background: none; border: none; border-bottom: 1px solid var(--mat-sys-outline-variant); color: inherit;
+      font: inherit; text-align: left; cursor: pointer; }
+    .kudos-row:hover:not(:disabled) { background: var(--mat-sys-surface-container); }
+    .kudos-row:disabled { cursor: default; }
+    .open { color: var(--mat-sys-on-surface-variant); }
+    .history-title { display: flex; align-items: center; gap: 8px; text-transform: none; }
+    .history-title span::first-letter { text-transform: uppercase; }
+    .given { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--mat-sys-outline-variant); }
+    .given .icon { font-size: 24px; line-height: 1.2; }
+    .given .body { min-width: 0; flex: 1; }
+    .given .line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+    .given .from { display: inline-flex; align-items: center; gap: 4px; }
+    .given .reason { margin: 4px 0 0; font-style: italic; overflow-wrap: anywhere; }
   `,
 })
 export class ArchiveComponent {
-  private readonly kollegiet = inject(KollegietService);
+  protected readonly kollegiet = inject(KollegietService);
+  private readonly dialog = inject(MatDialog);
+  private readonly historyTpl = viewChild.required<TemplateRef<unknown>>('historyTpl');
   protected readonly months = resource({
     // By the month field: Firestore does not sort by document id descending.
     loader: async () => (await getDocs(query(collection(db, 'archive'), orderBy('month', 'desc'), limit(MONTHS))))
@@ -131,6 +178,14 @@ export class ArchiveComponent {
     .map(([kitchenId, k]) => ({kitchenId, highfives: k.highfives, badges: Object.entries(k.badges) as [Badge, number][]}))
     .map(k => ({...k, total: k.highfives + k.badges.reduce((n, [, c]) => n + c, 0)}))
     .sort((a, b) => b.total - a.total || this.kollegiet.card(a.kitchenId).name.localeCompare(this.kollegiet.card(b.kitchenId).name, 'da')));
+
+  protected givenTo(kitchenId: string) {
+    return (this.shown()?.given ?? []).filter(g => g.to === kitchenId);
+  }
+
+  protected history(kitchenId: string) {
+    this.dialog.open(this.historyTpl(), {width: '520px', maxWidth: '94vw', autoFocus: false, data: kitchenId});
+  }
 
   protected monthDate(month: string) {
     const [y, m] = month.split('-').map(Number);

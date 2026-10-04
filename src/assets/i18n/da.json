@@ -575,6 +575,8 @@
   "KOL_ARCHIVE_KUDOS": "High-fives og badges",
   "KOL_ARCHIVE_NOTES": "Mest snakkede sedler",
   "KOL_ARCHIVE_NONE": "Ingen denne måned.",
+  "KOL_ARCHIVE_HISTORY": "Se hvem der gav dem",
+  "KOL_ARCHIVE_FROM": "fra",
   "KOL_ARCHIVE_ERROR": "Arkivet kunne ikke hentes. Prøv igen om lidt.",
   "USAGE_PAGE_KOLLEGIET_ARCHIVE": "Kollegiet: Arkiv",
   "KOL_WRITE": "Skriv til de andre køkkener",
