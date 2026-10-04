@@ -7,6 +7,7 @@ import {Battle, scoreboard} from '../../interfaces/kollegiet';
 import {AuthService} from '../../services/auth.service';
 import {KollegietService} from '../../services/kollegiet.service';
 import {LeagueService} from '../../services/league.service';
+import {TranslatePipe} from '../../translate.pipe';
 import {KitchenChipComponent} from './kitchen-chip.component';
 import {liveBoard} from './live-board';
 
@@ -14,7 +15,7 @@ import {liveBoard} from './live-board';
 // moves. Gym taps are on the battle's card in Kollegiet. Only for kitchens in the battle, so only their tablets listen.
 @Component({
   selector: 'app-battle-ticker',
-  imports: [RouterLink, MatIconModule, KitchenChipComponent],
+  imports: [RouterLink, MatIconModule, KitchenChipComponent, TranslatePipe],
   template: `
     <div class="ticker">
       <a class="title" [routerLink]="['/kollegiet/battle', battle().id]">
@@ -23,10 +24,16 @@ import {liveBoard} from './live-board';
       </a>
       <ol class="rows">
         @for (r of rows(); track r.kitchenId) {
-          <li [class.mine]="r.kitchenId === me()" [class.bump]="live.bumped().has(r.kitchenId)">
-            <span class="rank">{{ r.rank === 1 && r.score > 0 ? '🏆' : r.rank }}</span>
+          <!-- The place in a circle (the cup for the one ahead), the kitchen, and its number with what it counts. -->
+          <li [class.mine]="r.kitchenId === me()" [class.bump]="live.bumped().has(r.kitchenId)"
+              [attr.aria-label]="('KOL_RANK' | translate) + ' ' + r.rank + ': ' + kollegiet.card(r.kitchenId).name + ', ' + r.score + ' ' + (unit() | translate)">
+            @if (r.rank === 1 && r.score > 0) {
+              <span class="cup" aria-hidden="true">🏆</span>
+            } @else {
+              <span class="rank" aria-hidden="true">{{ r.rank }}</span>
+            }
             <app-kitchen-chip [kitchenId]="r.kitchenId" />
-            <b class="score">{{ r.score }}{{ battle().metric === 'plantMeals' ? ' %' : '' }}</b>
+            <span class="score" aria-hidden="true"><b>{{ r.score }}</b> {{ unit() | translate }}</span>
           </li>
         }
       </ol>
@@ -49,8 +56,11 @@ import {liveBoard} from './live-board';
       background: var(--mat-sys-surface-container-high); transition: background-color 300ms; }
     li.mine { background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); }
     li.bump { background: var(--mat-sys-tertiary); color: var(--mat-sys-on-tertiary); }
-    .rank { font: var(--mat-sys-label-large); min-width: 1.4em; text-align: center; }
-    .score { font-variant-numeric: tabular-nums; }
+    .rank { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+      font: var(--mat-sys-label-medium); background: var(--mat-sys-surface); border: 1px solid var(--mat-sys-outline-variant); }
+    .cup { flex: none; width: 22px; text-align: center; }
+    .score { padding-left: 8px; border-left: 1px solid var(--mat-sys-outline-variant); font: var(--mat-sys-label-medium); }
+    .score b { font: var(--mat-sys-label-large); font-variant-numeric: tabular-nums; }
     .toast { flex: none; padding: 4px 12px; border-radius: 14px; background: var(--mat-sys-tertiary); color: var(--mat-sys-on-tertiary);
       font: var(--mat-sys-label-large); animation: pop 400ms ease-out; }
     @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -71,5 +81,7 @@ export class BattleTickerComponent {
   protected readonly live = liveBoard(this.rows, computed(() => this.tallies() ? this.id() : ''));
   protected readonly me = computed(() => this.auth.membership()?.kitchenId ?? '');
   protected readonly icon = computed(() => LeagueService.metricIcon(this.battle().metric));
+  // What the number counts: øl, spisende, besøg...
+  protected readonly unit = computed(() => 'KOL_UNIT_' + this.battle().metric);
 
 }

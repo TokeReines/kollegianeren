@@ -107,7 +107,9 @@ async function realScore(battle, kid, tally) {
     // battle, when it has ended.
     case 'drinks': {
       const purchases = await get(k.collection('purchases').where('timestamp', '>=', from).where('timestamp', '<', to));
-      return purchases.reduce((n, p) => n + (Number(p.get('amount')) || 0), 0);
+      // A food club bill split into Regnskab (productId madklub-…) is dinner, not drinks.
+      return purchases.filter(p => !String(p.get('productId')).startsWith('madklub-'))
+        .reduce((n, p) => n + (Number(p.get('amount')) || 0), 0);
     }
     case 'beer': {
       const beer = new Set((await get(k.collection('products').where('category', '==', 'beer'))).map(d => d.id));

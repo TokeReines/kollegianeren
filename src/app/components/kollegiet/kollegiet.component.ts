@@ -6,17 +6,18 @@ import {MatTabsModule} from '@angular/material/tabs';
 import {showAnchor} from '../../anchor';
 import {KollegietService} from '../../services/kollegiet.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {ArchiveComponent} from './archive.component';
 import {BattlesComponent} from './battles.component';
 import {BoardComponent} from './board.component';
 import {KitchensComponent} from './kitchens.component';
 
-const TABS = ['board', 'battles', 'kitchens'] as const;
+const TABS = ['board', 'battles', 'kitchens', 'archive'] as const;
 
 // Kollegiet: the kitchens of the dorm together (docs/kollegiet.md). Opening it counts as having
 // seen what is new, for the strip and the bell.
 @Component({
   selector: 'app-kollegiet',
-  imports: [MatTabsModule, TranslatePipe, BattlesComponent, BoardComponent, KitchensComponent],
+  imports: [MatTabsModule, TranslatePipe, ArchiveComponent, BattlesComponent, BoardComponent, KitchensComponent],
   template: `
     <div class="page">
       <h1>{{ "KOL_TITLE" | translate }}</h1>
@@ -24,6 +25,7 @@ const TABS = ['board', 'battles', 'kitchens'] as const;
         <mat-tab [label]="'KOL_TAB_BOARD' | translate"><ng-template matTabContent><app-board /></ng-template></mat-tab>
         <mat-tab [label]="'KOL_TAB_BATTLES' | translate"><ng-template matTabContent><app-battles /></ng-template></mat-tab>
         <mat-tab [label]="'KOL_TAB_KITCHENS' | translate"><ng-template matTabContent><app-kitchens /></ng-template></mat-tab>
+        <mat-tab [label]="'KOL_TAB_ARCHIVE' | translate"><ng-template matTabContent><app-archive /></ng-template></mat-tab>
       </mat-tab-group>
     </div>
   `,

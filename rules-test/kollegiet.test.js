@@ -312,6 +312,10 @@ test('profiles: managers edit their own; tablets and other kitchens do not', asy
   await assertFails(setDoc(doc(as('tabA'), 'profiles', A), p));
   await assertFails(setDoc(doc(as(B), 'profiles', A), p));
   await assertFails(setDoc(doc(as(A), 'profiles', A), { ...p, colour: 'neon' }));
+  // Things it lends out: a short list.
+  await assertSucceeds(setDoc(doc(as(A), 'profiles', A), { ...p, lends: ['Raclette-grill', 'Beerpong-bord'] }));
+  await assertFails(setDoc(doc(as(A), 'profiles', A), { ...p, lends: Array.from({ length: 13 }, (_, i) => `ting ${i}`) }));
+  await assertFails(setDoc(doc(as(A), 'profiles', A), { ...p, lends: 'Raclette-grill' }));
 });
 
 test('reports come from the league job only, for the maker; standings are written by the job only', async () => {

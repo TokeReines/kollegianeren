@@ -1,14 +1,14 @@
 import {Component, DestroyRef, computed, inject, signal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {switchMap} from 'rxjs';
-import {DatePipe} from '@angular/common';
+import {DatePipe, DecimalPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {Meal, MealFields, WEEKS_AHEAD, WEEKS_BACK, isoWeek, newMeal, signupOpen, weekDays, weekStart} from '../../interfaces/meal';
+import {Meal, MealFields, WEEKS_AHEAD, WEEKS_BACK, expensesTotal, isoWeek, newMeal, signupOpen, weekDays, weekStart} from '../../interfaces/meal';
 import {User, byRoom} from '../../interfaces/user';
 import {MealService} from '../../services/meal.service';
 import {UserService} from '../../services/user.service';
@@ -18,6 +18,7 @@ import {TranslatePipe} from '../../translate.pipe';
 import {joinNames} from '../buy-page/basket';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
+import {BillDialogComponent, BillDialogData} from './bill-dialog.component';
 import {CookDialogComponent, CookDialogData} from './cook-dialog.component';
 import {MealDialogComponent, MealDialogData} from './meal-dialog.component';
 import {SignupDialogComponent, SignupDialogData} from './signup-dialog.component';
@@ -29,7 +30,7 @@ const FACES = 8;
 // day and who cooks; menu, time and the rest are added later. The others sign up until it closes.
 @Component({
   selector: 'app-food-club',
-  imports: [DatePipe, MatButtonModule, MatChipsModule, MatIconModule, MatMenuModule, MatTooltipModule,
+  imports: [DatePipe, DecimalPipe, MatButtonModule, MatChipsModule, MatIconModule, MatMenuModule, MatTooltipModule,
     TranslatePipe, ResidentAvatarComponent],
   templateUrl: './food-club.component.html',
   styleUrl: './food-club.component.scss',
@@ -152,6 +153,25 @@ export class FoodClubComponent {
   // The menu, or "Anna og Bo laver mad" while there is none.
   private title(meal: Meal) {
     return meal.menu || `${this.cookNames(meal)} ${this.i18n.t(meal.cooks.length > 1 ? 'FOOD_COOK_MANY' : 'FOOD_COOKS')}`;
+  }
+
+  // What was bought for the dinner and by whom, any time; split into Regnskab once it is eaten.
+  protected expenses(meal: Meal) {
+    const first = [...this.cooks(meal), ...this.eaters(meal)];
+    const payers = [...new Set([...first, ...this.residents()])];
+    this.dialog.open<BillDialogComponent, BillDialogData>(BillDialogComponent, {width: '560px', maxWidth: '94vw', autoFocus: false,
+      data: {meal: () => this.meals().find(m => m.id === meal.id), title: this.title(meal), payers, residents: this.byId()}});
+  }
+
+  protected expensesTotal(meal: Meal) {
+    return expensesTotal(meal);
+  }
+
+  protected async undoBill(meal: Meal) {
+    const t = (k: string) => this.i18n.t(k);
+    if (await this.confirm.ask({title: t('FOOD_BILL_UNDO'), message: t('FOOD_BILL_UNDO_TEXT'), confirm: t('FOOD_BILL_UNDO'), danger: true})) {
+      this.mealService.undoBill(meal).catch(this.notify.error);
+    }
   }
 
   protected async remove(meal: Meal) {

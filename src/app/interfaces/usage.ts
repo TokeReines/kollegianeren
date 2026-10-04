@@ -4,7 +4,7 @@
 
 // Pages, from the address: the first part, and the tab on Kollegiet and Aktuelt.
 export const USAGE_PAGES = [
-  'buy', 'food-club', 'stats', 'kollegiet:board', 'kollegiet:battles', 'kollegiet:kitchens', 'battle',
+  'buy', 'food-club', 'stats', 'kollegiet:board', 'kollegiet:battles', 'kollegiet:kitchens', 'kollegiet:archive', 'battle',
   'aktuelt:nyt', 'aktuelt:forslag', 'aktuelt:om', 'products', 'users', 'accounting', 'access',
 ] as const;
 
@@ -14,10 +14,10 @@ export const USAGE_ACTIONS = [
   // Buying
   'buy', 'buy-group', 'purchase-remove',
   // Food club
-  'meal-add', 'meal-edit', 'meal-delete', 'meal-cook', 'meal-signup', 'meal-signoff',
+  'meal-add', 'meal-edit', 'meal-delete', 'meal-cook', 'meal-signup', 'meal-signoff', 'meal-expense', 'meal-bill', 'meal-bill-undo',
   // Kollegiet
   'post', 'post-reply', 'highfive', 'badge', 'event', 'event-edit', 'rsvp', 'who-is-coming', 'live-call', 'live-call-end',
-  'poll', 'poll-close', 'vote', 'battle', 'battle-join', 'battle-calloff', 'gym', 'profile', 'shelf-guide', 'take-back', 'hide', 'note-take-down',
+  'poll', 'poll-close', 'vote', 'battle', 'battle-join', 'battle-calloff', 'gym', 'profile', 'shelf-guide', 'take-back', 'hide', 'note-take-down', 'lend-ask',
   // Aktuelt
   'proposal-comment', 'proposal-vote', 'message', 'picture',
   // Statistik
@@ -25,7 +25,7 @@ export const USAGE_ACTIONS = [
   // Managing
   'product-add', 'product-edit', 'product-delete', 'stock', 'resident-add', 'resident-edit', 'resident-delete',
   'move-out', 'move-in', 'anonymise', 'resident-link', 'invite', 'invite-revoke', 'member-remove', 'kitchen-rename',
-  'accounting-csv', 'accounting-xlsx', 'export-json', 'export-csv',
+  'accounting-csv', 'accounting-xlsx', 'accounting-paid', 'accounting-message', 'export-json', 'export-csv',
 ] as const;
 
 export type UsagePage = typeof USAGE_PAGES[number];

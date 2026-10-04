@@ -49,11 +49,16 @@ service cloud.firestore {
 
     // Shape of a purchase as both the 2019 app and the current app write it. Checked against
     // the backed-up purchases: price is null in a few old ones, userRoom is sometimes a number.
+    // A food club dinner's bill split into Regnskab (MealService.splitBill): who paid gets the bill
+    // back as a negative price, with 0 portions when they did not eat. Only under a dinner's id.
+    function mealBill(d) {
+      return d.productId is string && d.productId.matches('madklub-[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
     function validPurchase(d) {
       return d.keys().hasOnly(['amount', 'price', 'productId', 'productName', 'userId', 'userName', 'userRoom', 'timestamp'])
         && d.keys().hasAll(['amount', 'productId', 'userId', 'timestamp'])
-        && d.amount is int && d.amount >= 1 && d.amount <= 200
-        && (d.get('price', null) == null || (d.price is number && d.price >= 0 && d.price <= 20000))
+        && d.amount is int && ((d.amount >= 1 && d.amount <= 200) || (d.amount == 0 && mealBill(d)))
+        && (d.get('price', null) == null || (d.price is number && d.price <= 20000 && (d.price >= 0 || (mealBill(d) && d.price >= -20000))))
         && d.productId is string && d.userId is string
         && d.get('productName', '') is string && d.get('userName', '') is string
         && (d.get('userRoom', null) == null || d.userRoom is string || d.userRoom is number);
@@ -83,6 +88,13 @@ service cloud.firestore {
     // ops/admin-stats.js job (the admin SDK), never from the app.
     match /adminStats/{id} {
       allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Kollegiet's archive, a document a month (winners, votes, kudos, the most talked-about notes),
+    // written by ops/stats-summary.js from the nightly backup; read on Kollegiet's Arkiv tab.
+    match /archive/{month} {
+      allow read: if kitchenLogin() || isAdmin();
       allow write: if false;
     }
 
@@ -307,7 +319,9 @@ service cloud.firestore {
     match /profiles/{kid} {
       allow read: if kitchenLogin() || isAdmin();
       allow create, update: if canManage(kid) && kitchenLogin()
-        && request.resource.data.keys().hasOnly(['emoji', 'colour', 'bio', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['emoji', 'colour', 'bio', 'lends', 'updatedAt'])
+        // Things it lends to the others, a short list (the app keeps each to 40 characters).
+        && (!('lends' in request.resource.data) || (request.resource.data.lends is list && request.resource.data.lends.size() <= 12))
         && request.resource.data.keys().hasAll(['emoji', 'colour', 'bio', 'updatedAt'])
         && text(request.resource.data.emoji, 1, 16)
         && request.resource.data.colour in ['purple', 'blue', 'teal', 'green', 'lime', 'amber', 'orange', 'red', 'pink', 'grey']
@@ -729,7 +743,13 @@ service cloud.firestore {
       // update of that meal, which fails on createdAt. Moving a meal is a new day's document.
       match /meals/{mealId} {
         function validMeal(d) {
-          return d.keys().hasOnly(['day', 'date', 'cooks', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
+          return d.keys().hasOnly(['day', 'date', 'cooks', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt', 'expenses', 'bill'])
+            // What was bought for it, by whom (MealService.addExpense): a short list.
+            && (d.get('expenses', []) is list && d.get('expenses', []).size() <= 20)
+            // Its bill once split (MealService.splitBill).
+            && (d.get('bill', null) == null || (d.bill is map
+              && d.bill.keys().hasOnly(['productId', 'total', 'paidBy', 'eaters', 'share', 'at'])
+              && d.bill.total is number && d.bill.total > 0 && d.bill.total <= 20000 && d.bill.paidBy is string))
             && d.keys().hasAll(['day', 'date', 'cooks', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt'])
             && d.day == mealId && mealId.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
             && d.date is timestamp && d.closesAt is timestamp && d.closesAt <= d.date

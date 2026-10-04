@@ -24,6 +24,10 @@
     <div class="tile"><div class="value">{{ a.rows.length }}</div><div class="label">{{ "ACCOUNTING_RESIDENTS" | translate }}</div></div>
     <div class="tile"><div class="value">{{ a.sums.purchases }}</div><div class="label">{{ "STATS_PURCHASES" | translate }}</div></div>
     <div class="tile"><div class="value">{{ a.sums.allUnits }}</div><div class="label">{{ "STATS_UNITS" | translate }}</div></div>
+    <div class="tile">
+      <div class="value">{{ paidCount() }} <span class="of">/ {{ owingCount() }}</span></div>
+      <div class="label">{{ "ACCOUNTING_PAID_COUNT" | translate }} · {{ outstanding() | number:'1.2-2' }} kr. {{ "ACCOUNTING_OUTSTANDING" | translate }}</div>
+    </div>
   </div>
 
   <div class="toolbar">
@@ -36,7 +40,16 @@
       <mat-button-toggle value="units">{{ "ACCOUNTING_SHOW_UNITS" | translate }}</mat-button-toggle>
       <mat-button-toggle value="kr">{{ "ACCOUNTING_SHOW_KR" | translate }}</mat-button-toggle>
     </mat-button-toggle-group>
+    <mat-button-toggle-group [value]="unpaidOnly()" (change)="unpaidOnly.set($event.value)" hideSingleSelectionIndicator [attr.aria-label]="'ACCOUNTING_PAID' | translate">
+      <mat-button-toggle [value]="false">{{ "ACCOUNTING_ALL" | translate }}</mat-button-toggle>
+      <mat-button-toggle [value]="true">{{ "ACCOUNTING_UNPAID" | translate }}</mat-button-toggle>
+    </mat-button-toggle-group>
     <span class="fill-space"></span>
+    <!-- The number the copied messages ask residents to pay to; saved for the kitchen. -->
+    <mat-form-field class="mobilepay" subscriptSizing="dynamic">
+      <mat-label>{{ "ACCOUNTING_MOBILEPAY" | translate }}</mat-label>
+      <input matInput #mp [value]="mobilePay()" (blur)="saveMobilePay(mp.value)" (change)="saveMobilePay(mp.value)" (keydown.enter)="mp.blur()" inputmode="numeric" maxlength="20" autocomplete="off">
+    </mat-form-field>
     <button mat-flat-button [matMenuTriggerFor]="exportMenu" [disabled]="!a.rows.length">
       <mat-icon>download</mat-icon> {{ "ACCOUNTING_EXPORT" | translate }}
     </button>
@@ -77,6 +90,22 @@
           <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACCOUNTING_TOTAL_KR" | translate }}</th>
           <td mat-cell *matCellDef="let row">{{ row.total | number:'1.2-2' }}</td>
           <td mat-footer-cell *matFooterCellDef>{{ a.sums.total | number:'1.2-2' }}</td>
+        </ng-container>
+        <!-- Paid for this period: ticked, a mark when the amount has changed since, and the message to send. -->
+        <ng-container matColumnDef="paid" stickyEnd>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ "ACCOUNTING_PAID" | translate }}</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="paid">
+              <mat-checkbox [checked]="!!paid(row)" [disabled]="!row.total && !paid(row)" (change)="togglePaid(row, $event.checked)"
+                            [attr.aria-label]="('ACCOUNTING_PAID' | translate) + ': ' + row.name" />
+              @if (changed(row)) {
+                <mat-icon class="changed" [matTooltip]="changedText(row)">error_outline</mat-icon>
+              }
+              <button mat-icon-button [disabled]="!row.total" (click)="copyMessage(row)" [matTooltip]="'ACCOUNTING_COPY_MESSAGE' | translate"
+                      [attr.aria-label]="'ACCOUNTING_COPY_MESSAGE' | translate"><mat-icon>content_copy</mat-icon></button>
+            </div>
+          </td>
+          <td mat-footer-cell *matFooterCellDef>{{ paidCount() }}/{{ owingCount() }}</td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>

@@ -1,5 +1,5 @@
 import {Injectable, inject} from '@angular/core';
-import {doc, increment, limit, orderBy, query, serverTimestamp, where, writeBatch} from 'firebase/firestore';
+import {WriteBatch, doc, increment, limit, orderBy, query, serverTimestamp, where, writeBatch} from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {Product, tracksStock} from '../interfaces/product';
 import {Purchase} from '../interfaces/purchase';
@@ -62,16 +62,22 @@ export class PurchaseService {
   async remove(purchase: Purchase, product: Pick<Product, 'id' | 'stock' | 'category'> | undefined): Promise<void> {
     this.usage.act('purchase-remove');
     const batch = writeBatch(db);
-    batch.delete(doc(this.purchases(), purchase.id));
-    batch.set(doc(kitchenCollection(this.auth.currentKitchenId, 'removed'), purchase.id), {
-      userId: purchase.userId, productName: purchase.productName ?? null, amount: purchase.amount, price: purchase.price ?? null,
-      timestamp: purchase.timestamp, removedAt: serverTimestamp(),
-    });
+    this.takeBack(batch, purchase);
     await batch.commit();
     this.league.onSale(product ?? {category: null}, -(Number(purchase.amount) || 0), millis(purchase.timestamp));
     if (product) {
       await this.moveCounters([{product, units: Number(purchase.amount) || 0}], 1).catch(() => undefined);
     }
+  }
+
+  // The delete and its note, into a batch that may hold more (a food club bill taken back at once,
+  // MealService.undoBill). No stock or battles: a bill has no product.
+  takeBack(batch: WriteBatch, purchase: Purchase) {
+    batch.delete(doc(this.purchases(), purchase.id));
+    batch.set(doc(kitchenCollection(this.auth.currentKitchenId, 'removed'), purchase.id), {
+      userId: purchase.userId, productName: purchase.productName ?? null, amount: purchase.amount, price: purchase.price ?? null,
+      timestamp: purchase.timestamp, removedAt: serverTimestamp(),
+    });
   }
 
   // direction -1 for a sale (stock down, sold up), 1 for taking it back.

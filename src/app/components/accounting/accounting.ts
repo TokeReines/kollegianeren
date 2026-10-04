@@ -125,6 +125,34 @@ export function fromSummary(months: AccountsMonth[], from: Date, to: Date, after
   return [...[...lines.values()].filter(l => l.n > 0), ...after];
 }
 
+// Who has paid for a period: kitchens/{kid}/settlements/{from}_{to}, per resident the kroner they
+// paid (what they owed when it was ticked) and when. Only for exactly that period.
+export interface Settlement {
+  from: string;
+  to: string;
+  paid?: Record<string, {kr: number, at: Timestamp | null}>;
+}
+
+export function settlementId(from: Date, to: Date): string {
+  return `${dayName(from)}_${dayName(to)}`;
+}
+
+// "1.234,50", as Danes write kroner.
+export const kroner = (n: number) => n.toLocaleString('da-DK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+// The message for one resident, to paste into a chat: what they owe for the period and where to pay
+// it, or what they have to get back. `t` gives the texts, with {name}, {period}, {kr} and {number}.
+export function paymentMessage(row: Pick<AccountRow, 'name' | 'total'>, period: string, mobilePay: string,
+                               t: (key: string) => string): string {
+  const fill = (key: string) => t(key).replace('{name}', row.name).replace('{period}', period)
+    .replace('{kr}', kroner(Math.abs(row.total))).replace('{number}', mobilePay);
+  if (row.total < 0) {
+    return fill('ACCOUNTING_MESSAGE_CREDIT');
+  }
+  return [fill('ACCOUNTING_MESSAGE_OWE'), mobilePay.trim() ? fill('ACCOUNTING_MESSAGE_PAY') : '', t('ACCOUNTING_MESSAGE_THANKS')]
+    .filter(Boolean).join(' ');
+}
+
 export type Period = 'thisMonth' | 'lastMonth' | 'last30' | 'thisYear';
 
 // The first and last day of a named period.

@@ -43,6 +43,7 @@ export interface KitchenCard {
   bio: string;
   // Whether the kitchen has made a profile on Kollegiet.
   profiled: boolean;
+  lends: string[];
 }
 
 // Kollegiet's board, events, kudos, polls and profiles (docs/kollegiet.md). The live lists are for
@@ -142,16 +143,16 @@ export class KollegietService {
     const profiles = new Map(this.profileList().map(p => [p.id, p]));
     return this.kitchenList().filter(k => typeof k.name === 'string' && k.name !== '').map(k => {
       const p = profiles.get(k.id);
-      return {id: k.id, name: k.name, emoji: p?.emoji ?? '🏠', colour: p?.colour ?? 'grey', bio: p?.bio ?? '', profiled: !!p};
+      return {id: k.id, name: k.name, emoji: p?.emoji ?? '🏠', colour: p?.colour ?? 'grey', bio: p?.bio ?? '', profiled: !!p, lends: p?.lends ?? []};
     }).sort((a, b) => a.name.localeCompare(b.name, 'da', {numeric: true}));
   });
   readonly byId = computed(() => new Map(this.cards().map(c => [c.id, c])));
 
   card(id: string): KitchenCard {
     if (id === SYSTEM) {
-      return {id, name: 'Kollegiet', emoji: '🏆', colour: 'amber', bio: '', profiled: true};
+      return {id, name: 'Kollegiet', emoji: '🏆', colour: 'amber', bio: '', profiled: true, lends: []};
     }
-    return this.byId().get(id) ?? {id, name: '?', emoji: '🏠', colour: 'grey', bio: '', profiled: false};
+    return this.byId().get(id) ?? {id, name: '?', emoji: '🏠', colour: 'grey', bio: '', profiled: false, lends: []};
   }
 
   get kitchenId(): string {
@@ -177,7 +178,7 @@ export class KollegietService {
     return setDoc(doc(db, 'seen', this.kitchenId), {aktueltAt: serverTimestamp()}, {merge: true});
   }
 
-  saveProfile(fields: Pick<Profile, 'emoji' | 'colour' | 'bio'>) {
+  saveProfile(fields: Pick<Profile, 'emoji' | 'colour' | 'bio' | 'lends'>) {
     this.usage.act('profile');
     const batch = writeBatch(db);
     batch.set(doc(db, 'profiles', this.kitchenId), {...fields, updatedAt: serverTimestamp()});
