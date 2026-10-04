@@ -1,4 +1,4 @@
-import {splitBill} from './interfaces/meal';
+import {expensesTotal, splitBill, splitExpenses} from './interfaces/meal';
 import {accounts} from './components/accounting/accounting';
 
 // What Regnskab shows for a split bill: purchases of "Madklub", one per line.
@@ -33,6 +33,20 @@ describe('Food club: splitting the bill', () => {
     expect(a.sums.total).toBe(0);
     expect(a.sums.units.Madklub).toBe(3);
     expect(a.rows.find(r => r.userId === 'shopper')?.total).toBe(-90);
+  });
+
+  it('pays back several payers what each spent, one of them not eating', () => {
+    // The cook bought food for 200, a friend wine for 60 and did not eat, the cook added 40 more later.
+    const lines = splitExpenses([{by: 'cook', kr: 200}, {by: 'friend', kr: 60}, {by: 'cook', kr: 40}], ['cook', 'b', 'c', 'd']);
+    expect(lines).toEqual([
+      {userId: 'cook', amount: 1, price: -165},
+      {userId: 'b', amount: 1, price: 75},
+      {userId: 'c', amount: 1, price: 75},
+      {userId: 'd', amount: 1, price: 75},
+      {userId: 'friend', amount: 0, price: -60},
+    ]);
+    expect(inAccounts(lines).sums.total).toBe(0);
+    expect(expensesTotal({expenses: [{kr: 19.99}, {kr: 0.01}, {kr: 100.1}] as never})).toBe(120.1);
   });
 
   it('keeps every share in whole øre for awkward amounts', () => {

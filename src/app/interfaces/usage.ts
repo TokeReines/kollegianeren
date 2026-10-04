@@ -14,7 +14,7 @@ export const USAGE_ACTIONS = [
   // Buying
   'buy', 'buy-group', 'purchase-remove',
   // Food club
-  'meal-add', 'meal-edit', 'meal-delete', 'meal-cook', 'meal-signup', 'meal-signoff', 'meal-bill', 'meal-bill-undo',
+  'meal-add', 'meal-edit', 'meal-delete', 'meal-cook', 'meal-signup', 'meal-signoff', 'meal-expense', 'meal-bill', 'meal-bill-undo',
   // Kollegiet
   'post', 'post-reply', 'highfive', 'badge', 'event', 'event-edit', 'rsvp', 'who-is-coming', 'live-call', 'live-call-end',
   'poll', 'poll-close', 'vote', 'battle', 'battle-join', 'battle-calloff', 'gym', 'profile', 'shelf-guide', 'take-back', 'hide', 'note-take-down', 'lend-ask',

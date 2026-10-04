@@ -1,8 +1,8 @@
 import {Injectable, inject} from '@angular/core';
-import {arrayRemove, arrayUnion, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch} from 'firebase/firestore';
+import {Timestamp, arrayRemove, arrayUnion, deleteDoc, deleteField, doc, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch} from 'firebase/firestore';
 import {getDoc, getDocs} from '../read-meter';
 import {Observable} from 'rxjs';
-import {BILL_PRODUCT, Meal, MealFields, billProductId, dayKey, splitBill} from '../interfaces/meal';
+import {BILL_PRODUCT, EXPENSE_NOTE_MAX, Meal, MealExpense, MealFields, billProductId, dayKey, expensesTotal, splitExpenses} from '../interfaces/meal';
 import {Purchase} from '../interfaces/purchase';
 import {User} from '../interfaces/user';
 import {PurchaseService} from './purchase.service';
@@ -58,9 +58,9 @@ export class MealService {
       return false;
     }
     const batch = writeBatch(db);
-    // A split bill moves with it (its purchases keep the product id it was split under).
+    // Its expenses and a split bill move with it (the bill's purchases keep the product id it was split under).
     batch.set(target, {...fields, day, signups: [...new Set([...meal.signups, ...fields.cooks])], createdAt: serverTimestamp(),
-      ...(meal.bill ? {bill: meal.bill} : {})});
+      ...(meal.expenses?.length ? {expenses: meal.expenses} : {}), ...(meal.bill ? {bill: meal.bill} : {})});
     batch.delete(doc(this.meals(), meal.id));
     await batch.commit();
     return true;
@@ -84,13 +84,29 @@ export class MealService {
     }
   }
 
-  // The shopping split between the eaters, into Regnskab: a purchase of "Madklub" each, and the
-  // whole bill back to who paid (splitBill), with the meal marked in the same batch so it is split once.
-  splitBill(meal: Meal, total: number, paidBy: string, residents: Map<string, User>) {
+  // What a resident spent on the dinner, any time before the bill is split. Several tablets adding at
+  // once all count (arrayUnion); the time is the tablet's, as a list cannot hold the server's.
+  addExpense(meal: Meal, expense: Pick<MealExpense, 'by' | 'kr' | 'note'>) {
+    this.usage.act('meal-expense');
+    const e: MealExpense = {id: doc(this.meals()).id, by: expense.by, kr: Math.round(expense.kr * 100) / 100,
+      note: expense.note.trim().slice(0, EXPENSE_NOTE_MAX), at: Timestamp.now()};
+    return updateDoc(doc(this.meals(), meal.id), {expenses: arrayUnion(e)});
+  }
+
+  removeExpense(meal: Meal, expense: MealExpense) {
+    return updateDoc(doc(this.meals(), meal.id), {expenses: arrayRemove(expense)});
+  }
+
+  // The expenses split between the eaters, into Regnskab: a purchase of "Madklub" each, and every
+  // payer's money back (splitExpenses), with the meal marked in the same batch so it is split once.
+  splitBill(meal: Meal, residents: Map<string, User>) {
     this.usage.act('meal-bill');
     const purchases = kitchenCollection(this.auth.currentKitchenId, 'purchases');
     const batch = writeBatch(db);
-    const lines = splitBill(total, meal.signups, paidBy);
+    const expenses = meal.expenses ?? [];
+    const total = expensesTotal(meal);
+    const paidBy = expenses[0]?.by ?? '';
+    const lines = splitExpenses(expenses, meal.signups);
     for (const l of lines) {
       const u = residents.get(l.userId);
       batch.set(doc(purchases), {

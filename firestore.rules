@@ -743,7 +743,9 @@ service cloud.firestore {
       // update of that meal, which fails on createdAt. Moving a meal is a new day's document.
       match /meals/{mealId} {
         function validMeal(d) {
-          return d.keys().hasOnly(['day', 'date', 'cooks', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt', 'bill'])
+          return d.keys().hasOnly(['day', 'date', 'cooks', 'menu', 'notes', 'tags', 'closesAt', 'askCook', 'signups', 'createdAt', 'expenses', 'bill'])
+            // What was bought for it, by whom (MealService.addExpense): a short list.
+            && (d.get('expenses', []) is list && d.get('expenses', []).size() <= 20)
             // Its bill once split (MealService.splitBill).
             && (d.get('bill', null) == null || (d.bill is map
               && d.bill.keys().hasOnly(['productId', 'total', 'paidBy', 'eaters', 'share', 'at'])

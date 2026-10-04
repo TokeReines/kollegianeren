@@ -89,11 +89,13 @@
                 } @else if (!d.past) {
                   <span class="status"><mat-icon>{{ m.askCook ? 'forum' : 'lock' }}</mat-icon> {{ (m.askCook ? "FOOD_ASK" : "FOOD_CLOSED") | translate }}</span>
                 }
-                <!-- On the day and after: the shopping split between the eaters, into Regnskab. -->
+                <!-- What was bought for it, any time (days before, too), and split into Regnskab once eaten. -->
                 @if (m.bill; as b) {
-                  <span class="status bill"><mat-icon>receipt_long</mat-icon> {{ "FOOD_BILL_DONE" | translate }} {{ b.share | number:'1.2-2' }} kr. {{ "FOOD_BILL_EACH" | translate }}</span>
-                } @else if ((d.past || isToday(d.day)) && !open(m) && m.signups.length) {
-                  <button mat-stroked-button (click)="splitBill(m)"><mat-icon>receipt_long</mat-icon> {{ "FOOD_BILL_SPLIT" | translate }}</button>
+                  <button mat-button class="bill" (click)="expenses(m)"><mat-icon>receipt_long</mat-icon> {{ "FOOD_BILL_DONE" | translate }} {{ b.share | number:'1.2-2' }} kr. {{ "FOOD_BILL_EACH" | translate }}</button>
+                } @else if (m.expenses?.length) {
+                  <button mat-stroked-button (click)="expenses(m)"><mat-icon>receipt_long</mat-icon> {{ "FOOD_EXPENSES_TITLE" | translate }} · {{ expensesTotal(m) | number:'1.2-2' }} kr.</button>
+                } @else {
+                  <button mat-stroked-button (click)="expenses(m)"><mat-icon>add_shopping_cart</mat-icon> {{ "FOOD_EXPENSE_ADD_FIRST" | translate }}</button>
                 }
               </div>
             </div>

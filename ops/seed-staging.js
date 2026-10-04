@@ -14,8 +14,8 @@
 // without a kitchen), and every Kollegiet document a protected kitchen did not write or get.
 // Then, relative to now:
 // - purchases topped up from each staging kitchen's newest one to now, at its usual pace;
-// - food club: two dinners a week for six weeks, most with the bill split into Regnskab, and a
-//   few ahead with sign-ups open;
+// - food club: two dinners a week for six weeks with their expenses (sometimes from two residents),
+//   most split into Regnskab, and a few ahead with sign-ups open, some with shopping in already;
 // - Regnskab: a MobilePay number, and last month half paid (one with an amount changed since);
 // - profiles with things to lend, notes (at most 3 a kitchen) with replies and borrow questions,
 //   events (one over a weekend), battles won over two months with standings, a live one, a food
@@ -159,12 +159,16 @@ async function topUp(k, { users, products }) {
   return n;
 }
 
-// The bill split the way the app does it (src/app/interfaces/meal.ts, splitBill).
-function splitBill(total, eaters, paidBy) {
-  const ore = Math.round(total * 100), base = Math.floor(ore / eaters.length), rest = ore - base * eaters.length;
+// The expenses split the way the app does it (src/app/interfaces/meal.ts, splitExpenses).
+function splitExpenses(expenses, eaters) {
+  const paid = new Map();
+  for (const e of expenses) paid.set(e.by, (paid.get(e.by) || 0) + Math.round(e.kr * 100));
+  const ore = [...paid.values()].reduce((a, b) => a + b, 0), base = Math.floor(ore / eaters.length), rest = ore - base * eaters.length;
   const lines = eaters.map((userId, i) => ({ userId, amount: 1, ore: base + (i < rest ? 1 : 0) }));
-  const payer = lines.find(l => l.userId === paidBy);
-  if (payer) payer.ore -= ore; else lines.push({ userId: paidBy, amount: 0, ore: -ore });
+  for (const [by, kr] of paid) {
+    const line = lines.find(l => l.userId === by);
+    if (line) line.ore -= kr; else lines.push({ userId: by, amount: 0, ore: -kr });
+  }
   return lines.map(l => ({ ...l, price: l.ore / 100 }));
 }
 
@@ -185,10 +189,20 @@ async function foodClub(k, { users }) {
     const id = dayKey(date);
     const meal = { day: id, date: T(date.getTime()), closesAt: T(date.getTime() - 24 * H), cooks, menu, notes: '', tags, askCook: false, signups,
       createdAt: T(date.getTime() - between(3, 10) * D) };
+    // What was bought: the cook's shopping, sometimes a second resident's too (the wine), added days
+    // before or on the day; most dinners eaten are split, and some ahead already have shopping in.
+    if (past || rnd() < 0.4) {
+      meal.expenses = [{ id: `e${between(1000, 9999)}`, by: cooks[0], kr: Math.round(between(120, 420) * 2) / 2, note: pick(['Netto', 'Rema', 'Føtex', '']),
+        at: T(Math.min(date.getTime() - between(0, 3) * D, now - H)) }];
+      if (rnd() < 0.3) {
+        meal.expenses.push({ id: `e${between(1000, 9999)}`, by: pick(signups), kr: between(40, 120), note: pick(['Vin', 'Dessert', '']),
+          at: T(Math.min(date.getTime() - between(0, 2) * D, now - H)) });
+      }
+    }
     if (past && rnd() < 0.7) {
-      const total = Math.round(between(150, 480) * 2) / 2;
+      const total = Math.round(meal.expenses.reduce((n, e) => n + Math.round(e.kr * 100), 0)) / 100;
       const productId = `madklub-${id}`;
-      const lines = splitBill(total, signups, cooks[0]);
+      const lines = splitExpenses(meal.expenses, signups);
       for (const l of lines) {
         const u = byId.get(l.userId);
         if (!DRY) await purchases.add({ productId, productName: 'Madklub', amount: l.amount, price: l.price, userId: l.userId,

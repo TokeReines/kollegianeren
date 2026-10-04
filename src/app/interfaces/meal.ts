@@ -26,7 +26,8 @@ export interface Meal {
   // Resident ids, the cooks included.
   signups: string[];
   createdAt: Timestamp;
-  // Once the bill is split into Regnskab.
+  // What was bought for it, added as it was bought, and once split, the bill in Regnskab.
+  expenses?: MealExpense[];
   bill?: MealBill | null;
 }
 
@@ -113,8 +114,26 @@ export function atTime(day: Date, time: string): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h || 0, m || 0);
 }
 
-// A dinner's bill, split (MealService.splitBill): what the shopping cost, who paid it, and the share
-// each of the eaters paid. On the meal, so it is split once.
+// What a resident spent on a dinner, added whenever they shopped (days before, too), with what for
+// if they like ("Alt" when not). A dinner can have several, from different residents; they are split together.
+export interface MealExpense {
+  id: string;
+  by: string;
+  kr: number;
+  note: string;
+  at: Timestamp;
+}
+
+// What a dinner can have of expenses, and the longest note.
+export const EXPENSES_MAX = 20;
+export const EXPENSE_NOTE_MAX = 60;
+
+export function expensesTotal(meal: Pick<Meal, 'expenses'>): number {
+  return Math.round((meal.expenses ?? []).reduce((n, e) => n + Math.round(e.kr * 100), 0)) / 100;
+}
+
+// A dinner's bill, split (MealService.splitBill): what the shopping cost, who paid it (the first
+// payer, when several did), and the share each of the eaters paid. On the meal, so it is split once.
 export interface MealBill {
   // The purchases' product id, billProductId of the day it was split on.
   productId: string;
@@ -131,19 +150,30 @@ export function billProductId(meal: Pick<Meal, 'id'>): string {
   return 'madklub-' + meal.id;
 }
 
-// Every eater pays an equal share in whole øre (the first ones one øre more, when it does not divide),
-// and the one who paid gets the whole bill back: their share less the bill, or the bill as a line of
+// Every eater pays an equal share of what was spent, in whole øre (the first ones one øre more, when it
+// does not divide), and everyone who paid gets back what they paid: their share less it, or a line of
 // its own (0 portions) when they did not eat. In øre, so the lines add up to exactly 0 kr.
-export function splitBill(total: number, eaters: string[], paidBy: string): {userId: string, amount: number, price: number}[] {
-  const ore = Math.round(total * 100);
+export function splitExpenses(expenses: Pick<MealExpense, 'by' | 'kr'>[], eaters: string[]): {userId: string, amount: number, price: number}[] {
+  const paid = new Map<string, number>();
+  for (const e of expenses) {
+    paid.set(e.by, (paid.get(e.by) ?? 0) + Math.round(e.kr * 100));
+  }
+  const ore = [...paid.values()].reduce((a, b) => a + b, 0);
   const base = Math.floor(ore / eaters.length);
   const rest = ore - base * eaters.length;
   const lines = eaters.map((userId, i) => ({userId, amount: 1, ore: base + (i < rest ? 1 : 0)}));
-  const payer = lines.find(l => l.userId === paidBy);
-  if (payer) {
-    payer.ore -= ore;
-  } else {
-    lines.push({userId: paidBy, amount: 0, ore: -ore});
+  for (const [by, kr] of paid) {
+    const line = lines.find(l => l.userId === by);
+    if (line) {
+      line.ore -= kr;
+    } else {
+      lines.push({userId: by, amount: 0, ore: -kr});
+    }
   }
   return lines.map(l => ({userId: l.userId, amount: l.amount, price: l.ore / 100}));
+}
+
+// One payer for the whole bill.
+export function splitBill(total: number, eaters: string[], paidBy: string): {userId: string, amount: number, price: number}[] {
+  return splitExpenses([{by: paidBy, kr: total}], eaters);
 }

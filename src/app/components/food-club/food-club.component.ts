@@ -8,7 +8,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {Meal, MealFields, WEEKS_AHEAD, WEEKS_BACK, isoWeek, newMeal, signupOpen, weekDays, weekStart} from '../../interfaces/meal';
+import {Meal, MealFields, WEEKS_AHEAD, WEEKS_BACK, expensesTotal, isoWeek, newMeal, signupOpen, weekDays, weekStart} from '../../interfaces/meal';
 import {User, byRoom} from '../../interfaces/user';
 import {MealService} from '../../services/meal.service';
 import {UserService} from '../../services/user.service';
@@ -18,7 +18,7 @@ import {TranslatePipe} from '../../translate.pipe';
 import {joinNames} from '../buy-page/basket';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {ResidentAvatarComponent} from '../shared/resident-avatar.component';
-import {BillDialogComponent, BillDialogData, BillResult} from './bill-dialog.component';
+import {BillDialogComponent, BillDialogData} from './bill-dialog.component';
 import {CookDialogComponent, CookDialogData} from './cook-dialog.component';
 import {MealDialogComponent, MealDialogData} from './meal-dialog.component';
 import {SignupDialogComponent, SignupDialogData} from './signup-dialog.component';
@@ -155,17 +155,16 @@ export class FoodClubComponent {
     return meal.menu || `${this.cookNames(meal)} ${this.i18n.t(meal.cooks.length > 1 ? 'FOOD_COOK_MANY' : 'FOOD_COOKS')}`;
   }
 
-  // What the shopping cost and who paid; then a share each into Regnskab.
-  protected splitBill(meal: Meal) {
-    const payers = [...this.cooks(meal), ...this.eaters(meal).filter(u => !meal.cooks.includes(u.id))];
-    this.dialog.open<BillDialogComponent, BillDialogData, BillResult>(BillDialogComponent,
-      {width: '480px', maxWidth: '94vw', data: {title: this.title(meal), eaters: this.eaters(meal), payers}})
-      .afterClosed().subscribe(r => {
-        if (r) {
-          this.mealService.splitBill(meal, r.total, r.paidBy, this.byId())
-            .then(() => this.notify.info(this.i18n.t('FOOD_BILL_SPLIT_DONE'), 4000), this.notify.error);
-        }
-      });
+  // What was bought for the dinner and by whom, any time; split into Regnskab once it is eaten.
+  protected expenses(meal: Meal) {
+    const first = [...this.cooks(meal), ...this.eaters(meal)];
+    const payers = [...new Set([...first, ...this.residents()])];
+    this.dialog.open<BillDialogComponent, BillDialogData>(BillDialogComponent, {width: '560px', maxWidth: '94vw', autoFocus: false,
+      data: {meal: () => this.meals().find(m => m.id === meal.id), title: this.title(meal), payers, residents: this.byId()}});
+  }
+
+  protected expensesTotal(meal: Meal) {
+    return expensesTotal(meal);
   }
 
   protected async undoBill(meal: Meal) {

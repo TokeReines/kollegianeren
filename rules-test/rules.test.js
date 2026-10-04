@@ -140,6 +140,12 @@ test('food club bill: a negative price or 0 portions only under a dinner\'s prod
   await assertFails(updateDoc(meal, { bill: { productId: 'madklub-2026-10-08', total: -1, paidBy: 'u2', eaters: 2, share: 60, at: null } }));
   await assertFails(updateDoc(meal, { bill: { total: 120, paidBy: 'u2', extra: 1 } }));
   await assertSucceeds(updateDoc(meal, { bill: deleteField() }));
+  // Expenses added as they are bought: a list of at most 20.
+  const expense = n => ({ id: `e${n}`, by: 'u1', kr: 50, note: '', at: Timestamp.fromMillis(1790000000000) });
+  await assertSucceeds(updateDoc(meal, { expenses: arrayUnion(expense(1)) }));
+  await assertSucceeds(updateDoc(meal, { expenses: arrayRemove(expense(1)) }));
+  await assertFails(updateDoc(meal, { expenses: Array.from({ length: 21 }, (_, i) => expense(i)) }));
+  await assertFails(updateDoc(meal, { expenses: 50 }));
 });
 test('accounting: purchases in a date range', async () => {
   const q = query(collection(asKitchen(A), 'kitchens', A, 'purchases'),
