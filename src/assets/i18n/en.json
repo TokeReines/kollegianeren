@@ -71,6 +71,8 @@
   "FORSLAG_ANSWER": "Your answer",
   "FORSLAG_ADD_PICTURE": "Add picture",
   "FORSLAG_PASTE_HINT": "Paste pictures straight into the text, or drag them in.",
+  "RICH_BOLD": "Bold",
+  "RICH_LIST": "Bullet list",
   "FORSLAG_UPLOADING": "Uploading the picture...",
   "FORSLAG_REMOVE": "Delete comment",
   "FORSLAG_REMOVE_TEXT": "The comment disappears for everyone.",

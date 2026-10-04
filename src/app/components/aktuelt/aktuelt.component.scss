@@ -59,7 +59,7 @@ mat-tab-group {
 }
 
 .body {
-  white-space: pre-line;
+  // Line breaks come as <br> (rich-text.ts asHtml), also in older plain posts.
   margin-top: 12px;
   line-height: 1.5;
 }
