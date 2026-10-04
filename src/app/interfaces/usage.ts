@@ -14,7 +14,7 @@ export const USAGE_ACTIONS = [
   // Buying
   'buy', 'buy-group', 'purchase-remove',
   // Food club
-  'meal-add', 'meal-edit', 'meal-delete', 'meal-cook', 'meal-signup', 'meal-signoff',
+  'meal-add', 'meal-edit', 'meal-delete', 'meal-cook', 'meal-signup', 'meal-signoff', 'meal-bill', 'meal-bill-undo',
   // Kollegiet
   'post', 'post-reply', 'highfive', 'badge', 'event', 'event-edit', 'rsvp', 'who-is-coming', 'live-call', 'live-call-end',
   'poll', 'poll-close', 'vote', 'battle', 'battle-join', 'battle-calloff', 'gym', 'profile', 'shelf-guide', 'take-back', 'hide', 'note-take-down',
@@ -25,7 +25,7 @@ export const USAGE_ACTIONS = [
   // Managing
   'product-add', 'product-edit', 'product-delete', 'stock', 'resident-add', 'resident-edit', 'resident-delete',
   'move-out', 'move-in', 'anonymise', 'resident-link', 'invite', 'invite-revoke', 'member-remove', 'kitchen-rename',
-  'accounting-csv', 'accounting-xlsx', 'export-json', 'export-csv',
+  'accounting-csv', 'accounting-xlsx', 'accounting-paid', 'accounting-message', 'export-json', 'export-csv',
 ] as const;
 
 export type UsagePage = typeof USAGE_PAGES[number];
