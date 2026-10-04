@@ -87,8 +87,17 @@ function summarise(purchases, sinceDay) {
     console.log(`the backup is still running (last finished ${state.lastRun?.at}), nothing written`);
     return;
   }
+  // Only kitchens that still exist, as of the backup's newest snapshot: the purchase files of a
+  // kitchen deleted since stay in the backup, and writing its summaries would bring its path back.
+  const snaps = fs.readdirSync(path.join(FROM, 'snapshots')).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+  const latest = snaps.length ? path.join(FROM, 'snapshots', snaps[snaps.length - 1], 'kitchens.ndjson.gz') : null;
+  const existing = latest && fs.existsSync(latest) ? new Set(readNdjson(latest).map(r => r.path.split('/').pop())) : null;
   let writes = 0;
   for (const kid of fs.readdirSync(pdir)) {
+    if (existing && !existing.has(kid)) {
+      console.log(`${kid}: no longer a kitchen, skipped`);
+      continue;
+    }
     // Later files overwrite earlier copies of a purchase (the names start with the run time).
     const byPath = new Map();
     for (const f of fs.readdirSync(path.join(pdir, kid)).sort()) for (const r of readNdjson(path.join(pdir, kid, f))) byPath.set(r.path, r.data);

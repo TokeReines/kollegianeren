@@ -85,6 +85,13 @@ On top of the anonymised prod copy (`restore.js --anonymise` into the emulator):
 - `node seed-demo.js`: extra logins with roles, invites, stock, moved-out residents, a week of purchases, maker threads, a small referred kitchen.
 - `node seed-avatars.js`: illustrated avatars (DiceBear Notionists, CC0, generated locally) for every other resident.
 - `node seed-kollegiet.js`: Kollegiet (docs/kollegiet.md): a test case for every feature around Ny2: a message from Toke, profiles, product categories, posts, events, a live beer battle, a challenge, kudos and polls. Then `node league.js --emulator --daily` settles the ended battle and the closed poll.
+- `node seed-staging.js --project dev [--dry] [--wipe]`: dev as a staging dorm. Kitchens with a real
+  tester's login are left alone; the prod copies and `demo-mellemste-7` get purchases up to now, food club
+  dinners (most with the bill split), last month half paid, profiles with things to lend, notes, events,
+  battles over two months, votes and kudos. `--wipe` first deletes the junk kitchens (and their
+  `@kitchen.test` logins) and the Kollegiet documents no tester wrote. It backdates purchases and posts,
+  so take a full backup afterwards (empty the backup folder first) before `stats-summary.js`, then
+  `league.js --project dev --daily`. Mind dev's 50,000 reads a day: a full backup is about 6,000.
 - `node seed-kollegiet.js --project dev --kitchen <id>`: the same on dev around one kitchen, against four test kitchens (`test-rival-1` to `4`, "Test Ny2" and so on) with their own products, residents and purchases. Nothing is written to the home kitchen's purchases or residents. `--remove` takes it all out again. Refuses prod.
 
 Logins are listed in `~/kollegianeren-emulator-data/accounts.json`.
