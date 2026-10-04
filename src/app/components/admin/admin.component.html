@@ -5,6 +5,12 @@
     <p class="meta">
       {{ "ADMIN_UPDATED" | translate }} {{ s.at.toDate() | date:'EEEE d. MMMM HH:mm' }}. {{ "ADMIN_DAILY" | translate }}
       <span class="privacy"><mat-icon inline>privacy_tip</mat-icon> {{ "ADMIN_NO_NAMES" | translate }}</span>
+      @if (nightly(); as n) {
+        <span class="nightly" [class.stale]="stale(n)" [matTooltip]="stale(n) ? ('ADMIN_NIGHTLY_STALE' | translate) : ''">
+          <mat-icon inline>{{ stale(n) ? 'warning' : 'backup' }}</mat-icon>
+          {{ "ADMIN_BACKUP" | translate }} {{ n.backupAt?.toDate() | date:'EEE d/M HH:mm' }}, {{ "ADMIN_SUMMARIES" | translate }} {{ n.summariesAt.toDate() | date:'EEE d/M HH:mm' }}
+        </span>
+      }
     </p>
 
     @let t = summary();

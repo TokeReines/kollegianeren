@@ -13,7 +13,6 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatSort, MatSortModule} from '@angular/material/sort';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {PurchaseService} from '../../services/purchase.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {sortValue} from '../../table-sort';
@@ -21,6 +20,7 @@ import {TranslatePipe} from '../../translate.pipe';
 import type {SheetData} from 'write-excel-file/browser';
 import {AccountRow, Period, accounts, periodRange, toCsv, toTable} from './accounting';
 import {UsageService} from '../../services/usage.service';
+import {AccountingService} from './accounting.service';
 
 // Product columns get a prefix, so a product called "name" or "total" cannot clash.
 const PRODUCT = 'p:';
@@ -37,7 +37,7 @@ export class AccountingComponent {
   private readonly usage = inject(UsageService);
   private readonly i18n = inject(TranslateService);
   private readonly notify = inject(Notify);
-  private readonly purchaseService = inject(PurchaseService);
+  private readonly accounting = inject(AccountingService);
 
   protected readonly periods: {id: Period, label: string}[] = [
     {id: 'thisMonth', label: 'ACCOUNTING_THIS_MONTH'},
@@ -54,7 +54,7 @@ export class AccountingComponent {
 
   private readonly range = computed(() => ({from: this.from(), to: this.to()}));
   private readonly purchases = toSignal(
-    toObservable(this.range).pipe(switchMap(({from, to}) => this.purchaseService.between(from, to))), {initialValue: []});
+    toObservable(this.range).pipe(switchMap(({from, to}) => this.accounting.between(from, to))), {initialValue: []});
   protected readonly accounts = computed(() => accounts(this.purchases()));
   protected readonly productColumns = computed(() => this.accounts().products.map(name => ({id: PRODUCT + name, name})));
   protected readonly displayedColumns = computed(() => ['name', 'room', ...this.productColumns().map(c => c.id), 'total']);

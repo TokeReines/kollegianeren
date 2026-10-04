@@ -10,7 +10,8 @@
 //   1. Snapshots the small collections (kitchen docs, users, products) into snapshots/<date>/,
 //      and Kollegiet (posts, events, kudos, battles, polls, profiles, standings, proposals and
 //      their subcollections) into snapshots/<date>/kollegiet/. A few dozen reads today.
-//   2. Pulls new purchases per kitchen since the newest one already backed up.
+//   2. Pulls new purchases per kitchen since the newest one already backed up, and the ids of
+//      purchases taken back since the last run (the app's notes in removed/).
 //   3. Backfills older purchases within the window, newest first, round-robin across kitchens,
 //      resuming from a cursor stored in state.json, with at most --backfill-reads of the budget.
 //   4. Drops backed-up purchases that have fallen out of the window (lib/prune.js).
@@ -19,8 +20,9 @@
 // quota day pass --ceiling, so the kitchens always keep headroom. Once backfilled, a night
 // costs about 1.5k reads (the snapshot and the day's purchases).
 //
-// Limitations: purchases edited in place (same timestamp) or hard-deleted after being backed
-// up are not re-read. Once backfill is done, a weekly count() per kitchen flags mismatches.
+// Limitations: purchases edited in place (same timestamp) are not re-read, and ones deleted
+// without the app's note (by an ops script) stay in the files. Once backfill is done, a weekly
+// count() per kitchen flags mismatches.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -174,6 +176,23 @@ async function backfillChunk(ref, st) {
   if (docs.length < CHUNK) st.backfillDone = true;
 }
 
+// Purchases taken back: the app leaves a note in removed/ with each (PurchaseService.remove). Only
+// the ids are kept, in removed/<kitchen>/, so the summaries (stats-summary.js) leave them out.
+// Read after the kitchen's new purchases and always, whatever the budget: a purchase that run
+// skipped was then already gone, so its note is read here, and the app subtracts only notes after
+// st.removedThrough. A read per kitchen, and one per purchase taken back.
+async function takenBack(ref, st) {
+  let q = ref.collection('removed').orderBy('removedAt');
+  if (st.removedThrough) q = q.startAfter(new Timestamp(st.removedThrough.s, st.removedThrough.n));
+  const docs = await get(q);
+  if (!docs.length) return;
+  const file = path.join(OUT, 'removed', ref.id, `${runId}.ndjson.gz`);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, zlib.gzipSync(docs.map(d => JSON.stringify({ id: d.id })).join('\n') + '\n'));
+  const last = docs[docs.length - 1].get('removedAt');
+  st.removedThrough = { s: last.seconds, n: last.nanoseconds };
+}
+
 // Compares the purchases inside the window (right after pruning, that is all of st.stored).
 async function reconcile(ref, st) {
   const agg = await ref.collection('purchases').where('timestamp', '>=', cutoff).count().get();
@@ -184,12 +203,15 @@ async function reconcile(ref, st) {
 }
 
 (async () => {
-  if (args['before-reset']) {
+  fs.mkdirSync(OUT, { recursive: true });
+  const state = loadState();
+  // A night that failed (the day's quota already used up) is made up for as soon as the next
+  // hourly run finds the last good one more than 25 hours old, instead of a day later.
+  const missed = !state.lastRun || Date.now() - Date.parse(state.lastRun.at) > 25 * 36e5;
+  if (args['before-reset'] && !missed) {
     const minutesLeft = (pacificMidnight().getTime() + 864e5 - Date.now()) / 60000;
     if (minutesLeft > +args['before-reset']) { log(`${Math.round(minutesLeft)} min until quota reset, skipping`); return; }
   }
-  fs.mkdirSync(OUT, { recursive: true });
-  const state = loadState();
   const startUsed = await projectReadsToday();
   log(`project ${projectId}, out ${OUT}, reads today ${startUsed}, ceiling ${CEILING}, run budget ${MAX_READS}`);
   if (startUsed >= CEILING) { log('ceiling already reached, nothing to do'); return; }
@@ -204,6 +226,7 @@ async function reconcile(ref, st) {
 
   for (const ref of kitchenRefs) {
     await incremental(ref, state.kitchens[ref.id]);
+    await takenBack(ref, state.kitchens[ref.id]);
     saveState(state);
   }
 
