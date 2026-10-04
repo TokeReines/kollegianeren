@@ -271,13 +271,15 @@
       white-space: nowrap;
     }
 
-    span {
-      font: var(--mat-sys-body-small);
-      color: var(--mat-sys-on-surface-variant);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+  }
+
+  .when {
+    display: flex;
+    flex-direction: column;
+    margin-top: -4px;
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    overflow-wrap: anywhere;
   }
 
   .more {

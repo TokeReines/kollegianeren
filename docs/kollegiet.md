@@ -115,7 +115,7 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
 - **Kollegiet** (new menu item, everyone). Three tabs:
   - **Opslagstavle:** a pin board. Across the top, loud: stickers in one row that scrolls,
     newest on the left: the newest 20 high-fives and badges, and battles and votes won in the
-    last three days (gold). A button gives a high-five or a badge to any kitchen. Under it one
+    last week (gold). A button gives a high-five or a badge to any kitchen. Under it one
     wall of papers of the same size, in a fixed order, so space follows how many there are of
     each:
     1. a blank note to write on, with buttons for an event and a vote;
@@ -178,7 +178,7 @@ show the strip all evening, so it may also be dismissed. Dismissing it updates t
   kudos listener the shell already has for the bell.
 - **Votes:** any kitchen starts a poll from the board ("Start en afstemning"). While it is
   open, a card at the top of the board: pick a kitchen, change your vote until it closes. Only
-  your own vote is shown, never a running count. The winner is pinned on the board for three days
+  your own vote is shown, never a running count. The winner is pinned on the board for a week
   and gets the title on its profile.
 - **Gym counter:** "+1" (and −1 to undo a slip) on the battle's card on the Battles tab while a
   gym battle runs. Someone back from the gym taps it once. Not on the buy page, which is for
