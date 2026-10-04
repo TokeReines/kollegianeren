@@ -4,7 +4,7 @@
 
 // Pages, from the address: the first part, and the tab on Kollegiet and Aktuelt.
 export const USAGE_PAGES = [
-  'buy', 'food-club', 'stats', 'kollegiet:board', 'kollegiet:battles', 'kollegiet:kitchens', 'battle',
+  'buy', 'food-club', 'stats', 'kollegiet:board', 'kollegiet:battles', 'kollegiet:kitchens', 'kollegiet:archive', 'battle',
   'aktuelt:nyt', 'aktuelt:forslag', 'aktuelt:om', 'products', 'users', 'accounting', 'access',
 ] as const;
 

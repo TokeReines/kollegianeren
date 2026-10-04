@@ -149,7 +149,7 @@ export class KitchensComponent {
     }
     const kitchen = this.kollegiet.card(kitchenId).name;
     this.dialog.open<BorrowDialogComponent, BorrowData, string>(BorrowDialogComponent, {width: '480px', maxWidth: '94vw',
-      data: {kitchen, text: this.i18n.t('KOL_BORROW_TEXT').replace('{item}', item)}})
+      data: {kitchen, text: this.i18n.t('KOL_BORROW_TEXT').replace('{item}', inSentence(item))}})
       .afterClosed().subscribe(text => {
         if (text) {
           this.usage.act('lend-ask');
@@ -172,4 +172,10 @@ export class KitchensComponent {
         }
       });
   }
+}
+
+// "Raclette-grill" in the middle of a sentence: "raclette-grill". Not "TV" or "PS5".
+function inSentence(item: string): string {
+  return item.length > 1 && item[1] === item[1].toLocaleUpperCase('da') && item[1] !== item[1].toLocaleLowerCase('da')
+    ? item : item.charAt(0).toLocaleLowerCase('da') + item.slice(1);
 }

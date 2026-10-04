@@ -133,6 +133,9 @@ Cloud Monitoring refuses service accounts on a project without billing, so cron 
   delete (the rules require it), and the backup keeps their ids, so the next summary leaves them
   out. It also writes `adminStats/nightly`, which the Admin page shows, red after two days.
   No reads; about 15 writes per kitchen.
+- **Kollegiet's archive**: the same job writes `archive/{YYYY-MM}` (`lib/kollegiet-archive.js`) from the
+  backup's merged Kollegiet files: battles and votes won, high-fives and badges per kitchen, and the five
+  notes with the most replies. Kollegiet's Arkiv tab reads up to 12 of them when it opens.
 - **Checking Regnskab's summary**: `node tools/accounts-check/run.js --project dev --from 2026-09-01 --to 2026-10-04`
   computes every kitchen's Regnskab both ways with the app's code and compares them to the øre.
   A read per purchase in the period.

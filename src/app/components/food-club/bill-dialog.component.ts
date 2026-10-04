@@ -32,7 +32,7 @@ export interface BillResult {
       <p>{{ data.eaters.length }} {{ "FOOD_BILL_HOW" | translate }}</p>
       <mat-form-field subscriptSizing="dynamic">
         <mat-label>{{ "FOOD_BILL_TOTAL" | translate }}</mat-label>
-        <input matInput type="number" inputmode="decimal" min="1" max="20000" step="0.01" [ngModel]="total()" (ngModelChange)="total.set(+$event)" autocomplete="off">
+        <input matInput type="number" inputmode="decimal" min="1" max="20000" step="0.01" [ngModel]="total() || null" (ngModelChange)="total.set(+$event)" autocomplete="off">
         <span matTextSuffix>kr.</span>
       </mat-form-field>
       <mat-form-field subscriptSizing="dynamic">

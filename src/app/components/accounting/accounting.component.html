@@ -48,7 +48,7 @@
     <!-- The number the copied messages ask residents to pay to; saved for the kitchen. -->
     <mat-form-field class="mobilepay" subscriptSizing="dynamic">
       <mat-label>{{ "ACCOUNTING_MOBILEPAY" | translate }}</mat-label>
-      <input matInput #mp [value]="mobilePay()" (blur)="saveMobilePay(mp.value)" (keydown.enter)="mp.blur()" inputmode="numeric" maxlength="20" autocomplete="off">
+      <input matInput #mp [value]="mobilePay()" (blur)="saveMobilePay(mp.value)" (change)="saveMobilePay(mp.value)" (keydown.enter)="mp.blur()" inputmode="numeric" maxlength="20" autocomplete="off">
     </mat-form-field>
     <button mat-flat-button [matMenuTriggerFor]="exportMenu" [disabled]="!a.rows.length">
       <mat-icon>download</mat-icon> {{ "ACCOUNTING_EXPORT" | translate }}

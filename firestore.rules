@@ -91,6 +91,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Kollegiet's archive, a document a month (winners, votes, kudos, the most talked-about notes),
+    // written by ops/stats-summary.js from the nightly backup; read on Kollegiet's Arkiv tab.
+    match /archive/{month} {
+      allow read: if kitchenLogin() || isAdmin();
+      allow write: if false;
+    }
+
     // "Aktuelt": readable by every signed-in kitchen, written by admins.
     match /announcements/{id} {
       allow read: if signedIn();
