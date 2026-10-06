@@ -14,9 +14,10 @@ import {
 // is billed in full again when it reconnects ("wake"), though nothing changes on screen. Answers
 // from the offline cache and the app's own pending writes cost nothing and are not counted.
 //
-// "reconnect" is a list coming back from offline (its connection dropped and came back): counted
-// at its full size, an upper bound, since within the resume window Firestore resends only changes.
-// Compared with Google's own count, it shows whether dropped connections are what costs.
+// "reconnect" is a list coming back after its connection dropped. Within the resume window the
+// server resends only what changed, counted as "live"; after longer, the whole list again, counted
+// here unless a wake already counted it. (Counted in full every time, a tablet on poor wifi looked
+// like thousands of reads that Google's own count showed were never billed.)
 
 export type ReadKind = 'open' | 'resume' | 'live' | 'get' | 'wake' | 'reconnect';
 type Sink = (key: string, n: number) => void;
@@ -69,7 +70,11 @@ export function meterWake() {
   wake();
 }
 
+// When a wake was last counted, so a list reconnecting after it is not counted twice.
+let lastWake = 0;
+
 function wake() {
+  lastWake = Date.now();
   const counted = new Set<string>();
   for (const l of active) {
     // Identical queries share one listen on the server.
@@ -160,6 +165,12 @@ interface SnapshotLike {
   docChanges?: () => unknown[];
 }
 
+// What a list costs on top of its changes when it comes back from offline: all of it, if it was
+// away longer than the resume window and no wake has counted it since it dropped; else nothing.
+export function reconnectReads(size: number, offlineAt: number, now: number, wokeAt: number): number {
+  return now - offlineAt > RESUME_MS && wokeAt < offlineAt ? Math.max(1, size) : 0;
+}
+
 export function snapshotReads(snap: SnapshotLike, first: boolean): number {
   if (snap.metadata.fromCache || snap.metadata.hasPendingWrites) {
     return 0;
@@ -192,17 +203,20 @@ export const onSnapshot = ((ref: unknown, ...rest: unknown[]) => {
   const resumed = shared || Date.now() - (lastSeen[listener.key] ?? 0) < RESUME_MS;
   let first = true;
   let delivered = false;
-  let wentOffline = false;
+  let offlineAt = 0;
   rest[at] = (snap: QuerySnapshot | DocumentSnapshot) => {
     if (isList) {
       listener.size = (snap as QuerySnapshot).size;
       // After the first answer, a cached answer means the connection dropped; the next answer from
-      // the server is the reconnect.
+      // the server is the reconnect. Its changes are counted as live below.
       if (!first && snap.metadata.fromCache) {
-        wentOffline = true;
-      } else if (wentOffline && !snap.metadata.fromCache) {
-        wentOffline = false;
-        add(source, 'reconnect', Math.max(1, listener.size));
+        offlineAt ||= Date.now();
+      } else if (offlineAt && !snap.metadata.fromCache) {
+        const n = reconnectReads(listener.size, offlineAt, Date.now(), lastWake);
+        if (n) {
+          add(source, 'reconnect', n);
+        }
+        offlineAt = 0;
       }
     }
     if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
