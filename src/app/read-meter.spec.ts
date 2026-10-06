@@ -1,11 +1,23 @@
 import {initializeApp} from 'firebase/app';
 import {collection, collectionGroup, doc, getFirestore, limit, orderBy, query, where} from 'firebase/firestore';
-import {queryKey, snapshotReads, sourceOf} from './read-meter';
+import {queryKey, reconnectReads, snapshotReads, sourceOf} from './read-meter';
 
 const meta = (fromCache: boolean, hasPendingWrites = false) => ({fromCache, hasPendingWrites});
 const list = (size: number, changes: number, m = meta(false)) => ({metadata: m, size, docChanges: () => new Array(changes).fill(0)});
 
 describe('read meter', () => {
+  it('counts a dropped connection in full only after the resume window, once', () => {
+    const min = 60e3;
+    // Back within 30 minutes: only the changes, counted as live.
+    expect(reconnectReads(55, 0, 4 * min, 0)).toBe(0);
+    expect(reconnectReads(55, 0, 30 * min, 0)).toBe(0);
+    // Away longer: the whole list again.
+    expect(reconnectReads(55, 0, 31 * min, -1)).toBe(55);
+    expect(reconnectReads(0, 0, 31 * min, -1)).toBe(1);
+    // Unless a wake after it dropped already counted it.
+    expect(reconnectReads(55, 0, 31 * min, 20 * min)).toBe(0);
+  });
+
   it('counts what the server sent, not the cache or our own writes', () => {
     expect(snapshotReads(list(40, 40), true)).toBe(40);
     expect(snapshotReads(list(40, 2), false)).toBe(2);
