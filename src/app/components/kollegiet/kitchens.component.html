@@ -89,8 +89,9 @@
       <h3>🤝 {{ "KOL_LENDS_ALL" | translate }}</h3>
       <div class="lends">
         @for (l of lendable(); track l.kitchenId + l.item) {
+          <!-- The thing, then who has it: several kitchens share the same emoji. -->
           <button mat-stroked-button [disabled]="!me()" (click)="ask(l.kitchenId, l.item)">
-            <span class="with-chip" style="--chip-size: 20px"><app-kitchen-chip [kitchenId]="l.kitchenId" [iconOnly]="true" /> {{ l.item }}</span>
+            <span class="with-chip" style="--chip-size: 20px">{{ l.item }} <span class="at">·</span> <app-kitchen-chip [kitchenId]="l.kitchenId" /></span>
           </button>
         }
       </div>

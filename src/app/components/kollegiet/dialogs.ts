@@ -424,18 +424,23 @@ export type ProfileFields = Pick<Profile, 'emoji' | 'colour' | 'bio'> & {name: s
       <mat-form-field>
         <mat-label>{{ "KOL_PROFILE_LENDS" | translate }}</mat-label>
         <textarea matInput [(ngModel)]="lends" rows="3" [placeholder]="'KOL_PROFILE_LENDS_EXAMPLE' | translate"></textarea>
-        <mat-hint>{{ "KOL_PROFILE_LENDS_HINT" | translate }}</mat-hint>
+        @if (lendProblem()) {
+          <mat-hint class="problem">{{ lendProblem() | translate }}</mat-hint>
+        } @else {
+          <mat-hint>{{ "KOL_PROFILE_LENDS_HINT" | translate }}</mat-hint>
+        }
       </mat-form-field>
     </div>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close type="button">{{ "CANCEL" | translate }}</button>
-      <button mat-flat-button [disabled]="!name().trim()" (click)="save()">{{ "SAVE" | translate }}</button>
+      <button mat-flat-button [disabled]="!name().trim() || !!lendProblem()" (click)="save()">{{ "SAVE" | translate }}</button>
     </mat-dialog-actions>
   `,
   styles: `
     .name { margin-top: 8px; }
     .content { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
     .label { color: var(--mat-sys-on-surface-variant); font: var(--mat-sys-body-small); }
+    .problem { color: var(--mat-sys-error); }
     .pick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
     .swatch { width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; font-size: 20px; cursor: pointer;
       background: var(--mat-sys-surface-container-high); color: inherit; }
@@ -459,9 +464,13 @@ export class ProfileDialogComponent {
   protected readonly bio = signal(this.current.bio);
   // One thing a line.
   protected readonly lends = signal(this.current.lends.join('\n'));
+  private readonly lendLines = computed(() => [...new Set(this.lends().split('\n').map(l => l.trim()).filter(Boolean))]);
+  // Said while typing, instead of cutting a long line off when saving.
+  protected readonly lendProblem = computed(() => this.lendLines().some(l => l.length > LEND_MAX) ? 'KOL_PROFILE_LENDS_TOO_LONG'
+    : this.lendLines().length > LENDS_MAX ? 'KOL_PROFILE_LENDS_TOO_MANY' : '');
 
   protected save() {
-    const lends = [...new Set(this.lends().split('\n').map(l => l.trim().slice(0, LEND_MAX)).filter(Boolean))].slice(0, LENDS_MAX);
+    const lends = this.lendLines().map(l => l.slice(0, LEND_MAX)).slice(0, LENDS_MAX);
     this.ref.close({name: this.name().trim(), emoji: this.emoji(), colour: this.colour(), bio: this.bio().trim(), lends});
   }
 }
