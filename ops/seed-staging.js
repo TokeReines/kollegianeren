@@ -21,7 +21,7 @@
 //   events (one over a weekend), battles won over two months with standings, a live one, a food
 //   club month and a challenge, votes closed and open, and high-fives and badges with reasons.
 // Then run: node league.js --project dev --daily, backup.js and stats-summary.js (summaries, archive).
-const { Timestamp } = require('firebase-admin/firestore');
+const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { init, parseArgs } = require('./lib/firebase');
 
 const args = parseArgs();
@@ -44,17 +44,21 @@ const at = (daysAgo, hour, minute = 0) => { const d = new Date(now - daysAgo * D
 const log = (...m) => console.log(...m);
 
 const PROFILES = {
-  'Ny2': ['🐙', 'teal', 'Tavlens bedste udsigt og den mest larmende kaffemaskine.', ['Raclette-grill', 'Beerpong-bord']],
-  'Ny3': ['🍕', 'blue', 'Pizza søndag, altid.', ['Pizzasten', 'Stor gryde']],
-  'Ny6': ['🎉', 'purple', 'Festkøkkenet på Ny. Vi har en discokugle.', ['Discokugle', 'Højtaler', 'Lyskæde']],
-  'Ny7': ['🎸', 'orange', 'Guitar i køkkenet hver torsdag.', ['Guitar', 'Brætspil']],
-  'Ny8': ['🦊', 'amber', 'Små men seje, og altid kaffe på kanden.', ['Vaffeljern']],
-  'Gl4': ['🔥', 'red', 'Åbent køkken hver fredag. Medbring godt humør.', ['Grill', 'Partytelt']],
-  'gl2': ['🍝', 'green', 'Pasta er en livsstil.', ['Pastamaskine']],
-  'Gl8': ['⚽', 'lime', 'Fodbold på storskærm i weekenden.', ['Projektor', 'Fodboldspil']],
-  'Ml5': ['🌮', 'pink', 'Taco-tirsdag siden 2019.', ['Tortillapresse']],
-  'Ml8': ['🏋️', 'green', 'Halvdelen af os er i fitness, resten er i sofaen.', ['Kettlebells', 'Yogamåtter']],
-  'Mellemste 7': ['🌻', 'amber', 'Plantebaseret madklub tre gange om ugen.', ['Stor gryde', 'Riskoger']],
+  // What they lend: their own specialities, everyday things several kitchens have (Løg, Støvsuger),
+  // and one at the 40 characters a thing may have.
+  'Ny2': ['🐙', 'teal', 'Tavlens bedste udsigt og den mest larmende kaffemaskine.',
+    ['Raclette-grill', 'Beerpong-bord (husk selv bolde og bægre)', 'Løg', 'Boremaskine', 'Ekstra stole']],
+  'Ny3': ['🍕', 'blue', 'Pizza søndag, altid.', ['Pizzasten', 'Stor gryde', 'Kagedåser', 'Mel', 'Kagerulle']],
+  'Ny6': ['🎉', 'purple', 'Festkøkkenet på Ny. Vi har en discokugle.',
+    ['Discokugle', 'Højtaler', 'Lyskæde', 'Røgmaskine', 'Mikrofon til karaoke', 'Udklædningskasse']],
+  'Ny7': ['🎸', 'orange', 'Guitar i køkkenet hver torsdag.', ['Guitar', 'Brætspil', 'Cajón', 'Løg', 'Kaffemaskine til fest']],
+  'Ny8': ['🦊', 'amber', 'Små men seje, og altid kaffe på kanden.', ['Vaffeljern', 'Støvsuger', 'Strygejern', 'Æg']],
+  'Gl4': ['🔥', 'red', 'Åbent køkken hver fredag. Medbring godt humør.', ['Grill', 'Partytelt', 'Grillkul', 'Bordtennisbat', 'Lange borde', 'Løg']],
+  'gl2': ['🍝', 'green', 'Pasta er en livsstil.', ['Pastamaskine', 'Parmesanrivejern', 'Store tallerkener (20 stk.)']],
+  'Gl8': ['⚽', 'lime', 'Fodbold på storskærm i weekenden.', ['Projektor', 'Fodboldspil', 'Lærred', 'HDMI-kabel', 'Boremaskine']],
+  'Ml5': ['🌮', 'pink', 'Taco-tirsdag siden 2019.', ['Tortillapresse', 'Blender', 'Limepresser']],
+  'Ml8': ['🏋️', 'green', 'Halvdelen af os er i fitness, resten er i sofaen.', ['Kettlebells', 'Yogamåtter', 'Proteinpulver', 'Cykelpumpe', 'Støvsuger']],
+  'Mellemste 7': ['🌻', 'amber', 'Plantebaseret madklub tre gange om ugen.', ['Stor gryde', 'Riskoger', 'Krydderurter fra altanen', 'Havre', 'Sukker']],
 };
 const MENUS = [['Lasagne', ['meat', 'lactoseFree']], ['Linsegryde', ['vegan']], ['Tacos', ['meat']], ['Grøntsagssuppe', ['vegan', 'glutenFree']],
   ['Pasta carbonara', ['pork']], ['Kylling i karry', ['meat']], ['Fiskefrikadeller', ['fish']], ['Risotto', ['vegetarian']],
@@ -394,5 +398,11 @@ async function kollegiet(kitchens, home) {
     log(`${k.name}: ${bought} purchases added, ${dinners} dinners, ${paid} marked paid for last month`);
   }
   await kollegiet(groups.staging, HOME);
+  // The app fetches Kollegiet's lists again only when pulse/kollegiet moves (src/app/services/pulse.service.ts);
+  // written past the app, they would stay as each device cached them.
+  if (!DRY) {
+    await db.doc('pulse/kollegiet').set(Object.fromEntries(['kitchens', 'events', 'kudos', 'battles', 'posts', 'news', 'proposals']
+      .map(k => [k, FieldValue.serverTimestamp()])), { merge: true });
+  }
   log('Then: node league.js --project dev --daily; node backup.js --project dev --out ...; node stats-summary.js --project dev --from ...');
 })().catch(e => { console.error(e); process.exit(1); });
