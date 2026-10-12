@@ -862,6 +862,8 @@
   "KOL_PROFILE_LENDS": "Ting I låner ud",
   "KOL_PROFILE_LENDS_EXAMPLE": "Raclette-grill\nBeerpong-bord\nStor gryde",
   "KOL_PROFILE_LENDS_HINT": "Én ting pr. linje. De andre køkkener kan spørge om at låne dem.",
+  "KOL_PROFILE_LENDS_TOO_LONG": "Højst 40 tegn pr. linje. Gør den lange linje kortere.",
+  "KOL_PROFILE_LENDS_TOO_MANY": "Højst 12 ting.",
   "KOL_LENDS": "Kan lånes",
   "KOL_LENDS_ALL": "Kan lånes hos de andre køkkener",
   "KOL_LENDS_NONE_MINE": "Skriv i jeres profil, hvad I gerne låner ud, så kan de andre spørge.",

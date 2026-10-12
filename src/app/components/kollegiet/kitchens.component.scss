@@ -262,6 +262,15 @@
     align-items: center;
     gap: 6px;
   }
+
+  .at {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  // On a phone a long thing wraps; who has it stays whole.
+  app-kitchen-chip {
+    flex: none;
+  }
 }
 
 .lends-hint {

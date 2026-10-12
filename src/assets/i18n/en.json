@@ -862,6 +862,8 @@
   "KOL_PROFILE_LENDS": "Things you lend out",
   "KOL_PROFILE_LENDS_EXAMPLE": "Raclette grill\nBeer pong table\nBig pot",
   "KOL_PROFILE_LENDS_HINT": "One thing a line. The other kitchens can ask to borrow them.",
+  "KOL_PROFILE_LENDS_TOO_LONG": "At most 40 characters a line. Make the long line shorter.",
+  "KOL_PROFILE_LENDS_TOO_MANY": "At most 12 things.",
   "KOL_LENDS": "To borrow",
   "KOL_LENDS_ALL": "To borrow from the other kitchens",
   "KOL_LENDS_NONE_MINE": "Write in your profile what you lend out, so the others can ask.",
