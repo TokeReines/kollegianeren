@@ -21,7 +21,7 @@
 //   events (one over a weekend), battles won over two months with standings, a live one, a food
 //   club month and a challenge, votes closed and open, and high-fives and badges with reasons.
 // Then run: node league.js --project dev --daily, backup.js and stats-summary.js (summaries, archive).
-const { Timestamp } = require('firebase-admin/firestore');
+const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { init, parseArgs } = require('./lib/firebase');
 
 const args = parseArgs();
@@ -398,5 +398,11 @@ async function kollegiet(kitchens, home) {
     log(`${k.name}: ${bought} purchases added, ${dinners} dinners, ${paid} marked paid for last month`);
   }
   await kollegiet(groups.staging, HOME);
+  // The app fetches Kollegiet's lists again only when pulse/kollegiet moves (src/app/services/pulse.service.ts);
+  // written past the app, they would stay as each device cached them.
+  if (!DRY) {
+    await db.doc('pulse/kollegiet').set(Object.fromEntries(['kitchens', 'events', 'kudos', 'battles', 'posts', 'news', 'proposals']
+      .map(k => [k, FieldValue.serverTimestamp()])), { merge: true });
+  }
   log('Then: node league.js --project dev --daily; node backup.js --project dev --out ...; node stats-summary.js --project dev --from ...');
 })().catch(e => { console.error(e); process.exit(1); });
