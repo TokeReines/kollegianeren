@@ -35,6 +35,8 @@ export class NoticeService {
   // Until the seen document is in, nothing counts as new.
   private readonly seenAt = toSignal(this.kollegiet.seen$, {initialValue: Number.MAX_SAFE_INTEGER});
   private readonly aktueltSeenAt = toSignal(this.kollegiet.aktueltSeen$, {initialValue: Number.MAX_SAFE_INTEGER});
+  private readonly forslagSeenAt = toSignal(this.kollegiet.forslagSeen$, {initialValue: Number.MAX_SAFE_INTEGER});
+  private readonly dismissed = toSignal(this.kollegiet.dismissed$, {initialValue: []});
 
   readonly notices = computed<Notice[]>(() => {
     const kid = this.auth.membership()?.kitchenId;
@@ -44,12 +46,13 @@ export class NoticeService {
       return [];
     }
     const latest = this.unread()[0];
-    const maker: Notice[] = latest ? [{kind: 'maker', from: null, text: latest.text, at: millis(latest.createdAt),
+    const maker: Notice[] = latest ? [{id: 'maker', kind: 'maker', from: null, text: latest.text, at: millis(latest.createdAt),
       link: {path: '/aktuelt', fragment: 'message'}}] : [];
+    const dismissed = new Set(this.dismissed());
     return sortNotices([...maker, ...newsNotices(this.news(), this.aktueltSeenAt()),
-      ...proposalNotices(this.proposals(), this.aktueltSeenAt()), ...kollegietNotices(kid, this.seenAt(), {
+      ...proposalNotices(this.proposals(), this.forslagSeenAt()), ...kollegietNotices(kid, this.seenAt(), {
       events: this.events(), battles: this.league.battles(), kudos: this.kudos(),
-    }, Math.max(this.league.now(), Date.now()))]);
+    }, Math.max(this.league.now(), Date.now()))]).filter(n => !dismissed.has(n.id));
   });
 
   readonly makerUnread = computed(() => this.unread().length);
@@ -97,14 +100,14 @@ export class NoticeService {
     return n.kind !== 'maker';
   }
 
-  // "Not now": the same as having looked, for Aktuelt or for everything from Kollegiet. For a
-  // live call it answers no, so the party sees it, and it stops showing.
+  // "Not now": this notice goes, the others stay. For a live call it answers no, so the party
+  // sees it, and it stops showing.
   dismiss(n: Notice) {
     this.usage.act('notice-dismiss');
     if (n.kind === 'live' && n.eventId) {
       return this.kollegiet.rsvp({id: n.eventId}, 'no');
     }
-    return n.kind === 'news' || n.kind === 'proposal' ? this.kollegiet.markAktueltSeen() : this.kollegiet.markSeen();
+    return this.kollegiet.dismissNotice(n.id);
   }
 
   // Shown on every page except where it leads: Aktuelt for the maker's things, Kollegiet for its

@@ -23,7 +23,7 @@ export const USAGE_ACTIONS = [
   // Statistik
   'stats-period', 'stats-food',
   // Managing
-  'product-add', 'product-edit', 'product-delete', 'stock', 'resident-add', 'resident-edit', 'resident-delete',
+  'product-add', 'product-edit', 'product-delete', 'product-sales', 'stock', 'resident-add', 'resident-edit', 'resident-delete',
   'move-out', 'move-in', 'anonymise', 'resident-link', 'invite', 'invite-revoke', 'member-remove', 'kitchen-rename',
   'accounting-csv', 'accounting-xlsx', 'accounting-paid', 'accounting-message', 'export-json', 'export-csv',
 ] as const;

@@ -153,8 +153,8 @@ describe('news on Aktuelt', () => {
     expect(newsNotices(list, NOW - 2 * H, NOW).map(n => n.text)).toEqual(['Nyt new']);
     expect(newsNotices(list, 0, NOW).map(n => n.text)).toEqual(['Nyt new', 'Nyt seen']);
     expect(newsNotices(list, 0, NOW)[0].link).toEqual({path: '/aktuelt', fragment: 'news-new'});
-    const maker = {kind: 'maker' as const, from: null, text: 'Hej', at: NOW - 5 * H, link: {path: '/aktuelt'}};
-    const invite = {kind: 'invite' as const, from: 'B', text: 'Fest', at: NOW, link: {path: '/kollegiet'}};
+    const maker = {id: 'maker', kind: 'maker' as const, from: null, text: 'Hej', at: NOW - 5 * H, link: {path: '/aktuelt'}};
+    const invite = {id: 'event:x', kind: 'invite' as const, from: 'B', text: 'Fest', at: NOW, link: {path: '/kollegiet'}};
     expect(sortNotices([invite, ...newsNotices(list, NOW - 2 * H, NOW), maker]).map(n => n.kind)).toEqual(['maker', 'news', 'invite']);
   });
 });

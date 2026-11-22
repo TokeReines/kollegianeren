@@ -26,7 +26,7 @@ export const routes: Routes = [
       {path: 'aktuelt', loadComponent: () => import('./components/aktuelt/aktuelt.component').then(m => m.AktueltComponent)},
       {path: 'maker', redirectTo: 'aktuelt'},
       {path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)},
-      {path: 'inbox', loadComponent: () => import('./components/maker-inbox/maker-inbox.component').then(m => m.MakerInboxComponent)},
+      {path: 'inbox', canActivate: [adminGuard], loadComponent: () => import('./components/maker-inbox/maker-inbox.component').then(m => m.MakerInboxComponent)},
     ],
   },
   {path: '**', redirectTo: ''},

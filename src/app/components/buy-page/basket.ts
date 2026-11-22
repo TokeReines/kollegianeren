@@ -1,6 +1,7 @@
 import {Product, byName} from '../../interfaces/product';
 
-// Product ids, most bought first, then by name.
+// Product ids, most bought first, then by name. A sold out product keeps its place (greyed), so a
+// popular one running out is seen at the top.
 export function productOrder(products: Pick<Product, 'id' | 'name' | 'sold'>[]): string[] {
   return [...products].sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0) || byName(a, b)).map(p => p.id);
 }

@@ -2,7 +2,7 @@ import {Injectable, computed} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {Observable, catchError, combineLatest, filter, from, map, of, shareReplay, distinctUntilChanged, switchMap} from 'rxjs';
 import {
-  EmailAuthProvider, User, createUserWithEmailAndPassword, onAuthStateChanged, reauthenticateWithCredential,
+  EmailAuthProvider, User, createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, reauthenticateWithCredential,
   sendPasswordResetEmail, signInWithEmailAndPassword, signOut, verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import {doc} from 'firebase/firestore';
@@ -63,8 +63,9 @@ export class AuthService {
   readonly user = toSignal(this.user$, {initialValue: null});
   readonly membership = toSignal(this.membership$, {initialValue: null});
   readonly role = computed(() => this.membership()?.role ?? null);
-  // Owners and treasurers manage products, residents, accounts and logins; tablets only buy.
-  readonly canManage = computed(() => !!this.role() && this.role() !== 'tablet');
+  // Owners and treasurers manage products, residents, accounts and logins; tablets only buy. Only
+  // in a kitchen that exists: the maker, or a login whose invite failed, has none to manage.
+  readonly canManage = computed(() => this.hasKitchen() && !!this.role() && this.role() !== 'tablet');
 
   // The signed-in kitchen's id right now, for writes triggered by the user.
   get currentKitchenId(): string {
@@ -77,6 +78,15 @@ export class AuthService {
 
   emailSignup(email: string, password: string) {
     return createUserWithEmailAndPassword(auth, email, password);
+  }
+
+  // Removes the login just made when its invite could not be used, so no login is left without a
+  // kitchen and the email can be used again.
+  async undoSignup() {
+    const user = auth.currentUser;
+    if (user) {
+      await deleteUser(user).catch(() => signOut(auth));
+    }
   }
 
   emailLogin(email: string, password: string) {

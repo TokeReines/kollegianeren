@@ -29,6 +29,8 @@
     <td mat-cell *matCellDef="let purchase" class="undo">
       @if (canUndo(purchase)) {
         <button mat-button (click)="remove(purchase)"><mat-icon>undo</mat-icon> {{ "BEERSYSTEM_UNDO" | translate }}</button>
+      } @else if (isBillLine(purchase)) {
+        <span class="bill-hint">{{ "HISTORY_BILL_HINT" | translate }}</span>
       }
     </td>
   </ng-container>

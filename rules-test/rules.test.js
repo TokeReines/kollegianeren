@@ -283,6 +283,16 @@ function redeem(uid, code, kitchenId, role, newKitchenName) {
 }
 const unused = () => ({ kitchenId: A, role: 'tablet', createdBy: A, createdAt: Timestamp.now(), expiresAt: days(7), usedBy: null, usedAt: null });
 
+test('a login without a kitchen owns nothing: not the empty kitchen of its own uid', async () => {
+  const ghost = asKitchen('ghost');
+  await assertFails(setDoc(doc(ghost, 'kitchens', 'ghost', 'products', 'p1'), { name: 'Beer', price: 5, retailPrice: 3, active: true }));
+  await assertFails(setDoc(doc(ghost, 'kitchens', 'ghost', 'users', 'u1'), { name: 'X', room: '1', kitchen: 'ghost', active: true }));
+  await assertFails(getDocs(collection(ghost, 'kitchens', 'ghost', 'purchases')));
+  await assertFails(setDoc(doc(ghost, 'invites', 'g1'), invite('ghost', 'tablet', 'ghost')));
+  // The kitchens that do exist keep their uid owner.
+  await assertSucceeds(setDoc(doc(asKitchen(A), 'kitchens', A, 'products', 'p2'), { name: 'Cola', price: 5, retailPrice: 3, active: true }));
+});
+
 test('invites: owner and treasurer invite tablets; tablets and outsiders cannot', async () => {
   await assertSucceeds(setDoc(doc(asKitchen(A), 'invites', 'c1'), invite(A, 'tablet', A)));
   await assertSucceeds(setDoc(doc(asKitchen(A), 'invites', 'c2'), invite(A, 'treasurer', A)));
@@ -503,4 +513,16 @@ test('app versions: a login reports its own build, nothing else', async () => {
   await assertFails(setDoc(doc(asKitchen(A), 'kitchens', B, 'appVersions', A), { build: 'x', loadedAt: serverTimestamp() }));
   await assertFails(setDoc(doc(asKitchen('ghost'), 'kitchens', 'ghost', 'appVersions', 'ghost'), { build: 'x', loadedAt: serverTimestamp() }));
   await assertFails(deleteDoc(mine));
+});
+
+test('seen: a kitchen stamps Aktuelt and Forslag apart and closes notices one by one', async () => {
+  const mine = doc(asKitchen(A), 'seen', A);
+  await assertSucceeds(setDoc(mine, { aktueltAt: serverTimestamp() }, { merge: true }));
+  await assertSucceeds(setDoc(mine, { forslagAt: serverTimestamp() }, { merge: true }));
+  await assertSucceeds(setDoc(mine, { dismissed: ['battle:b1', 'kudos:k1'] }, { merge: true }));
+  await assertFails(setDoc(mine, { dismissed: Array.from({ length: 41 }, (_, i) => `event:${i}`) }, { merge: true }));
+  await assertFails(setDoc(mine, { dismissed: 'battle:b1' }, { merge: true }));
+  await assertFails(setDoc(mine, { forslagAt: Timestamp.fromMillis(0) }, { merge: true }));
+  await assertFails(setDoc(mine, { other: true }, { merge: true }));
+  await assertFails(setDoc(doc(asKitchen(A), 'seen', B), { dismissed: [] }, { merge: true }));
 });

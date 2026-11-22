@@ -46,7 +46,7 @@
                   @if (!open(m)) {
                     <button mat-menu-item (click)="signups(m)"><mat-icon>group_add</mat-icon><span>{{ "FOOD_EDIT_SIGNUPS" | translate }}</span></button>
                   }
-                  @if (m.bill) {
+                  @if (canUndoBill(m)) {
                     <button mat-menu-item (click)="undoBill(m)"><mat-icon>undo</mat-icon><span>{{ "FOOD_BILL_UNDO" | translate }}</span></button>
                   }
                   <button mat-menu-item (click)="remove(m)"><mat-icon>delete</mat-icon><span>{{ "DELETE" | translate }}</span></button>

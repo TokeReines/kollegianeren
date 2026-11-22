@@ -1,5 +1,6 @@
 import {Component, computed, inject, model, signal} from '@angular/core';
-import {FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {AbstractControl, FormsModule, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {Timestamp} from 'firebase/firestore';
 import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
@@ -14,6 +15,9 @@ import {
   Profile, REASON_MAX, TITLE_MAX,
 } from '../../interfaces/kollegiet';
 import {atTime} from '../../interfaces/meal';
+import {lacksBeer} from '../../interfaces/product';
+import {ProductService} from '../../services/product.service';
+import {notBlank} from '../../validators';
 import {AuthService} from '../../services/auth.service';
 import {EventFields, KollegietService} from '../../services/kollegiet.service';
 import {BattleFields} from '../../services/league.service';
@@ -68,6 +72,13 @@ export interface EventDialogData {
   event: KEvent | null;
 }
 
+// A new event may start at most an hour ago (firestore.rules): today at a time long gone is
+// refused, so it is said here, before the rest is filled in.
+function startsSoonEnough(g: AbstractControl): ValidationErrors | null {
+  const {day, time} = g.value as {day: Date | null, time: string};
+  return day && time && atTime(day, time).getTime() < Date.now() - 55 * 60e3 ? {past: true} : null;
+}
+
 // A new event (open kitchen, party, dinner) or editing one. Closes with its fields.
 @Component({
   selector: 'app-event-dialog',
@@ -100,6 +111,9 @@ export interface EventDialogData {
           <input matInput type="time" formControlName="time">
         </mat-form-field>
       </div>
+      @if (form.hasError('past')) {
+        <p class="label past" role="alert">{{ "KOL_EVENT_PAST" | translate }}</p>
+      }
       <mat-form-field>
         <mat-label>{{ "KOL_EVENT_HOURS" | translate }}</mat-label>
         <mat-select formControlName="hours">
@@ -123,7 +137,7 @@ export interface EventDialogData {
       <button mat-flat-button type="submit" form="event-form" [disabled]="form.invalid || !someone(invited())">{{ (data.event ? "SAVE" : "KOL_INVITE") | translate }}</button>
     </mat-dialog-actions>
   `,
-  styles: DIALOG_STYLES,
+  styles: DIALOG_STYLES + `.past { color: var(--mat-sys-error); margin: 0; }`,
 })
 export class EventDialogComponent {
   protected readonly data = inject<EventDialogData>(MAT_DIALOG_DATA);
@@ -135,13 +149,13 @@ export class EventDialogComponent {
   private readonly start = this.data.event?.startsAt.toDate() ?? null;
   protected readonly form = inject(NonNullableFormBuilder).group({
     kind: [this.data.event?.kind ?? 'openKitchen'],
-    title: [this.data.event?.title ?? '', [Validators.required, Validators.maxLength(TITLE_MAX)]],
+    title: [this.data.event?.title ?? '', [Validators.required, notBlank, Validators.maxLength(TITLE_MAX)]],
     day: [this.start as Date | null, Validators.required],
     time: [this.start ? hhmm(this.start) : '21:00', Validators.required],
     hours: [this.data.event ? Math.round((this.data.event.endsAt.toMillis() - this.data.event.startsAt.toMillis()) / 3.6e6) : 4],
     place: [this.data.event?.place ?? '', Validators.maxLength(80)],
     text: [this.data.event?.text ?? '', Validators.maxLength(1000)],
-  });
+  }, {validators: this.data.event ? [] : [startsSoonEnough]});
 
   protected readonly invited = signal<'all' | string[]>(this.data.event?.invited ?? 'all');
   protected readonly someone = someone;
@@ -180,7 +194,11 @@ export interface BattleDialogData {
             <mat-option [value]="m">{{ "KOL_METRIC_" + m | translate }}</mat-option>
           }
         </mat-select>
-        <mat-hint>{{ "KOL_METRIC_HINT_" + form.controls.metric.value | translate }}</mat-hint>
+        @if (form.controls.metric.value === 'beer' && lacksBeer()) {
+          <mat-hint class="warn">{{ "KOL_METRIC_NO_BEER" | translate }}</mat-hint>
+        } @else {
+          <mat-hint>{{ "KOL_METRIC_HINT_" + form.controls.metric.value | translate }}</mat-hint>
+        }
       </mat-form-field>
       <mat-form-field>
         <mat-label>{{ "KOL_NAME" | translate }}</mat-label>
@@ -220,9 +238,12 @@ export interface BattleDialogData {
       <button mat-flat-button type="submit" form="battle-form" [disabled]="form.invalid || !someone(invited())">{{ "KOL_CHALLENGE" | translate }}</button>
     </mat-dialog-actions>
   `,
-  styles: DIALOG_STYLES + `.error { color: var(--mat-sys-error); margin: 0; }`,
+  styles: DIALOG_STYLES + `.error, .warn { color: var(--mat-sys-error); margin: 0; }`,
 })
 export class BattleDialogComponent {
+  // Most beers counts the products set as beer: say so before a kitchen with none challenges.
+  private readonly products = toSignal(inject(ProductService).list(), {initialValue: []});
+  protected readonly lacksBeer = computed(() => lacksBeer(this.products()));
   protected readonly data = inject<BattleDialogData>(MAT_DIALOG_DATA);
   private readonly ref = inject<MatDialogRef<BattleDialogComponent, BattleFields>>(MatDialogRef);
   protected readonly metrics = METRICS;
@@ -234,7 +255,7 @@ export class BattleDialogComponent {
   private readonly end = new Date(new Date(this.start).setHours(26, 0, 0, 0));
   protected readonly form = inject(NonNullableFormBuilder).group({
     metric: ['beer' as Metric],
-    title: ['', [Validators.required, Validators.maxLength(TITLE_MAX)]],
+    title: ['', [Validators.required, notBlank, Validators.maxLength(TITLE_MAX)]],
     fromDay: [new Date(this.start.getFullYear(), this.start.getMonth(), this.start.getDate()) as Date | null, Validators.required],
     fromTime: [hhmm(this.start), Validators.required],
     toDay: [new Date(this.end.getFullYear(), this.end.getMonth(), this.end.getDate()) as Date | null, Validators.required],

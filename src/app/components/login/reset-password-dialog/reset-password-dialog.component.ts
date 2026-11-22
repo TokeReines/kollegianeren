@@ -5,6 +5,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {AuthService} from '../../../services/auth.service';
+import {TranslateService} from '../../../services/translate.service';
+import {authErrorKey, resetLooksSent} from '../../../interfaces/errors';
 import {TranslatePipe} from '../../../translate.pipe';
 
 // "Forgot password": Firebase mails a reset link. Opened with the email typed on the login page.
@@ -43,6 +45,7 @@ import {TranslatePipe} from '../../../translate.pipe';
 })
 export class ResetPasswordDialogComponent {
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(TranslateService);
   protected readonly email = new FormControl(inject<string>(MAT_DIALOG_DATA) ?? '', {nonNullable: true, validators: [Validators.required, Validators.email]});
   // A <form> needs a form directive, or submitting it reloads the page.
   protected readonly form = new FormGroup({email: this.email});
@@ -60,7 +63,11 @@ export class ResetPasswordDialogComponent {
       await this.auth.sendResetEmail(this.email.value.trim());
       this.sent.set(true);
     } catch (e) {
-      this.error.set((e as Error).message);
+      if (resetLooksSent(e)) {
+        this.sent.set(true);
+      } else {
+        this.error.set(this.i18n.t(authErrorKey(e)));
+      }
     } finally {
       this.busy.set(false);
     }

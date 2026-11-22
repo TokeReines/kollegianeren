@@ -89,8 +89,12 @@ export class AccessComponent {
     return this.notify.copy(text);
   }
 
-  protected revoke(invite: Invite) {
-    this.access.revoke(invite).catch(this.notify.error);
+  protected async revoke(invite: Invite) {
+    const t = (k: string) => this.i18n.t(k);
+    if (await this.confirm.ask({title: t('ACCESS_REVOKE_TITLE'), message: t('ACCESS_REVOKE_TEXT').replace('{code}', invite.id),
+      confirm: t('ACCESS_REVOKE'), danger: true})) {
+      this.access.revoke(invite).catch(this.notify.error);
+    }
   }
 
   protected async remove(member: Member) {

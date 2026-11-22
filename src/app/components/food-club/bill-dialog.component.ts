@@ -13,6 +13,8 @@ import {MealService} from '../../services/meal.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {AMOUNT_PATTERN, kr, parseKr} from '../../format';
+import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 
 export interface BillDialogData {
   // The live meal from the page, so an expense added on another tablet shows up here too.
@@ -60,9 +62,10 @@ export interface BillDialogData {
           <form class="add" (submit)="$event.preventDefault(); save()">
             <mat-form-field class="amount" subscriptSizing="dynamic">
               <mat-label>{{ "FOOD_EXPENSE_KR" | translate }}</mat-label>
-              <input matInput name="kr" type="number" inputmode="decimal" min="1" max="20000" step="0.01" [ngModel]="kr() || null"
-                     (ngModelChange)="kr.set(+$event)" autocomplete="off">
+              <input matInput name="kr" inputmode="decimal" [pattern]="amountPattern" [ngModel]="krText()"
+                     (ngModelChange)="krText.set($event)" autocomplete="off">
               <span matTextSuffix>kr.</span>
+              <mat-error>{{ "AMOUNT_INVALID" | translate }}</mat-error>
             </mat-form-field>
             <mat-form-field class="by" subscriptSizing="dynamic">
               <mat-label>{{ "FOOD_BILL_PAID_BY" | translate }}</mat-label>
@@ -122,9 +125,12 @@ export class BillDialogComponent {
   private readonly meals = inject(MealService);
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
+  private readonly confirm = inject(Confirm);
 
   protected readonly meal = computed(() => this.data.meal());
-  protected readonly kr = signal(0);
+  protected readonly krText = signal('');
+  protected readonly kr = computed(() => parseKr(this.krText()) ?? 0);
+  protected readonly amountPattern = AMOUNT_PATTERN;
   protected readonly by = signal(this.data.payers[0]?.id ?? '');
   protected readonly note = signal('');
   protected readonly noteMax = EXPENSE_NOTE_MAX;
@@ -159,7 +165,12 @@ export class BillDialogComponent {
     this.ref.close();
   }
 
-  protected remove(e: MealExpense) {
+  protected async remove(e: MealExpense) {
+    const t = (k: string) => this.i18n.t(k);
+    if (!await this.confirm.ask({title: t('FOOD_EXPENSE_REMOVE'), message: `${this.name(e.by)}: ${kr(e.kr, 2)}${e.note ? ', ' + e.note : ''}`,
+      confirm: t('DELETE'), danger: true})) {
+      return;
+    }
     const m = this.meal();
     if (m) {
       this.meals.removeExpense(m, e).catch(this.notify.error);

@@ -1,11 +1,17 @@
 import {Timestamp} from 'firebase/firestore';
-import {accounts, periodRange, toCsv, toTable} from './components/accounting/accounting';
+import {accounts, matchesSearch, periodEnded, periodRange, sumRows, toCsv, toTable} from './components/accounting/accounting';
+import {isBillLine} from './interfaces/meal';
+import {authErrorKey, errorKey, resetLooksSent} from './interfaces/errors';
+import {canTakeBack} from './interfaces/purchase';
+import {parseDanishDate} from './date-adapter';
+import {notBlank} from './validators';
+import {FormControl} from '@angular/forms';
 import {computeStats, heatLevel, periodStart} from './components/stats/stats';
 import {initials, tone} from './components/shared/resident-avatar.component';
 import {kitchenKey} from './interfaces/kitchen';
 import {inviteLink, isOpen, newCode} from './interfaces/invite';
 import {newestFirst, toThreads} from './interfaces/message';
-import {byName, isLowStock, margin, tracksStock} from './interfaces/product';
+import {byName, fitsStock, isLowStock, lacksBeer, margin, stockLeft, tracksStock} from './interfaces/product';
 import {byRoom} from './interfaces/user';
 import {KitchenStats, lastActive, summarise as summariseKitchens, trend} from './interfaces/admin-stats';
 import {computeFoodStats} from './components/stats/food-stats';
@@ -13,7 +19,7 @@ import {Meal, MealTag, atTime, closeHours, closeHoursFor, dayKey, isoWeek, newMe
 import {byMonth, isDueForAnonymising, summarise} from './services/residency';
 import {sortValue} from './table-sort';
 import {describeSale, joinNames, productOrder} from './components/buy-page/basket';
-import {kr} from './format';
+import {kr, krInput, parseKr} from './format';
 import {millis} from './time';
 
 const at = (y: number, m: number, d: number, h = 20) => Timestamp.fromDate(new Date(y, m - 1, d, h));
@@ -36,6 +42,25 @@ describe('products', () => {
 
   it('sorts names the Danish way', () => {
     expect(['Øl', 'Cola', 'Æble'].map(name => ({name})).sort(byName).map(p => p.name)).toEqual(['Cola', 'Æble', 'Øl']);
+  });
+
+  it('what is left of tracked stock is never below 0, and unknown when not tracked', () => {
+    expect(stockLeft({stock: 96})).toBe(96);
+    expect(stockLeft({stock: 0})).toBe(0);
+    expect(stockLeft({stock: -3})).toBe(0);
+    expect(stockLeft({stock: null})).toBeNull();
+    expect(stockLeft({})).toBeNull();
+  });
+
+  it('a sale fits what is left: amount times buyers, never beyond, anything without stock', () => {
+    expect(fitsStock({stock: 6}, 2, 3)).toBe(true);
+    expect(fitsStock({stock: 5}, 2, 3)).toBe(false);
+    expect(fitsStock({stock: 3}, 3, 0)).toBe(true);
+    expect(fitsStock({stock: 3}, 4, 0)).toBe(false);
+    expect(fitsStock({stock: 0}, 1, 1)).toBe(false);
+    expect(fitsStock({stock: -2}, 1, 1)).toBe(false);
+    expect(fitsStock({stock: null}, 99, 9)).toBe(true);
+    expect(fitsStock({}, 99, 9)).toBe(true);
   });
 });
 
@@ -327,5 +352,112 @@ describe('buy page', () => {
   it('puts the most bought products first, then by name', () => {
     expect(productOrder([{id: 'c', name: 'Cola', sold: 5}, {id: 'a', name: 'Apollinaris'}, {id: 't', name: 'Tuborg', sold: 40}, {id: 'b', name: 'Blanc'}]))
       .toEqual(['t', 'c', 'a', 'b']);
+  });
+
+  it('keeps a sold out product in its place', () => {
+    const products = [{id: 't', name: 'Tuborg', sold: 40, stock: 0}, {id: 'c', name: 'Cola', sold: 5, stock: 12}, {id: 'a', name: 'Amper'}];
+    expect(productOrder(products)).toEqual(['t', 'c', 'a']);
+  });
+});
+
+describe('money and access fixes', () => {
+  it('knows a food club bill line by its product id', () => {
+    expect(isBillLine({productId: 'madklub-2026-11-22'})).toBe(true);
+    expect(isBillLine({productId: 'p1'})).toBe(false);
+    expect(isBillLine({productId: null})).toBe(false);
+  });
+
+  it('Statistik leaves split food club bills out of the sales', () => {
+    const p = (productId: string, productName: string, amount: number, price: number) =>
+      ({timestamp: Timestamp.fromDate(new Date(2026, 9, 28, 20)), productId, productName, amount, price, userId: 'u1'});
+    const s = computeStats([p('p1', 'Tuborg', 2, 14), p('madklub-x', 'Madklub', 1, 75), p('madklub-x', 'Madklub', -1, -150)],
+      new Date(2026, 9, 26), 7, new Map());
+    expect(s.totals).toMatchObject({kr: 14, purchases: 1, units: 2});
+    expect(s.products.map(r => r.name)).toEqual(['Tuborg']);
+  });
+
+  it('the totals row adds up the residents shown, also in an export', () => {
+    const a = accounts([
+      {userId: 'a', userName: 'Anna', userRoom: '1', productName: 'Cola', amount: 1, price: 6},
+      {userId: 'b', userName: 'Bo', userRoom: '2', productName: 'Cola', amount: 2, price: 12.5},
+    ]);
+    const bo = a.rows.filter(r => matchesSearch(r, ' bo '));
+    expect(bo.map(r => r.name)).toEqual(['Bo']);
+    expect(sumRows(bo)).toEqual({units: {Cola: 2}, kr: {Cola: 12.5}, total: 12.5});
+    const t = toTable({...a, rows: bo}, 'kr', {name: 'Navn', room: 'Værelse', total: 'I alt', sum: 'Sum'});
+    expect(t.footer).toEqual(['Sum', '', 12.5, 12.5]);
+  });
+
+  it('a period can be marked paid once it has ended, not while it ends today', () => {
+    const now = new Date(2026, 10, 22, 15);
+    expect(periodEnded(new Date(2026, 10, 22), now)).toBe(false);
+    expect(periodEnded(new Date(2026, 10, 21), now)).toBe(true);
+    expect(periodEnded(periodRange('lastMonth', now).to, now)).toBe(true);
+    expect(periodEnded(periodRange('last30', now).to, now)).toBe(false);
+  });
+
+  it('turns Firebase Auth errors into texts, and never tells whether an email has a login', () => {
+    expect(authErrorKey({code: 'auth/email-already-in-use'})).toBe('AUTH_EMAIL_IN_USE');
+    expect(authErrorKey(new Error('boom'))).toBe('AUTH_FAILED');
+    expect(resetLooksSent({code: 'auth/user-not-found'})).toBe(true);
+    expect(resetLooksSent({code: 'auth/network-request-failed'})).toBe(false);
+  });
+});
+
+describe('everyday fixes', () => {
+  it('reads an amount typed with a comma or a point, and nothing else', () => {
+    expect(parseKr('40,5')).toBe(40.5);
+    expect(parseKr('240,50')).toBe(240.5);
+    expect(parseKr(' 40.50 ')).toBe(40.5);
+    expect(parseKr('40')).toBe(40);
+    expect(parseKr('')).toBeNull();
+    expect(parseKr('1.240,50')).toBeNull();
+    expect(parseKr('4,505')).toBeNull();
+    expect(parseKr('-5')).toBeNull();
+    expect(parseKr('fem')).toBeNull();
+  });
+
+  it('writes an amount back the Danish way', () => {
+    expect(krInput(6.5)).toBe('6,5');
+    expect(krInput(12)).toBe('12');
+    expect(krInput(null)).toBe('');
+    expect(krInput(undefined)).toBe('');
+  });
+
+  it('refuses a name of only spaces', () => {
+    expect(notBlank(new FormControl('   '))).toEqual({blank: true});
+    expect(notBlank(new FormControl(' Bo '))).toBeNull();
+    expect(notBlank(new FormControl(''))).toBeNull();
+  });
+
+  it('says when no product in the fridge is beer, once they have loaded', () => {
+    expect(lacksBeer([])).toBe(false);
+    expect(lacksBeer([{active: true, category: 'soda'}, {active: true}])).toBe(true);
+    expect(lacksBeer([{active: false, category: 'beer'}, {active: true, category: 'soda'}])).toBe(true);
+    expect(lacksBeer([{active: true, category: 'beer'}])).toBe(false);
+  });
+
+  it('lets the tablet take back only within its minute', () => {
+    expect(canTakeBack(0, 54e3, false)).toBe(true);
+    expect(canTakeBack(0, 56e3, false)).toBe(false);
+    expect(canTakeBack(0, 864e5, true)).toBe(true);
+  });
+
+  it('says Firebase errors in words, and leaves the app\'s own as they are', () => {
+    expect(errorKey({code: 'permission-denied', message: 'PERMISSION_DENIED: evaluation error at L677'})).toBe('ERROR_NOT_ALLOWED');
+    expect(errorKey({code: 'unavailable'})).toBe('ERROR_OFFLINE');
+    expect(errorKey({code: 'resource-exhausted'})).toBe('ERROR_QUOTA');
+    expect(errorKey({code: 'internal'})).toBe('ERROR_FAILED');
+    expect(errorKey({code: 'auth/email-already-in-use'})).toBe('AUTH_EMAIL_IN_USE');
+    expect(errorKey(new Error('two at a time'))).toBeNull();
+  });
+
+  it('reads a date typed the Danish way', () => {
+    expect(parseDanishDate('20.11.2026')).toEqual(new Date(2026, 10, 20));
+    expect(parseDanishDate('1/2/26')).toEqual(new Date(2026, 1, 1));
+    expect(parseDanishDate('20-11', 2025)).toEqual(new Date(2025, 10, 20));
+    expect(parseDanishDate('31.2.2026')?.getTime()).toBeNaN();
+    expect(parseDanishDate('2026-11-20')).toBeUndefined();
+    expect(parseDanishDate('i går')).toBeUndefined();
   });
 });
