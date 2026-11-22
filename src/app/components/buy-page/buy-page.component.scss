@@ -222,6 +222,22 @@
     font: var(--mat-sys-body-small);
     color: var(--mat-sys-on-surface-variant);
   }
+
+  // Sold out: the tile stays, greyed (its "udsolgt" too), and cannot be tapped.
+  &.sold-out {
+    opacity: .55;
+    filter: grayscale(1);
+    cursor: default;
+  }
+
+  // Few left, in the tertiary colour so it reads as information, not an alert.
+  .left {
+    font: var(--mat-sys-label-small);
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
 }
 
 .resident {

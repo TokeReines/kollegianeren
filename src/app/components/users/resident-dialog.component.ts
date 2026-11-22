@@ -9,6 +9,7 @@ import {MatInputModule} from '@angular/material/input';
 import {User, UserFields} from '../../interfaces/user';
 import {TranslatePipe} from '../../translate.pipe';
 import {ImagePickerComponent} from '../shared/image-picker.component';
+import {notBlank} from '../../validators';
 
 // Adding a new resident (data null) or editing one. Closes with the resident's fields, or nothing.
 @Component({
@@ -45,7 +46,7 @@ export class ResidentDialogComponent {
   protected readonly resident = inject<User | null>(MAT_DIALOG_DATA);
   private readonly ref = inject<MatDialogRef<ResidentDialogComponent, UserFields>>(MatDialogRef);
   protected readonly form = inject(NonNullableFormBuilder).group({
-    name: [this.resident?.name ?? '', [Validators.required, Validators.maxLength(60)]],
+    name: [this.resident?.name ?? '', [Validators.required, notBlank, Validators.maxLength(60)]],
     room: [this.resident?.room ?? '', [Validators.maxLength(10)]],
     active: [this.resident?.active ?? true],
   });

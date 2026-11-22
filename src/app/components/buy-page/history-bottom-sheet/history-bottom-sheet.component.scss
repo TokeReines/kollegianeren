@@ -26,3 +26,10 @@ tr.removing {
     visibility: hidden;
   }
 }
+
+// A food club bill line: taken back from the dinner, not here.
+.bill-hint {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}

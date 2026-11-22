@@ -341,6 +341,8 @@ export function highfiveId(from: string, to: string, day: string): string {
 export type NoticeKind = 'live' | 'maker' | 'news' | 'proposal' | 'invite' | 'challenge' | 'kudos' | 'event';
 
 export interface Notice {
+  // Stable per thing it is about ("battle:abc"), so "not now" closes this one and no other.
+  id: string;
   kind: NoticeKind;
   // The kitchen it is from, if any.
   from: string | null;
@@ -369,7 +371,7 @@ export const NEWS_DAYS = 14;
 export function newsNotices(announcements: {id: string, title: string, createdAt: Timestamp}[], seenAt: number,
                             now = Date.now()): Notice[] {
   const since = Math.max(seenAt, now - NEWS_DAYS * 864e5);
-  return announcements.filter(a => millis(a.createdAt) > since).map(a => ({kind: 'news' as const, from: null, text: a.title,
+  return announcements.filter(a => millis(a.createdAt) > since).map(a => ({id: `news:${a.id}`, kind: 'news' as const, from: null, text: a.title,
     at: millis(a.createdAt), link: {path: '/aktuelt', fragment: `news-${a.id}`}}));
 }
 
@@ -382,7 +384,7 @@ export function kollegietNotices(kitchenId: string, seenAt: number, data: {event
     // A live call: while it goes on and until the kitchen answers, seen or not.
     if (e.kind === 'live') {
       if (isLiveNow(e, now) && isInvited(e, kitchenId) && !e.rsvp?.[kitchenId]) {
-        notices.push({kind: 'live', from: e.kitchenId, text: e.title, at: millis(e.startsAt), eventId: e.id,
+        notices.push({id: `live:${e.id}`, kind: 'live', from: e.kitchenId, text: e.title, at: millis(e.startsAt), eventId: e.id,
           link: {path: '/kollegiet', query: {tab: 'board'}, fragment: `event-${e.id}`}});
       }
       continue;
@@ -391,20 +393,20 @@ export function kollegietNotices(kitchenId: string, seenAt: number, data: {event
     if (fresh && isInvited(e, kitchenId)) {
       const soon = e.invited === 'all' && millis(e.startsAt) - now < 3 * 864e5;
       if (e.invited !== 'all' || soon) {
-        notices.push({kind: e.invited === 'all' ? 'event' : 'invite', from: e.kitchenId, text: e.title, at: millis(e.createdAt),
+        notices.push({id: `event:${e.id}`, kind: e.invited === 'all' ? 'event' : 'invite', from: e.kitchenId, text: e.title, at: millis(e.createdAt),
           link: {path: '/kollegiet', query: {tab: 'board'}, fragment: `event-${e.id}`}});
       }
     }
   }
   for (const b of data.battles) {
     if (millis(b.createdAt) > seenAt && isInvited(b, kitchenId) && !b.participants.includes(kitchenId) && battleState(b, now) !== 'ended') {
-      notices.push({kind: 'challenge', from: b.kitchenId, text: b.title, at: millis(b.createdAt),
+      notices.push({id: `battle:${b.id}`, kind: 'challenge', from: b.kitchenId, text: b.title, at: millis(b.createdAt),
         link: {path: '/kollegiet', query: {tab: 'battles'}, fragment: `battle-${b.id}`}});
     }
   }
   for (const k of data.kudos) {
     if (k.to === kitchenId && millis(k.createdAt) > seenAt) {
-      notices.push({kind: 'kudos', from: k.from, text: k.reason, at: millis(k.createdAt), badge: k.kind === 'badge' ? k.badge : null,
+      notices.push({id: `kudos:${k.id}`, kind: 'kudos', from: k.from, text: k.reason, at: millis(k.createdAt), badge: k.kind === 'badge' ? k.badge : null,
         link: {path: '/kollegiet', query: {tab: 'kitchens', kitchen: kitchenId}}});
     }
   }

@@ -13,9 +13,11 @@ import {AccessService} from '../../services/access.service';
 import {Invite} from '../../interfaces/invite';
 import {KitchenService} from '../../services/kitchen.service';
 import {kitchenKey} from '../../interfaces/kitchen';
+import {authErrorKey} from '../../interfaces/errors';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
 import {LanguageButtonComponent} from '../language-button/language-button.component';
+import {notBlank} from '../../validators';
 
 // The dorm's kitchens, offered as suggestions when an invite creates a new kitchen.
 const DORM_KITCHENS = [
@@ -83,7 +85,7 @@ export class RegisterComponent implements OnInit {
     this.validInvite.set(found.invite);
     this.inviteKitchen.set(found.kitchenName);
     const name = this.form.controls.kitchenName;
-    name.setValidators(this.isReferral() ? [Validators.required, Validators.maxLength(40)] : []);
+    name.setValidators(this.isReferral() ? [Validators.required, notBlank, Validators.maxLength(40)] : []);
     name.updateValueAndValidity();
   }
 
@@ -96,11 +98,27 @@ export class RegisterComponent implements OnInit {
     this.busy.set(true);
     this.submitError.set('');
     try {
-      await this.auth.emailSignup(email.trim(), password);
-      await this.access.redeem(invite, kitchenName);
+      // The code may have been used or run out since it was checked (a link shared in a group chat).
+      await this.check();
+      if (!this.validInvite()) {
+        return;
+      }
+      try {
+        await this.auth.emailSignup(email.trim(), password);
+      } catch (e) {
+        this.submitError.set(this.i18n.t(authErrorKey(e)));
+        return;
+      }
+      try {
+        await this.access.redeem(invite, kitchenName);
+      } catch {
+        // Someone else got there first: no login is left behind without a kitchen.
+        await this.auth.undoSignup();
+        await this.check();
+        this.submitError.set(this.i18n.t('REGISTER_INVITE_FAILED'));
+        return;
+      }
       await this.router.navigate(['']);
-    } catch (e) {
-      this.submitError.set((e as Error).message);
     } finally {
       this.busy.set(false);
     }

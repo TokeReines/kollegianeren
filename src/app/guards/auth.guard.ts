@@ -13,12 +13,13 @@ export const authGuard: CanActivateFn = () => {
   );
 };
 
-// Management pages; a tablet login is sent to the buy page. The rules enforce it regardless.
+// Management pages; a tablet login, or one with no kitchen (the maker's), is sent to the buy page.
+// The rules enforce it regardless.
 export const manageGuard: CanActivateFn = () => {
   const router = inject(Router);
-  return inject(AuthService).role$.pipe(
+  return inject(AuthService).kitchen$.pipe(
     take(1),
-    map(role => role !== 'tablet' ? true : router.createUrlTree(['/'])),
+    map(m => m && m.role !== 'tablet' ? true : router.createUrlTree(['/'])),
   );
 };
 

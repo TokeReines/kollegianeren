@@ -51,6 +51,8 @@ function summarise(purchases, sinceDay) {
     if (!through || before(through, ts) < 0) through = ts;
     const { day, hour } = local(msOf(ts));
     if (day < sinceDay) continue;
+    // A split food club bill (productId madklub-…) is not a sale: Statistik leaves it out.
+    if (String(p.productId || '').startsWith('madklub-')) continue;
     const price = Number(p.price) || 0, amount = Number(p.amount) || 0;
     const d = days[day] || (days[day] = { kr: 0, n: 0, u: 0, p: {}, h: {}, b: [] });
     d.kr += price;

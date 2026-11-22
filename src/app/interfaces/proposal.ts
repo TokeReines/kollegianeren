@@ -61,9 +61,9 @@ export function proposalNotices(proposals: Proposal[], seenAt: number, now = Dat
   for (const p of proposals) {
     const link = {path: '/aktuelt', query: {tab: 'forslag'}, fragment: `proposal-${p.id}`};
     if (millis(p.createdAt) > since) {
-      notices.push({kind: 'proposal', from: null, text: p.title, at: millis(p.createdAt), link});
+      notices.push({id: `proposal:${p.id}`, kind: 'proposal', from: null, text: p.title, at: millis(p.createdAt), link});
     } else if (p.status === 'done' && millis(p.statusAt) > since) {
-      notices.push({kind: 'proposal', from: null, text: p.title, at: millis(p.statusAt), link, done: true});
+      notices.push({id: `proposal-done:${p.id}`, kind: 'proposal', from: null, text: p.title, at: millis(p.statusAt), link, done: true});
     }
   }
   return notices;

@@ -172,13 +172,41 @@ export interface Table {
   footer: (string | number | null)[];
 }
 
-// The accounts as a plain table: counts or kroner per product, then the total in kroner.
+// The sums of the rows shown (after a search or "Mangler at betale"), for the totals row.
+export function sumRows(rows: AccountRow[]): Pick<Accounts['sums'], 'units' | 'kr' | 'total'> {
+  const sums = {units: {} as Record<string, number>, kr: {} as Record<string, number>, total: 0};
+  for (const r of rows) {
+    for (const [p, n] of Object.entries(r.units)) {
+      sums.units[p] = (sums.units[p] ?? 0) + n;
+    }
+    for (const [p, kr] of Object.entries(r.kr)) {
+      sums.kr[p] = (sums.kr[p] ?? 0) + kr;
+    }
+    sums.total += r.total;
+  }
+  return {units: sums.units, total: round(sums.total), kr: Object.fromEntries(Object.entries(sums.kr).map(([k, v]) => [k, round(v)]))};
+}
+
+// Whether a resident matches the search on Regnskab (name or room).
+export function matchesSearch(row: Pick<AccountRow, 'name' | 'room'>, term: string): boolean {
+  return `${row.name} ${row.room}`.toLocaleLowerCase('da').includes(term.trim().toLocaleLowerCase('da'));
+}
+
+// A period can be marked paid once it has ended. One that ends today (Sidste 30 dage, Denne måned,
+// I år) is a different period tomorrow, and the ticks are kept per exact period.
+export function periodEnded(to: Date, now = new Date()): boolean {
+  return to < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+// The accounts as a plain table: counts or kroner per product, then the total in kroner. The totals
+// row adds up the rows given, so an export of some residents sums to what it shows.
 export function toTable(a: Accounts, show: 'units' | 'kr', labels: {name: string, room: string, total: string, sum: string}): Table {
   const cell = (values: Record<string, number>, p: string) => values[p] ?? null;
+  const sums = sumRows(a.rows);
   return {
     header: [labels.name, labels.room, ...a.products, labels.total],
     rows: a.rows.map(r => [r.name, r.room, ...a.products.map(p => cell(show === 'units' ? r.units : r.kr, p)), r.total]),
-    footer: [labels.sum, '', ...a.products.map(p => cell(show === 'units' ? a.sums.units : a.sums.kr, p)), a.sums.total],
+    footer: [labels.sum, '', ...a.products.map(p => cell(show === 'units' ? sums.units : sums.kr, p)), sums.total],
   };
 }
 

@@ -20,6 +20,16 @@ import {PulseKind, PulseService, bump} from './pulse.service';
 const DAY = 864e5;
 // Posts from Kollegiet itself (results, achievements), written by ops/league.js.
 const SYSTEM = 'kollegiet';
+// How many notices closed one by one the kitchen's seen document remembers (firestore.rules: 40).
+const DISMISSED_MAX = 40;
+
+// seen/{kitchenId}: when the kitchen last looked at each part, and the notices it closed.
+interface SeenDoc {
+  kollegietAt?: Timestamp;
+  aktueltAt?: Timestamp;
+  forslagAt?: Timestamp;
+  dismissed?: string[];
+}
 
 export type EventFields = Pick<KEvent, 'kind' | 'title' | 'text' | 'place' | 'startsAt' | 'endsAt' | 'invited'>;
 export type HideableCollection = 'posts' | 'events' | 'kudos' | 'battles' | 'polls';
@@ -120,11 +130,18 @@ export class KollegietService {
     where('closesAt', '>=', Timestamp.fromMillis(Date.now() - 14 * DAY)), orderBy('closesAt', 'desc'), limit(20))));
   // When the kitchen last opened Kollegiet and Aktuelt: one document, one listener.
   private readonly seenDoc$ = whileSignedIn(this.auth.kitchen$,
-    kid => watchDoc<{kollegietAt?: Timestamp, aktueltAt?: Timestamp}>(doc(db, 'seen', kid)), null,
+    kid => watchDoc<SeenDoc>(doc(db, 'seen', kid)), null,
   ).pipe(shareReplay({bufferSize: 1, refCount: true}));
   readonly seen$ = this.seenDoc$.pipe(map(s => millis(s?.kollegietAt)), distinctUntilChanged(),
     shareReplay({bufferSize: 1, refCount: true}));
   readonly aktueltSeen$ = this.seenDoc$.pipe(map(s => millis(s?.aktueltAt)), distinctUntilChanged(),
+    shareReplay({bufferSize: 1, refCount: true}));
+  // Forslag has its own stamp, so reading the news (or a message from the maker) does not pass
+  // for having seen the proposals. Until a kitchen has one, Aktuelt's stands in.
+  readonly forslagSeen$ = this.seenDoc$.pipe(map(s => millis(s?.forslagAt ?? s?.aktueltAt)), distinctUntilChanged(),
+    shareReplay({bufferSize: 1, refCount: true}));
+  // Notices closed one by one ("not now"), by Notice.id.
+  readonly dismissed$ = this.seenDoc$.pipe(map(s => s?.dismissed ?? []), distinctUntilChanged((a, b) => a.join() === b.join()),
     shareReplay({bufferSize: 1, refCount: true}));
 
   // Posts since the kitchen last opened Kollegiet, for the menu badge: fetched when a post is added.
@@ -171,11 +188,23 @@ export class KollegietService {
     return setDoc(doc(db, 'seen', this.kitchenId), {kollegietAt: serverTimestamp()}, {merge: true});
   }
 
-  async markAktueltSeen() {
+  // The news tab or Forslag, each when it has been on screen.
+  async markAktueltSeen(part: 'news' | 'forslag') {
     if (!this.auth.hasKitchen()) {
       return;
     }
-    return setDoc(doc(db, 'seen', this.kitchenId), {aktueltAt: serverTimestamp()}, {merge: true});
+    return setDoc(doc(db, 'seen', this.kitchenId), {[part === 'news' ? 'aktueltAt' : 'forslagAt']: serverTimestamp()}, {merge: true});
+  }
+
+  // "Not now" on one notice: only that one goes. The newest DISMISSED_MAX are kept, which is far
+  // more than are ever waiting at once.
+  async dismissNotice(id: string) {
+    if (!this.auth.hasKitchen()) {
+      return;
+    }
+    const before = await firstValueFrom(this.dismissed$);
+    const dismissed = [...before.filter(d => d !== id), id].slice(-DISMISSED_MAX);
+    return setDoc(doc(db, 'seen', this.kitchenId), {dismissed}, {merge: true});
   }
 
   saveProfile(fields: Pick<Profile, 'emoji' | 'colour' | 'bio' | 'lends'>) {

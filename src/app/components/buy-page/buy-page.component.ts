@@ -7,7 +7,7 @@ import {MatBadgeModule} from '@angular/material/badge';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
-import {Product} from '../../interfaces/product';
+import {Product, fitsStock, isLowStock, stockLeft} from '../../interfaces/product';
 import {User, byRoom} from '../../interfaces/user';
 import {ProductService} from '../../services/product.service';
 import {PurchaseService} from '../../services/purchase.service';
@@ -29,6 +29,9 @@ import {WhoIsComingComponent} from '../kollegiet/who-is-coming.component';
 
 // How long the confirmation of a purchase stays in the bar.
 const CONFIRM_MS = 4000;
+// A half-made choice is cleared after this long without a tap, so the next one at the fridge
+// does not take over someone else's product or residents.
+const IDLE_MS = 60_000;
 
 // The tablet's screen: tap a product (again for more), tap one or more residents, buy. Every
 // chosen resident gets that many. Tapping another product switches to it; right-click or
@@ -39,6 +42,8 @@ const CONFIRM_MS = 4000;
     BattleTickerComponent, KitchenChipComponent, RouterLink, WhoIsComingComponent],
   templateUrl: './buy-page.component.html',
   styleUrl: './buy-page.component.scss',
+  // Any touch (a tap, or scrolling to find oneself) counts as still being here.
+  host: {'(pointerdown)': 'restartIdle()'},
 })
 export class BuyPageComponent {
   private readonly purchaseService = inject(PurchaseService);
@@ -72,6 +77,7 @@ export class BuyPageComponent {
   // A short confirmation of the last purchase.
   protected readonly confirmation = signal('');
   private timer: ReturnType<typeof setTimeout> | undefined;
+  private idleTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Battles the kitchen is in right now (Kollegiet): one strip above the grid, for the one that
   // ends first, and a link to the rest. Only to look at: gym taps are on the Battles tab.
@@ -107,7 +113,17 @@ export class BuyPageComponent {
 
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    inject(DestroyRef).onDestroy(() => {
+      clearTimeout(this.timer);
+      clearTimeout(this.idleTimer);
+    });
+    // Every change to the choice (from a tap or the keyboard) starts the wait over.
+    effect(() => {
+      this.productId();
+      this.amount();
+      this.buyerIds();
+      untracked(() => this.restartIdle());
+    });
     // A live achievement claimed by this tablet: say it.
     effect(() => {
       const earned = this.league.justEarned();
@@ -116,6 +132,11 @@ export class BuyPageComponent {
       }
     });
   }
+
+  // A tile with tracked stock says how many are left once it runs low (as "Snart udsolgt" under
+  // Products), and "Udsolgt" at 0. Plenty left is not news to anyone at the fridge.
+  protected readonly stockLeft = stockLeft;
+  protected readonly isLowStock = isLowStock;
 
   protected amountOf(product: Product): number {
     return product.id === this.productId() ? this.amount() : 0;
@@ -127,7 +148,14 @@ export class BuyPageComponent {
 
   // Another product starts over at one, as before.
   protected addOne(product: Product) {
-    if (product.id !== this.productId()) {
+    const same = product.id === this.productId();
+    // Not beyond what is left (every buyer takes the whole amount). Checked before switching, so a
+    // product that does not fit leaves the basket as it was.
+    if (!fitsStock(product, (same ? this.amount() : 0) + 1, this.buyerIds().length)) {
+      this.notify.info(this.onlyLeft(product));
+      return;
+    }
+    if (!same) {
       this.productId.set(product.id);
       this.amount.set(0);
     }
@@ -147,7 +175,20 @@ export class BuyPageComponent {
 
   protected toggleBuyer(user: User, event: Event) {
     event.preventDefault();
+    // One more buyer takes the amount once more: there may not be enough for them all.
+    const product = this.product();
+    if (product && !this.isBuyer(user) && !fitsStock(product, this.amount(), this.buyerIds().length + 1)) {
+      this.notify.info(this.onlyLeft(product));
+      return;
+    }
     this.buyerIds.update(ids => ids.includes(user.id) ? ids.filter(id => id !== user.id) : [...ids, user.id]);
+  }
+
+  protected restartIdle() {
+    clearTimeout(this.idleTimer);
+    if (this.productId() !== null || this.buyerIds().length) {
+      this.idleTimer = setTimeout(() => this.clear(), IDLE_MS);
+    }
   }
 
   protected clear() {
@@ -161,6 +202,11 @@ export class BuyPageComponent {
     if (!product || !buyers.length || amount < 1) {
       return;
     }
+    // Sold meanwhile, on another tablet or by a correction under Products.
+    if (!fitsStock(product, amount, buyers.length)) {
+      this.notify.info(this.onlyLeft(product));
+      return;
+    }
     this.purchaseService.sell(product, amount, buyers).catch(this.notify.error);
     const t = (k: string) => this.i18n.t(k);
     this.confirm(describeSale(buyers.map(u => u.name), [[amount, product.name]],
@@ -170,6 +216,10 @@ export class BuyPageComponent {
 
   protected openHistory() {
     this.bottomSheet.open(HistoryBottomSheetComponent);
+  }
+
+  private onlyLeft(product: Product): string {
+    return this.i18n.t('BUY_ONLY_LEFT').replace('{n}', String(stockLeft(product) ?? 0)).replace('{name}', product.name);
   }
 
   private confirm(text: string) {

@@ -8,7 +8,7 @@ import {MatSort, MatSortModule} from '@angular/material/sort';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DecimalPipe} from '@angular/common';
-import {EditableProduct, Product, isLowStock, margin, tracksStock} from '../../interfaces/product';
+import {EditableProduct, NewProduct, Product, isLowStock, lacksBeer, margin, tracksStock} from '../../interfaces/product';
 import {ProductService} from '../../services/product.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
@@ -16,6 +16,8 @@ import {TranslatePipe} from '../../translate.pipe';
 import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {ProductPictureComponent} from '../shared/product-picture.component';
 import {ProductDialogComponent} from './product-dialog.component';
+import {ProductSalesDialogComponent} from './product-sales.component';
+import {ProductStockDialogComponent} from './product-stock-dialog.component';
 import {sortValue} from '../../table-sort';
 
 @Component({
@@ -35,7 +37,8 @@ export class ProductsComponent {
   private readonly products = toSignal(this.productService.list(), {initialValue: []});
   private readonly sort = viewChild.required(MatSort);
   protected readonly table = new MatTableDataSource<Product>([]);
-  protected readonly displayedColumns = ['image', 'name', 'retailPrice', 'price', 'margin', 'stock', 'active', 'edit', 'delete'];
+  protected readonly displayedColumns = ['image', 'name', 'retailPrice', 'price', 'margin', 'sold', 'stock', 'active', 'edit', 'delete'];
+  protected readonly lacksBeer = computed(() => lacksBeer(this.products()));
   protected readonly lowStock = computed(() => this.products().filter(p => p.active && isLowStock(p)));
   protected readonly lowStockText = computed(() => this.lowStock()
     .map(p => `${p.name} (${(p.stock ?? 0) > 0 ? p.stock : this.i18n.t('PRODUCTS_SOLD_OUT')})`).join(', '));
@@ -50,7 +53,8 @@ export class ProductsComponent {
   }
 
   protected edit(product: Product | null = null) {
-    this.dialog.open<ProductDialogComponent, Product | null, EditableProduct>(ProductDialogComponent, {width: '440px', maxWidth: '94vw', data: product})
+    this.dialog.open<ProductDialogComponent, Product | null, EditableProduct | NewProduct>(ProductDialogComponent,
+      {width: '440px', maxWidth: '94vw', data: product})
       .afterClosed().subscribe(fields => {
         if (fields) {
           (product ? this.productService.update(product, fields) : this.productService.add(fields)).catch(this.notify.error);
@@ -58,37 +62,16 @@ export class ProductsComponent {
       });
   }
 
+  protected showStock(product: Product) {
+    this.dialog.open(ProductStockDialogComponent, {width: '460px', maxWidth: '94vw', data: product});
+  }
+
+  protected showSales(product: Product) {
+    this.dialog.open(ProductSalesDialogComponent, {width: '520px', maxWidth: '94vw', data: product});
+  }
+
   protected setActive(product: Product, active: boolean) {
     this.productService.update(product, {active}).catch(this.notify.error);
-  }
-
-  async trackStock(product: Product) {
-    const t = (k: string) => this.i18n.t(k);
-    const n = await this.confirm.number({
-      title: `${t('PRODUCTS_STOCK_TRACK')}: ${product.name}`, confirm: t('PRODUCTS_STOCK_TRACK'),
-      number: {label: t('PRODUCTS_STOCK_START'), value: 0, min: 0},
-    });
-    if (n !== undefined) {
-      this.productService.setStock(product.id, n).catch(this.notify.error);
-    }
-  }
-
-  async receive(product: Product) {
-    const t = (k: string) => this.i18n.t(k);
-    const n = await this.confirm.number({
-      title: `${t('PRODUCTS_RECEIVE_TITLE')}: ${product.name}`, message: t('PRODUCTS_RECEIVE_HINT'),
-      confirm: t('SAVE'), number: {label: t('PRODUCTS_STOCK_RECEIVE'), value: 24},
-    });
-    if (n) {
-      this.productService.adjustStock(product.id, n).catch(this.notify.error);
-    }
-  }
-
-  async stopTracking(product: Product) {
-    const t = (k: string) => this.i18n.t(k);
-    if (await this.confirm.ask({title: `${t('PRODUCTS_STOCK_STOP')} ${product.name}?`, confirm: t('PRODUCTS_STOCK_STOP_OK')})) {
-      this.productService.setStock(product.id, null).catch(this.notify.error);
-    }
   }
 
   async remove(product: Product) {

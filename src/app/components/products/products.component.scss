@@ -19,7 +19,7 @@
   color: var(--mat-sys-error);
 }
 
-// Prices are short; the stock column holds a number and two buttons.
+// Prices are short; sold and stock hold one button each.
 .products-table {
   .mat-column-retailPrice,
   .mat-column-price,
@@ -27,20 +27,30 @@
     flex: 0 0 104px;
   }
 
+  .mat-column-sold {
+    flex: 0 0 88px;
+  }
+
   .mat-column-stock {
-    flex: 0 0 168px;
+    flex: 0 0 128px;
+  }
+
+  .mat-column-active {
+    flex: 0 0 128px;
+    white-space: nowrap;
   }
 }
 
-.stock-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+// Sold out: still listed, in the error colour so it is seen at a glance.
+.stock.sold-out {
+  color: var(--mat-sys-error);
+  font-weight: 500;
 }
 
-.stock {
-  min-width: 2ch;
-  text-align: right;
+// Sold and stock: the number is the button that opens it, so the cells hold nothing else.
+.cell-button {
+  min-width: 48px;
+  padding: 0 12px;
 }
 
 // Short labels stay on one line in the table.
