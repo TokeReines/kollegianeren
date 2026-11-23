@@ -18,21 +18,28 @@ export class NetworkService {
   private offSince = 0;
 
   start() {
-    document.addEventListener('visibilitychange', () => {
-      clearTimeout(this.timer);
-      if (document.visibilityState === 'hidden') {
-        this.timer = setTimeout(() => {
-          this.offSince = Date.now();
-          disableNetwork(db).catch(() => this.offSince = 0);
-        }, HIDDEN_BEFORE_OFFLINE_MS);
-      } else if (this.offSince) {
-        // Back after a long break: what reconnecting costs, for the read meter.
-        if (Date.now() - this.offSince > RESUME_MS) {
-          meterWake();
-        }
-        this.offSince = 0;
-        enableNetwork(db).catch(() => undefined);
+    document.addEventListener('visibilitychange', () => this.screenChanged());
+    // A page can also start with the screen off: an update reloads the app once nobody has touched
+    // the tablet for two minutes, which at night is while it sleeps. No event comes then, and the
+    // app stayed online all night, every wake billing every list in full (22 November: 74,000
+    // reads, with eight tablets online through the night).
+    this.screenChanged();
+  }
+
+  private screenChanged() {
+    clearTimeout(this.timer);
+    if (document.visibilityState === 'hidden') {
+      this.timer = setTimeout(() => {
+        this.offSince = Date.now();
+        disableNetwork(db).catch(() => this.offSince = 0);
+      }, HIDDEN_BEFORE_OFFLINE_MS);
+    } else if (this.offSince) {
+      // Back after a long break: what reconnecting costs, for the read meter.
+      if (Date.now() - this.offSince > RESUME_MS) {
+        meterWake();
       }
-    });
+      this.offSince = 0;
+      enableNetwork(db).catch(() => undefined);
+    }
   }
 }
