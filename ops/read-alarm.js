@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Warns the maker about the free plan's read cap (50,000 a day, reset at midnight US Pacific,
-// 09:00 Danish time) with a note in the maker's inbox (reports, 🚩), and a push if ALARM_PUSH_URL
-// is set (a POST of {title, message}, e.g. a Home Assistant webhook).
+// 09:00 Danish time) with a note in the maker's inbox (reports, 🚩).
 //
 // - With Cloud Monitoring: the first time the day passes each threshold (25,000, 35,000 and
 //   45,000), and when the last hour alone read more than --rate (4,000; a normal hour is under
@@ -30,11 +29,6 @@ const fmt = n => n.toLocaleString('da-DK');
 async function warn(title, message) {
   if (args.dry) return console.log('  warning:', title, '|', message);
   await db.collection('reports').add({ kitchenId: 'kollegiet', target: 'quota', text: `${title} ${message}`, createdAt: FieldValue.serverTimestamp() });
-  if (process.env.ALARM_PUSH_URL) {
-    const res = await fetch(process.env.ALARM_PUSH_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, message }) })
-      .catch(e => ({ ok: false, status: e.message }));
-    if (!res.ok) console.error(`  push failed: ${res.status}`);
-  }
 }
 
 (async () => {

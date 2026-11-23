@@ -149,7 +149,7 @@ Cloud Monitoring refuses service accounts on a project without billing, so cron 
 - **A missed night** (the day's quota already used up when the backup runs): the next hourly run
   finds the last good backup more than 25 hours old and runs anyway, right after the reset.
 - **`read-alarm.js`** (cron `cron/tokeserver-read-alarm.sh`, every 30 minutes): a note in the
-  maker's inbox (🚩), and a push if `~/.config/kollegianeren/alarm-push-url` holds a URL. From Cloud
+  maker's inbox (🚩). From Cloud
   Monitoring: the first time a day passes 25,000, 35,000 and 45,000 reads, and when the last hour
   alone read more than 4,000 (at most every three hours). Monitoring refuses a service account on a
   project without billing, so on tokeserver the calls are counted on `otto-511021` (`QUOTA_PROJECT`;
