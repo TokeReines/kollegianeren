@@ -149,9 +149,15 @@ Cloud Monitoring refuses service accounts on a project without billing, so cron 
 - **A missed night** (the day's quota already used up when the backup runs): the next hourly run
   finds the last good backup more than 25 hours old and runs anyway, right after the reset.
 - **`read-alarm.js`** (cron `cron/tokeserver-read-alarm.sh`, every 30 minutes): a note in the
-  maker's inbox (🚩). With a person's own login (Cloud Monitoring works): the first time a day
-  passes 35,000 and 45,000 reads. On tokeserver, whose service account Monitoring refuses on the
-  Spark plan ("requires billing"): one read as a probe, and a note as soon as the quota is used up.
+  maker's inbox (🚩), and a push if `~/.config/kollegianeren/alarm-push-url` holds a URL. From Cloud
+  Monitoring: the first time a day passes 25,000, 35,000 and 45,000 reads, and when the last hour
+  alone read more than 4,000 (at most every three hours). Monitoring refuses a service account on a
+  project without billing, so on tokeserver the calls are counted on `otto-511021` (`QUOTA_PROJECT`;
+  the `toke-server` account has `roles/serviceusage.serviceUsageConsumer` there; reading Monitoring is
+  free). Without Monitoring it falls back to one read as a probe and a note once the quota is used up.
   One write per warning. State in `~/kollegianeren-backups/read-alarm.json`.
+- On 22 November the day passed the cap (74,044 reads): after an evening release, idle tablets read
+  7,000 to 9,500 an hour through the night (cause not found yet), and the old alarm, blind without
+  Monitoring, only noticed when the quota was gone.
 - On 1 October the day passed the cap (62,943 reads): Statistik and Regnskab opened often, and
   three releases that reloaded every tablet. Release at most once a day, in the morning.
