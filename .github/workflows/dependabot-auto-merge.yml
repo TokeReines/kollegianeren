@@ -21,10 +21,32 @@ jobs:
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      # A security update that moves several packages together ("Bump minimatch, eslint and ...")
+      # comes without an update type. Then the largest step named in the PR text counts: each
+      # "Updates `name` from 1.2.3 to 1.4.0". On 0.x a minor step counts as major, and a version that
+      # does not parse (a pre-release, say) counts as major too.
+      - id: size
+        run: |
+          node -e '
+            const meta = process.env.META_TYPE;
+            if (meta && meta !== "null") { console.log(`bump=${meta.replace("version-update:semver-", "")}`); process.exit(); }
+            const parse = v => /^\d+\.\d+\.\d+$/.test(v) ? v.split(".").map(Number) : null;
+            const rank = {patch: 0, minor: 1, major: 2};
+            let bump = null;
+            for (const [, from, to] of process.env.BODY.matchAll(/^Updates `[^`]+` from (\S+) to (\S+)$/gm)) {
+              const a = parse(from), b = parse(to);
+              const step = !a || !b || a[0] !== b[0] || (a[0] === 0 && a[1] !== b[1]) ? "major" : a[1] !== b[1] ? "minor" : "patch";
+              if (bump === null || rank[step] > rank[bump]) bump = step;
+            }
+            console.log(`bump=${bump ?? "unknown"}`);
+          ' >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+        env:
+          META_TYPE: ${{ steps.meta.outputs.update-type }}
+          BODY: ${{ github.event.pull_request.body }}
       - name: Approve and enable auto-merge
         if: >-
-          (steps.meta.outputs.update-type == 'version-update:semver-patch'
-            || steps.meta.outputs.update-type == 'version-update:semver-minor')
+          (steps.size.outputs.bump == 'patch' || steps.size.outputs.bump == 'minor')
           && steps.meta.outputs.directory != '/ops'
         run: |
           gh pr review --approve "$PR" --body "Patch or minor update: merges itself when CI is green."
