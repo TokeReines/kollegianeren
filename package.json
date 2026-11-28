@@ -22,7 +22,7 @@
     "@angular/platform-browser": "~22.3.0",
     "@angular/router": "~22.3.0",
     "@angular/service-worker": "~22.3.0",
-    "firebase": "^12.19.0",
+    "firebase": "^13.4.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.9.1",
     "write-excel-file": "^4.1.1"
