@@ -2,7 +2,7 @@ name: Dependabot auto-merge
 
 # Approves a Dependabot PR and turns on auto-merge, so GitHub merges it when the required checks
 # (CI: build and rules) pass. Only patch and minor updates of the app, rules-test and the CI actions;
-# majors and ops/ (run by cron on tokeserver, not tested in CI) get no approval and wait for a person.
+# majors and anything touching ops/ (run by cron on tokeserver, not tested in CI) get no approval and wait for a person.
 # Needs "Allow auto-merge" in the repo settings and build + rules as required checks on develop,
 # or auto-merge would merge before CI has run.
 
@@ -45,10 +45,14 @@ jobs:
           META_TYPE: ${{ steps.meta.outputs.update-type }}
           BODY: ${{ github.event.pull_request.body }}
       - name: Approve and enable auto-merge
-        if: >-
-          (steps.size.outputs.bump == 'patch' || steps.size.outputs.bump == 'minor')
-          && steps.meta.outputs.directory != '/ops'
+        if: steps.size.outputs.bump == 'patch' || steps.size.outputs.bump == 'minor'
         run: |
+          # A grouped security update can span several directories and still report "/", so the
+          # changed files decide whether ops/ is touched.
+          if gh pr diff --name-only "$PR" | grep -q '^ops/'; then
+            echo "Touches ops/: left for a person."
+            exit 0
+          fi
           gh pr review --approve "$PR" --body "Patch or minor update: merges itself when CI is green."
           gh pr merge --auto --merge "$PR"
         env:
