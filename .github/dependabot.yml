@@ -39,6 +39,10 @@ updates:
       time: "06:00"
       timezone: Europe/Copenhagen
     groups:
+      # rules-unit-testing peers one firebase major, so they move together (majors too: those wait
+      # for a person, and should follow the app's firebase).
+      firebase:
+        patterns: ["firebase", "@firebase/*"]
       minor-and-patch:
         patterns: ["*"]
         update-types: [minor, patch]
