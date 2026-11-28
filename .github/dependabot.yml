@@ -42,7 +42,6 @@ updates:
       minor-and-patch:
         patterns: ["*"]
         update-types: [minor, patch]
-
       security-minor-and-patch:
         applies-to: security-updates
         patterns: ["*"]
