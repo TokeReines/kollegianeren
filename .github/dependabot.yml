@@ -1,5 +1,6 @@
 # Version updates once a week, grouped so a week gives a few PRs instead of one per package.
-# Security updates come on their own as soon as an advisory is out (repo setting), grouped or not.
+# Security updates come as soon as an advisory is out, grouped per directory, but only patch and
+# minor steps: a major among them would otherwise hold back every small fix in the same PR.
 # Patch and minor updates of the app and rules-test merge themselves once CI is green
 # (workflows/dependabot-auto-merge.yml); majors and everything in ops/ wait for a person.
 version: 2
@@ -24,6 +25,10 @@ updates:
       minor-and-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+      security-minor-and-patch:
+        applies-to: security-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   - package-ecosystem: npm
     directory: /rules-test
@@ -39,6 +44,11 @@ updates:
         update-types: [minor, patch]
 
   # Cron jobs on tokeserver run these, and CI does not test them: merged by hand.
+      security-minor-and-patch:
+        applies-to: security-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+
   - package-ecosystem: npm
     directory: /ops
     target-branch: develop
@@ -47,6 +57,10 @@ updates:
       timezone: Europe/Copenhagen
     groups:
       minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-minor-and-patch:
+        applies-to: security-updates
         patterns: ["*"]
         update-types: [minor, patch]
 
