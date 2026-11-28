@@ -2,6 +2,7 @@ import {Injectable, inject} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Observable} from 'rxjs';
 import {TranslateService} from './translate.service';
+import {errorKey} from '../interfaces/errors';
 
 // Snackbar messages: errors, confirmations, and copying links to the clipboard.
 @Injectable({providedIn: 'root'})
@@ -10,8 +11,11 @@ export class Notify {
   private readonly i18n = inject(TranslateService);
 
   // Usable directly as a promise rejection handler: `.catch(this.notify.error)`.
+  // Firebase's errors are said in plain words; the raw one goes to the console for whoever debugs.
   readonly error = (e: unknown): void => {
-    this.snackBar.open(e instanceof Error ? e.message : String(e), 'OK', {duration: 6000});
+    console.error(e);
+    const key = errorKey(e);
+    this.snackBar.open(key ? this.i18n.t(key) : e instanceof Error ? e.message : String(e), 'OK', {duration: 6000});
   };
 
   info(message: string, duration = 4000): void {

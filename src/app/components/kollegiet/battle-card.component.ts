@@ -12,6 +12,7 @@ import {LeagueService} from '../../services/league.service';
 import {Notify} from '../../services/notify.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {Confirm} from '../confirm-dialog/confirm-dialog.component';
 import {KitchenChipComponent} from './kitchen-chip.component';
 
 // One battle: what is counted, when, the live scoreboard, and joining or tapping the gym counter.
@@ -90,6 +91,7 @@ export class BattleCardComponent {
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
   private readonly auth = inject(AuthService);
+  private readonly confirm = inject(Confirm);
   readonly battle = input.required<Battle>();
 
   private readonly tallies = toSignal(toObservable(computed(() => this.battle().id)).pipe(switchMap(id => this.league.tallies(id))), {initialValue: []});
@@ -112,7 +114,11 @@ export class BattleCardComponent {
     this.league.gym(this.battle(), n).catch(() => this.notify.info(this.i18n.t('KOL_GYM_WAIT')));
   }
 
-  protected callOff() {
-    this.league.callOff(this.battle()).catch(this.notify.error);
+  protected async callOff() {
+    const t = (k: string) => this.i18n.t(k);
+    if (await this.confirm.ask({title: t('KOL_CALL_OFF_TITLE'), message: `${this.battle().title}. ${t('KOL_CALL_OFF_TEXT')}`,
+      confirm: t('KOL_CALL_OFF'), cancel: t('KOL_KEEP'), danger: true})) {
+      this.league.callOff(this.battle()).catch(this.notify.error);
+    }
   }
 }

@@ -1,4 +1,4 @@
-import {Component, DestroyRef, computed, inject, signal, viewChild} from '@angular/core';
+import {Component, DestroyRef, computed, effect, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -59,9 +59,19 @@ export class AktueltComponent {
 
   constructor() {
     const kollegiet = inject(KollegietService);
-    const seen = () => kollegiet.markAktueltSeen().catch(() => undefined);
-    firstValueFrom(kollegiet.aktueltSeen$).then(at => this.seenBefore.set(at), () => undefined).finally(seen);
-    inject(DestroyRef).onDestroy(seen);
+    // Each tab counts as seen once it has been on screen (and again on leaving, for what came
+    // meanwhile): reading the news, or a message from the maker, is not looking at Forslag.
+    const shown = new Set<'news' | 'forslag'>();
+    const seen = (part: 'news' | 'forslag') => kollegiet.markAktueltSeen(part).catch(() => undefined);
+    const before = firstValueFrom(kollegiet.aktueltSeen$).then(at => this.seenBefore.set(at), () => undefined);
+    effect(() => {
+      const part = this.index() === 0 ? 'news' : this.index() === 1 ? 'forslag' : null;
+      if (part && !shown.has(part)) {
+        shown.add(part);
+        before.finally(() => seen(part));
+      }
+    });
+    inject(DestroyRef).onDestroy(() => shown.forEach(seen));
     // From a notification: #news-… or #proposal-…, once the tab has loaded it.
     this.route.fragment.pipe(takeUntilDestroyed()).subscribe(f => (f?.startsWith('news-') || f?.startsWith('proposal-')) && showAnchor(f));
   }

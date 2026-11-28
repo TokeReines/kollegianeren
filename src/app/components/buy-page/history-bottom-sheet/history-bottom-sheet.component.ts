@@ -5,7 +5,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatSort, MatSortModule} from '@angular/material/sort';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
-import {Purchase} from '../../../interfaces/purchase';
+import {Purchase, canTakeBack} from '../../../interfaces/purchase';
+import {isBillLine} from '../../../interfaces/meal';
 import {millis} from '../../../time';
 import {AuthService} from '../../../services/auth.service';
 import {Notify} from '../../../services/notify.service';
@@ -16,8 +17,6 @@ import {sortValue} from '../../../table-sort';
 import {TranslatePipe} from '../../../translate.pipe';
 import {Confirm} from '../../confirm-dialog/confirm-dialog.component';
 
-// A tablet may take a purchase back this long after it was made (firestore.rules allows 60 s).
-const TABLET_UNDO_MS = 55e3;
 // Material 3 removal: the row is marked red for a moment (so it is clear which one goes), slides
 // out while fading (emphasized accelerate), then the rows below glide up (emphasized decelerate).
 const MARK_MS = 300;
@@ -40,7 +39,9 @@ export class HistoryBottomSheetComponent {
   private readonly notify = inject(Notify);
 
   private readonly purchases = toSignal(this.purchaseService.newest(), {initialValue: []});
-  private readonly products = toSignal(inject(ProductService).list(), {initialValue: []});
+  private readonly productService = inject(ProductService);
+  // The same query as the buy page, so opening the sheet reads nothing more.
+  private readonly products = toSignal(this.productService.listActive(), {initialValue: []});
   private readonly sort = viewChild.required(MatSort);
   protected readonly table = new MatTableDataSource<Purchase>([]);
   protected readonly displayedColumns = ['timestamp', 'name', 'amount', 'price', 'user', 'undo'];
@@ -69,8 +70,14 @@ export class HistoryBottomSheetComponent {
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
 
+  // A food club bill line is only taken back with the whole bill, from the dinner.
+  protected readonly isBillLine = isBillLine;
+
   protected canUndo(p: Purchase): boolean {
-    return this.canManage() || this.now() - millis(p.timestamp) < TABLET_UNDO_MS;
+    if (isBillLine(p)) {
+      return false;
+    }
+    return canTakeBack(millis(p.timestamp) || Date.now(), this.now(), this.canManage());
   }
 
   protected async remove(p: Purchase) {
@@ -82,6 +89,12 @@ export class HistoryBottomSheetComponent {
     if (!ok) {
       return;
     }
+    // The minute may have run out while the question was open.
+    this.now.set(Date.now());
+    if (!this.canUndo(p)) {
+      this.notify.info(t('HISTORY_UNDO_TOO_LATE'), 6000);
+      return;
+    }
     const animate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.removing.update(ids => new Set([...ids, p.id]));
     const row = this.row(p.id);
@@ -91,7 +104,10 @@ export class HistoryBottomSheetComponent {
     }
     const before = this.rowTops();
     // The row leaves the list as soon as the delete is made locally; the promise waits for the server.
-    this.purchaseService.remove(p, this.products().find(x => x.id === p.productId)).then(
+    // A product made inactive since is looked up on its own, so its stock and count still come back.
+    const product = this.products().find(x => x.id === p.productId)
+      ?? await this.productService.get(p.productId).catch(() => undefined);
+    this.purchaseService.remove(p, product).then(
       () => this.notify.info(t('BEERSYSTEM_UNDONE')),
       e => {
         this.removing.update(ids => new Set([...ids].filter(id => id !== p.id)));

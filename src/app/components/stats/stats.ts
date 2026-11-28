@@ -1,5 +1,6 @@
 import {Timestamp} from 'firebase/firestore';
 import {Purchase} from '../../interfaces/purchase';
+import {isBillLine} from '../../interfaces/meal';
 
 export interface ProductRow { name: string; kr: number; units: number; }
 export interface DayRow { date: Date; kr: number; purchases: number; }
@@ -80,7 +81,7 @@ class Tally {
 
   add(p: Bought) {
     const t = p.timestamp?.toDate?.();
-    if (!t) {
+    if (!t || isBillLine(p)) {
       return;
     }
     const price = Number(p.price) || 0;
@@ -104,16 +105,24 @@ class Tally {
     if (!day) {
       return;
     }
-    day.kr += d.kr;
-    day.purchases += d.n;
-    this.kr += d.kr;
-    this.purchases += d.n;
-    this.units += d.u;
-    d.b.forEach(b => this.buyers.add(b));
+    // A summary from before bills were left out (ops/stats-summary.js) still has them: take their
+    // kroner and units out again. Their purchase count and buyers cannot be told apart.
+    let billKr = 0, billUnits = 0;
     for (const [key, [kr, units]] of Object.entries(d.p)) {
       const bar = key.indexOf('|');
+      if (isBillLine({productId: key.slice(0, bar)})) {
+        billKr += kr;
+        billUnits += units;
+        continue;
+      }
       this.product(key.slice(0, bar), key.slice(bar + 1), kr, units);
     }
+    day.kr += d.kr - billKr;
+    day.purchases += d.n;
+    this.kr += d.kr - billKr;
+    this.purchases += d.n;
+    this.units += d.u - billUnits;
+    d.b.forEach(b => this.buyers.add(b));
     const weekday = (day.date.getDay() + 6) % 7;
     for (const [hour, n] of Object.entries(d.h)) {
       this.heat[weekday][+hour] += n;

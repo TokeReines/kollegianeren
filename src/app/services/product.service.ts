@@ -1,5 +1,5 @@
 import {Injectable, inject} from '@angular/core';
-import {addDoc, deleteDoc, doc, increment, updateDoc} from 'firebase/firestore';
+import {addDoc, deleteDoc, doc, getDoc, increment, query, updateDoc, where} from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {EditableProduct, Product, ProductFields} from '../interfaces/product';
 import {AuthService} from './auth.service';
@@ -17,6 +17,18 @@ export class ProductService {
 
   list(): Observable<Product[]> {
     return watchInKitchen<Product>(this.auth.kitchenId$, kid => kitchenCollection(kid, 'products'));
+  }
+
+  // Only what the buy page shows. Most kitchens keep more inactive products than active ones (Ny8: 43
+  // of 52), and a tablet reads the whole list again each time it wakes after half an hour away.
+  listActive(): Observable<Product[]> {
+    return watchInKitchen<Product>(this.auth.kitchenId$, kid => query(kitchenCollection(kid, 'products'), where('active', '==', true)));
+  }
+
+  // One product, also an inactive one; undefined when it is gone.
+  async get(id: string): Promise<Product | undefined> {
+    const snap = await getDoc(doc(this.products(), id));
+    return snap.exists() ? {...snap.data(), id: snap.id} as Product : undefined;
   }
 
   add(product: ProductFields) {

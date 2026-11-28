@@ -150,6 +150,12 @@ export function billProductId(meal: Pick<Meal, 'id'>): string {
   return 'madklub-' + meal.id;
 }
 
+// A line of a split food club bill. Not drinks: kept out of Statistik's sales, and only taken back
+// together, with "Fortryd deling" on the dinner, so the bill keeps adding up to 0.
+export function isBillLine(p: {productId?: string | null}): boolean {
+  return String(p.productId ?? '').startsWith('madklub-');
+}
+
 // Every eater pays an equal share of what was spent, in whole øre (the first ones one øre more, when it
 // does not divide), and everyone who paid gets back what they paid: their share less it, or a line of
 // its own (0 portions) when they did not eat. In øre, so the lines add up to exactly 0 kr.

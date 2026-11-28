@@ -4,7 +4,8 @@ import {
   ApplicationConfig, LOCALE_ID, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection,
 } from '@angular/core';
 import {MAT_CARD_CONFIG} from '@angular/material/card';
-import {MAT_DATE_LOCALE, provideNativeDateAdapter} from '@angular/material/core';
+import {DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter} from '@angular/material/core';
+import {DanishDateAdapter} from './date-adapter';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
 import {provideRouter, withComponentInputBinding} from '@angular/router';
 import {provideServiceWorker} from '@angular/service-worker';
@@ -23,6 +24,8 @@ export const appConfig: ApplicationConfig = {
     // Built only for -c dev and -c production (angular.json); the emulator dev server has none.
     provideServiceWorker('ngsw-worker.js', {enabled: !environment.emulators, registrationStrategy: 'registerWhenStable:30000'}),
     provideNativeDateAdapter(),
+    // The native adapter, but it reads dates typed the Danish way.
+    {provide: DateAdapter, useClass: DanishDateAdapter},
     provideAppInitializer(() => inject(TranslateService).init()),
     {provide: LOCALE_ID, useValue: 'da'},
     {provide: MAT_DATE_LOCALE, useValue: 'da-DK'},

@@ -18,9 +18,12 @@ async function series(accessToken, projectId, metric, start, end, alignmentSecon
     'aggregation.perSeriesAligner': 'ALIGN_SUM',
     'aggregation.crossSeriesReducer': 'REDUCE_SUM',
   });
-  const res = await fetch(`https://monitoring.googleapis.com/v3/projects/${projectId}/timeSeries?${q}`, {
-    headers: { Authorization: `Bearer ${await accessToken()}` },
-  });
+  // A service account on the Spark plan gets "requires billing" from Monitoring. QUOTA_PROJECT names
+  // a project with billing that the call is counted on instead (reading Monitoring is free); the
+  // account needs roles/serviceusage.serviceUsageConsumer there.
+  const headers = { Authorization: `Bearer ${await accessToken()}` };
+  if (process.env.QUOTA_PROJECT) headers['x-goog-user-project'] = process.env.QUOTA_PROJECT;
+  const res = await fetch(`https://monitoring.googleapis.com/v3/projects/${projectId}/timeSeries?${q}`, { headers });
   const body = await res.json();
   if (body.error) throw new Error(`Cloud Monitoring: ${body.error.message}`);
   return (body.timeSeries?.[0]?.points || []).map(p => ({ end: p.interval.endTime, value: +p.value.int64Value }));
@@ -29,6 +32,13 @@ async function series(accessToken, projectId, metric, start, end, alignmentSecon
 // Document reads counted so far in the current quota day. Cloud Monitoring lags a few minutes.
 async function usedToday(accessToken, projectId, metric = 'document/read_count') {
   const points = await series(accessToken, projectId, metric, pacificMidnight(), new Date(), 60);
+  return points.reduce((sum, p) => sum + p.value, 0);
+}
+
+// Document reads in the last `minutes` minutes: a run-away (tablets reading all night) shows here
+// hours before the day's total does.
+async function usedRecently(accessToken, projectId, minutes = 60) {
+  const points = await series(accessToken, projectId, 'document/read_count', new Date(Date.now() - minutes * 60e3), new Date(), 60);
   return points.reduce((sum, p) => sum + p.value, 0);
 }
 
@@ -47,4 +57,4 @@ async function dailyUsage(accessToken, projectId, days) {
   return Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
 }
 
-module.exports = { SPARK, pacificMidnight, series, usedToday, dailyUsage };
+module.exports = { SPARK, pacificMidnight, series, usedToday, usedRecently, dailyUsage };

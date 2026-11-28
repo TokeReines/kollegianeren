@@ -4,7 +4,8 @@ import {Observable} from 'rxjs';
 import {Product, tracksStock} from '../interfaces/product';
 import {Purchase} from '../interfaces/purchase';
 import {User} from '../interfaces/user';
-import {db} from '../firebase';
+import {db, snapshotOptions} from '../firebase';
+import {getDocs} from '../read-meter';
 import {AuthService} from './auth.service';
 import {LeagueService} from './league.service';
 import {kitchenCollection, watchInKitchen} from './kitchen-data';
@@ -35,6 +36,14 @@ export class PurchaseService {
   newest(count = 30): Observable<Purchase[]> {
     return watchInKitchen<Purchase>(this.auth.kitchenId$, kid =>
       query(kitchenCollection(kid, 'purchases'), orderBy('timestamp', 'desc'), limit(count)));
+  }
+
+  // The latest purchases of one product, read once (not live) when someone asks: Products'
+  // "Solgt". Needs the index on productId + timestamp (firestore.indexes.json).
+  async ofProduct(productId: string, count = 30): Promise<Purchase[]> {
+    this.usage.act('product-sales');
+    const snap = await getDocs(query(this.purchases(), where('productId', '==', productId), orderBy('timestamp', 'desc'), limit(count)));
+    return snap.docs.map(d => ({id: d.id, ...d.data(snapshotOptions)}) as Purchase);
   }
 
   // Every buyer gets `amount` of the product: one purchase each, in one batch (queued while

@@ -10,6 +10,9 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {Meal, MealFields, WEEKS_AHEAD, WEEKS_BACK, expensesTotal, isoWeek, newMeal, signupOpen, weekDays, weekStart} from '../../interfaces/meal';
 import {User, byRoom} from '../../interfaces/user';
+import {canTakeBack} from '../../interfaces/purchase';
+import {millis} from '../../time';
+import {AuthService} from '../../services/auth.service';
 import {MealService} from '../../services/meal.service';
 import {UserService} from '../../services/user.service';
 import {Notify} from '../../services/notify.service';
@@ -38,6 +41,7 @@ const FACES = 8;
 export class FoodClubComponent {
   private readonly mealService = inject(MealService);
   private readonly dialog = inject(MatDialog);
+  private readonly canManage = inject(AuthService).canManage;
   private readonly notify = inject(Notify);
   private readonly i18n = inject(TranslateService);
   private readonly confirm = inject(Confirm);
@@ -167,15 +171,30 @@ export class FoodClubComponent {
     return expensesTotal(meal);
   }
 
+  // The bill's lines are purchases: the tablet may take them back only within its minute.
+  protected canUndoBill(meal: Meal): boolean {
+    return !!meal.bill && canTakeBack(millis(meal.bill.at) || Date.now(), Date.now(), this.canManage());
+  }
+
   protected async undoBill(meal: Meal) {
     const t = (k: string) => this.i18n.t(k);
     if (await this.confirm.ask({title: t('FOOD_BILL_UNDO'), message: t('FOOD_BILL_UNDO_TEXT'), confirm: t('FOOD_BILL_UNDO'), danger: true})) {
+      // The minute may have run out while the question was open.
+      if (!this.canUndoBill(meal)) {
+        this.notify.info(t('FOOD_BILL_UNDO_TOO_LATE'), 6000);
+        return;
+      }
       this.mealService.undoBill(meal).catch(this.notify.error);
     }
   }
 
   protected async remove(meal: Meal) {
     const t = (k: string) => this.i18n.t(k);
+    // Its charges would stay in Regnskab with nothing left to undo them from.
+    if (meal.bill) {
+      this.notify.info(t(this.canUndoBill(meal) ? 'FOOD_DELETE_BILL_FIRST' : 'FOOD_DELETE_BILL_MANAGER'), 6000);
+      return;
+    }
     const what = this.title(meal);
     if (await this.confirm.ask({title: `${t('DELETE')}: ${what}?`, message: t('FOOD_DELETE_CONFIRM'), confirm: t('DELETE'), danger: true})) {
       this.mealService.delete(meal).catch(this.notify.error);

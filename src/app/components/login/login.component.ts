@@ -10,6 +10,7 @@ import {MatInputModule} from '@angular/material/input';
 import {AuthService} from '../../services/auth.service';
 import {TranslateService} from '../../services/translate.service';
 import {TranslatePipe} from '../../translate.pipe';
+import {errorKey} from '../../interfaces/errors';
 import {LanguageButtonComponent} from '../language-button/language-button.component';
 import {ResetPasswordDialogComponent} from './reset-password-dialog/reset-password-dialog.component';
 
@@ -49,7 +50,7 @@ export class LoginComponent {
       await this.router.navigate(['']);
     } catch (e) {
       const code = (e as {code?: string}).code ?? '';
-      this.error.set(WRONG_LOGIN.includes(code) ? this.i18n.t('LOGIN_FAILED') : (e as Error).message);
+      this.error.set(WRONG_LOGIN.includes(code) ? this.i18n.t('LOGIN_FAILED') : this.i18n.t(errorKey(e) ?? 'AUTH_FAILED'));
     } finally {
       this.busy.set(false);
     }

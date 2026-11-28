@@ -18,7 +18,7 @@ import {TranslateService} from '../../services/translate.service';
 import {sortValue} from '../../table-sort';
 import {TranslatePipe} from '../../translate.pipe';
 import type {SheetData} from 'write-excel-file/browser';
-import {AccountRow, Period, accounts, kroner, paymentMessage, periodRange, toCsv, toTable} from './accounting';
+import {AccountRow, Period, accounts, kroner, matchesSearch, paymentMessage, periodEnded, periodRange, sumRows, toCsv, toTable} from './accounting';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {UsageService} from '../../services/usage.service';
 import {AccountingService} from './accounting.service';
@@ -58,7 +58,9 @@ export class AccountingComponent {
     toObservable(this.range).pipe(switchMap(({from, to}) => this.accounting.between(from, to))), {initialValue: []});
   protected readonly accounts = computed(() => accounts(this.purchases()));
   protected readonly productColumns = computed(() => this.accounts().products.map(name => ({id: PRODUCT + name, name})));
-  protected readonly displayedColumns = computed(() => ['name', 'room', ...this.productColumns().map(c => c.id), 'total', 'paid']);
+  // Paid can only be ticked for a period that has ended (periodEnded).
+  protected readonly ended = computed(() => periodEnded(this.to()));
+  protected readonly displayedColumns = computed(() => ['name', 'room', ...this.productColumns().map(c => c.id), 'total', ...(this.ended() ? ['paid'] : [])]);
   protected readonly table = new MatTableDataSource<AccountRow>([]);
   // The table (and its sort) only exists once the period has purchases.
   private readonly sort = viewChild(MatSort);
@@ -74,16 +76,18 @@ export class AccountingComponent {
   protected readonly paidCount = computed(() => this.owing().filter(r => this.paid(r)).length);
   protected readonly owingCount = computed(() => this.owing().length);
   protected readonly outstanding = computed(() => this.owing().filter(r => !this.paid(r)).reduce((sum, r) => sum + r.total, 0));
+  // The rows shown, after "Mangler at betale" and the search, and the totals row for exactly them.
+  private readonly shownRows = computed(() => (this.ended() && this.unpaidOnly() ? this.owing().filter(r => !this.paid(r)) : this.accounts().rows)
+    .filter(r => matchesSearch(r, this.search())));
+  protected readonly shownSums = computed(() => sumRows(this.shownRows()));
 
   constructor() {
     this.table.sortingDataAccessor = (row, column) => column.startsWith(PRODUCT)
       ? (this.show() === 'units' ? row.units : row.kr)[column.slice(PRODUCT.length)] ?? 0
       : column === 'paid' ? (this.paid(row) ? 1 : 0)
       : sortValue(row[column as 'name' | 'room' | 'total']);
-    this.table.filterPredicate = (row, term) => `${row.name} ${row.room}`.toLocaleLowerCase('da').includes(term);
     effect(() => this.table.sort = this.sort() ?? null);
-    effect(() => this.table.data = this.unpaidOnly() ? this.owing().filter(r => !this.paid(r)) : this.accounts().rows);
-    effect(() => this.table.filter = this.search().trim().toLocaleLowerCase('da'));
+    effect(() => this.table.data = this.shownRows());
   }
 
   protected paid(row: AccountRow) {
@@ -129,8 +133,13 @@ export class AccountingComponent {
   // The range picker reports the start date first, then the end date.
   private pickedFrom: Date | null = null;
 
-  protected startPicked(from: Date | null) {
+  // In the calendar the start waits for the end. Typed in the field, it counts at once (with the
+  // end as it is), or nothing would come of it.
+  protected startPicked(from: Date | null, inCalendar: boolean) {
     this.pickedFrom = from;
+    if (!inCalendar && from) {
+      this.endPicked(this.to());
+    }
   }
 
   protected endPicked(to: Date | null) {
@@ -147,8 +156,9 @@ export class AccountingComponent {
   private sheet() {
     const t = (k: string) => this.i18n.t(k);
     const a = this.accounts();
-    const visible = new Set(this.table.filteredData.map(r => r.userId));
-    return toTable({...a, rows: a.rows.filter(r => visible.has(r.userId))}, this.show(),
+    // The rows shown, in the order they are shown.
+    const rows = this.table.sort ? this.table.sortData([...this.shownRows()], this.table.sort) : this.shownRows();
+    return toTable({...a, rows}, this.show(),
       {name: t('NAME'), room: t('ROOM'), total: t('ACCOUNTING_TOTAL_KR'), sum: t('ACCOUNTING_SUM')});
   }
 

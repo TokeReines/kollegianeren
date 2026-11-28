@@ -11,11 +11,16 @@ service cloud.firestore {
     function memberDoc(kid) {
       return /databases/$(database)/documents/kitchens/$(kid)/members/$(request.auth.uid);
     }
+    // Only once that kitchen exists: a login left without one (an invite that failed while signing
+    // up, or an account made outside the app) owns nothing, not even an empty kitchen of its own.
+    function ownsByUid(kid) {
+      return request.auth.uid == kid && exists(/databases/$(database)/documents/kitchens/$(kid));
+    }
     function isMember(kid) {
-      return signedIn() && (request.auth.uid == kid || exists(memberDoc(kid)));
+      return signedIn() && (ownsByUid(kid) || exists(memberDoc(kid)));
     }
     function roleIn(kid) {
-      return request.auth.uid == kid ? 'owner' : get(memberDoc(kid)).data.role;
+      return ownsByUid(kid) ? 'owner' : get(memberDoc(kid)).data.role;
     }
     // Owners and treasurers manage products, residents, accounting and access.
     function canManage(kid) {
@@ -338,10 +343,12 @@ service cloud.firestore {
           || (resource != null && request.resource.data.get(field, null) == resource.data.get(field, null));
       }
       allow read: if isMember(kid);
+      // dismissed: the notices closed one by one ("not now"), by id, the newest 40.
       allow create, update: if isMember(kid) && kitchenLogin()
-        && request.resource.data.keys().hasOnly(['kollegietAt', 'lastPostAt', 'lastPostId', 'aktueltAt'])
+        && request.resource.data.keys().hasOnly(['kollegietAt', 'lastPostAt', 'lastPostId', 'aktueltAt', 'forslagAt', 'dismissed'])
         && request.resource.data.get('lastPostId', '') is string
-        && stamp('kollegietAt') && stamp('lastPostAt') && stamp('aktueltAt');
+        && request.resource.data.get('dismissed', []) is list && request.resource.data.get('dismissed', []).size() <= 40
+        && stamp('kollegietAt') && stamp('lastPostAt') && stamp('aktueltAt') && stamp('forslagAt');
       allow delete: if false;
     }
 

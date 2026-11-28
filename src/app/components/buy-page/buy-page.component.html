@@ -48,11 +48,16 @@
     <div class="grid products">
       @for (p of products(); track p.id) {
         @let n = amountOf(p);
-        <button type="button" class="tile product" [class.selected]="n > 0" (click)="addOne(p)" (contextmenu)="takeOne(p, $event)"
-                [attr.aria-label]="p.name + ', ' + p.price + ' kr.' + (n ? ', ' + n : '')">
+        @let left = stockLeft(p);
+        <button type="button" class="tile product" [class.selected]="n > 0" [class.sold-out]="left === 0" [disabled]="left === 0"
+                (click)="addOne(p)" (contextmenu)="takeOne(p, $event)"
+                [attr.aria-label]="p.name + ', ' + p.price + ' kr.' + (n ? ', ' + n : '') + (left === 0 ? ', ' + ('PRODUCTS_SOLD_OUT' | translate) : '')">
           <app-product-picture [product]="p" [size]="52" [matBadge]="n" [matBadgeHidden]="!n" matBadgeSize="large" />
           <span class="name">{{ p.name }}</span>
           <span class="price">{{ p.price | number:'1.0-2' }} kr.</span>
+          @if (left === 0 || (left !== null && isLowStock(p))) {
+            <span class="left">{{ left === 0 ? ("PRODUCTS_SOLD_OUT" | translate) : left + " " + ("BUY_LEFT" | translate) }}</span>
+          }
         </button>
       }
     </div>
