@@ -51,7 +51,7 @@ export class BuyPageComponent {
   private readonly i18n = inject(TranslateService);
   private readonly bottomSheet = inject(MatBottomSheet);
 
-  private readonly allProducts = toSignal(inject(ProductService).list().pipe(map(list => list.filter(p => p.active))), {initialValue: []});
+  private readonly allProducts = toSignal(inject(ProductService).listActive(), {initialValue: []});
   // Most bought first. The order is fixed when the page opens (and when products are added or
   // removed), so tiles do not jump around while people are tapping.
   private readonly productIds = computed(() => this.allProducts().map(p => p.id).sort().join());
@@ -63,7 +63,7 @@ export class BuyPageComponent {
     const byId = new Map(this.allProducts().map(p => [p.id, p]));
     return this.order().map(id => byId.get(id)).filter((p): p is Product => !!p);
   });
-  protected readonly residents = toSignal(inject(UserService).list().pipe(map(list => list.filter(u => u.active).sort(byRoom))), {initialValue: []});
+  protected readonly residents = toSignal(inject(UserService).listActive().pipe(map(list => list.sort(byRoom))), {initialValue: []});
 
   private readonly productId = signal<string | null>(null);
   protected readonly amount = signal(0);
