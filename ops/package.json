@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.3",
-    "@dicebear/core": "^9.4.3",
+    "@dicebear/core": "^11.0.0",
     "firebase-admin": "^14.5.1"
   },
   "overrides": {
