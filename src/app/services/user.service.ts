@@ -1,5 +1,5 @@
 import {Injectable, inject} from '@angular/core';
-import {addDoc, deleteDoc, doc, updateDoc} from 'firebase/firestore';
+import {addDoc, deleteDoc, doc, query, updateDoc, where} from 'firebase/firestore';
 import {Observable} from 'rxjs';
 import {User, UserFields} from '../interfaces/user';
 import {AuthService} from './auth.service';
@@ -18,6 +18,11 @@ export class UserService {
 
   list(): Observable<User[]> {
     return watchInKitchen<User>(this.auth.kitchenId$, kid => kitchenCollection(kid, 'users'));
+  }
+
+  // Only the residents the buy page shows: moved-out residents stay in the list for accounting.
+  listActive(): Observable<User[]> {
+    return watchInKitchen<User>(this.auth.kitchenId$, kid => query(kitchenCollection(kid, 'users'), where('active', '==', true)));
   }
 
   add(user: UserFields) {

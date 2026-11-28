@@ -39,7 +39,9 @@ export class HistoryBottomSheetComponent {
   private readonly notify = inject(Notify);
 
   private readonly purchases = toSignal(this.purchaseService.newest(), {initialValue: []});
-  private readonly products = toSignal(inject(ProductService).list(), {initialValue: []});
+  private readonly productService = inject(ProductService);
+  // The same query as the buy page, so opening the sheet reads nothing more.
+  private readonly products = toSignal(this.productService.listActive(), {initialValue: []});
   private readonly sort = viewChild.required(MatSort);
   protected readonly table = new MatTableDataSource<Purchase>([]);
   protected readonly displayedColumns = ['timestamp', 'name', 'amount', 'price', 'user', 'undo'];
@@ -102,7 +104,10 @@ export class HistoryBottomSheetComponent {
     }
     const before = this.rowTops();
     // The row leaves the list as soon as the delete is made locally; the promise waits for the server.
-    this.purchaseService.remove(p, this.products().find(x => x.id === p.productId)).then(
+    // A product made inactive since is looked up on its own, so its stock and count still come back.
+    const product = this.products().find(x => x.id === p.productId)
+      ?? await this.productService.get(p.productId).catch(() => undefined);
+    this.purchaseService.remove(p, product).then(
       () => this.notify.info(t('BEERSYSTEM_UNDONE')),
       e => {
         this.removing.update(ids => new Set([...ids].filter(id => id !== p.id)));
