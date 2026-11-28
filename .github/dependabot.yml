@@ -1,8 +1,9 @@
 # Version updates once a week, grouped so a week gives a few PRs instead of one per package.
 # Security updates come as soon as an advisory is out, grouped per directory, but only patch and
 # minor steps: a major among them would otherwise hold back every small fix in the same PR.
-# Patch and minor updates of the app and rules-test merge themselves once CI is green
-# (workflows/dependabot-auto-merge.yml); majors and everything in ops/ wait for a person.
+# Updates of the app, rules-test and the actions merge themselves once CI is green
+# (workflows/dependabot-auto-merge.yml), majors too, except majors of Angular and Firebase;
+# everything in ops/ waits for a person.
 version: 2
 updates:
   - package-ecosystem: npm
