@@ -48,7 +48,7 @@ Security rules (`firestore.rules`) enforce all of this; tests in `rules-test/` (
 ## Deploy
 
 ```bash
-npm run deploy:dev                                                    # dev hosting
+npm run deploy:dev                                                    # dev hosting (also automatic: every green push to develop, .github/workflows/deploy-dev.yml)
 node ops/deploy-rules.js dev firestore.rules                          # dev rules
 npm run build:prod && firebase deploy --only hosting --project prod   # prod app: announce first
 node ops/deploy-rules.js prod firestore.rules                         # prod rules (the CLI cannot, see ops/README.md)
