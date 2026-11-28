@@ -54,7 +54,14 @@ updates:
     schedule:
       interval: monthly
       timezone: Europe/Copenhagen
+    # Dicebear 10 and later move the styles out of @dicebear/collection (there is no collection 11),
+    # so a new core breaks the install. Only the seed scripts draw avatars: 9 stays.
+    ignore:
+      - dependency-name: "@dicebear/*"
+        update-types: ["version-update:semver-major"]
     groups:
+      dicebear:
+        patterns: ["@dicebear/*"]
       minor-and-patch:
         patterns: ["*"]
         update-types: [minor, patch]
