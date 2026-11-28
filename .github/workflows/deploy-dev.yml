@@ -35,6 +35,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      # Dependabot writes lockfiles with npm 11, which leaves optional peers out (chokidar 6 under
+      # the Angular CLI); the npm 10 that comes with Node 22 then refuses them in npm ci.
+      - run: npm install -g npm@11
       - run: npm ci --no-audit --no-fund
       - run: npx ng build -c dev
       - uses: FirebaseExtended/action-hosting-deploy@v0
